@@ -1,0 +1,44 @@
+package eu.tintera.tasks.db.entities
+
+import androidx.room.ColumnInfo
+import androidx.room.Dao
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import kotlin.uuid.Uuid
+
+@Entity(
+    tableName = "TaskParentTask",
+    primaryKeys = ["taskId", "parentTaskId"],
+    foreignKeys = [
+        ForeignKey(
+            entity = TaskEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["taskId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = TaskEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["parentTaskId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ]
+)
+data class TaskParentTask(
+    @ColumnInfo("taskId", index = true)
+    val taskId: Uuid,
+    @ColumnInfo("parentTaskId", index = true)
+    val parentTaskId: Uuid,
+)
+
+@Dao
+interface TaskParentTaskDao {
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(taskParentTask: TaskParentTask)
+
+    @Query("SELECT taskId FROM TaskParentTask WHERE parentTaskId = :id")
+    suspend fun childrenForTask(id: Uuid): List<Uuid>
+}

@@ -1,0 +1,31 @@
+package eu.tintera.tasks.db.entities
+
+import androidx.room.Dao
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import kotlin.uuid.Uuid
+
+@Entity(
+    tableName = "TaskTag",
+    primaryKeys = ["taskId", "name"],
+    foreignKeys = [
+        ForeignKey(
+            entity = TaskEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["taskId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ]
+)
+data class TaskTag(
+    val taskId: Uuid,
+    val name: String,
+)
+
+@Dao
+interface TaskTagDao {
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(taskTags: List<TaskTag>)
+}
