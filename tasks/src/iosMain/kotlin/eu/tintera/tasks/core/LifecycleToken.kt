@@ -52,11 +52,11 @@ internal class LifecycleToken(
 
         // Atomický zápis nového tasku. Pokud se povede, logujeme úspěch.
         if (taskIdentifier.compareAndSet(UIBackgroundTaskInvalid.toLong(), newIdentifier.toLong())) {
-            EventBus.send(TAG, "Background task acquired: $newIdentifier")
+            EventBus.send(TAG, "Background task acquired: $newIdentifier, isBackground=${isBackground.value}")
         } else {
             // Pokud se stav změnil (už jsme v popředí nebo je token mrtvý), okamžitě rušíme.
             UIApplication.sharedApplication.endBackgroundTask(newIdentifier)
-            EventBus.send(TAG, "Discarded late background task (state changed): $newIdentifier")
+            EventBus.send(TAG, "Discarded late background task (state changed): $newIdentifier, isBackground=${isBackground.value}")
         }
     }
 
@@ -76,7 +76,7 @@ internal class LifecycleToken(
                 // Pokud jsme předtím drželi skutečný task (> 0), musíme ho ukončit u iOS
                 if (current > 0L) {
                     UIApplication.sharedApplication.endBackgroundTask(current.toULong())
-                    EventBus.send(TAG, "Successfully ended active background task ID: $current")
+                    EventBus.send(TAG, "Successfully ended active background task ID: $current, isBackground=${isBackground.value}")
                 }
                 break
             }

@@ -13,5 +13,5 @@ internal class IosExecutionContextProvider(
     tokenProvider = tokenProvider,
     scope = scope,
     config = config,
-    dispatchers = dispatchers
+    dispatcher = dispatchers.default
 )

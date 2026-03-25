@@ -1,13 +1,11 @@
 package eu.tintera.tasks.core
 
-import eu.tintera.tasks.core.locks.SharedExecutionContextProvider
-import eu.tintera.tasks.core.locks.TokenProvider
+import eu.tintera.tasks.core.fakes.FakeTokenProvider
 import eu.tintera.tasks.core.locks.use
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -17,20 +15,11 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalCoroutinesApi::class)
 
 class SharedExecutionContextProviderTest {
-
-    private val releaseDebounce = 1500.milliseconds
-    private fun TestScope.executionContextProvider(
-        tokenProvider: TokenProvider,
-        releaseDebounce: Duration = this@SharedExecutionContextProviderTest.releaseDebounce
-    ) = SharedExecutionContextProvider(
-        tokenProvider = tokenProvider,
-        scope = backgroundScope,
-        releaseDebounce = releaseDebounce
-    )
 
     @Test
     fun `when first token is acquired, system lock is acquired`() = runTest {
@@ -64,7 +53,7 @@ class SharedExecutionContextProviderTest {
         token1.release() // Začíná běžet 1.5s odpočet
 
         // Posuneme čas před vypršení release debouncu - zámek by měl stále držet
-        advanceTimeBy(releaseDebounce - 1.milliseconds)
+        advanceTimeBy(defaultReleaseDebounce - 1.milliseconds)
 
         assertEquals(0, fakeSystemLock.releaseCount)
 
@@ -72,7 +61,7 @@ class SharedExecutionContextProviderTest {
         wakeLock.acquire()
 
         // Posuneme čas o další 2 sekundy. Kdyby debounce běžel, teď by to uvolnil.
-        advanceTimeBy(releaseDebounce + 1.milliseconds)
+        advanceTimeBy(defaultReleaseDebounce + 1.milliseconds)
 
         // Zámek musí stále držet, protože ho drží token2!
         assertEquals(0, fakeSystemLock.releaseCount)
@@ -92,11 +81,11 @@ class SharedExecutionContextProviderTest {
 
         token2.release()
 
-        advanceTimeBy(1000.milliseconds)
+        advanceTimeBy(defaultReleaseDebounce - 1.milliseconds)
 
         assertEquals(0, fakeSystemLock.releaseCount, "Released count must still be 1 (debounce)")
 
-        advanceTimeBy(1501)
+        advanceTimeBy(10.minutes)
 
         assertEquals(1, fakeSystemLock.releaseCount, "Released count must be 1")
     }
@@ -155,7 +144,7 @@ class SharedExecutionContextProviderTest {
 
         token2.release()
 
-        advanceTimeBy(releaseDebounce + 1.milliseconds)
+        advanceTimeBy(defaultReleaseDebounce + 1.milliseconds)
 
         assertEquals(1, fakeSystemLock.releaseCount) // Only the second one was released normally
     }
@@ -189,7 +178,7 @@ class SharedExecutionContextProviderTest {
         tokenB.release()
 
         // 7. Assert that the new system lock is now correctly released
-        advanceTimeBy(releaseDebounce + 1.milliseconds)
+        advanceTimeBy(defaultReleaseDebounce + 1.milliseconds)
         assertEquals(1, fakeSystemLock.releaseCount)
     }
 

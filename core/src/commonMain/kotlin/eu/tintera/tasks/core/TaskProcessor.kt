@@ -15,18 +15,22 @@ import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
-internal class TaskProcessor(
+internal interface TaskProcessor {
+    suspend fun run(task: Task)
+}
+
+internal class TaskProcessorImpl(
     private val repository: Repository,
     private val taskEvaluator: TaskEvaluator,
     private val networkState: NetworkState,
     private val executionContextProvider: ExecutionContextProvider,
     private val taskScopeFactory: TaskScopeFactory,
     config: TaskProcessorConfig = TaskProcessorConfig()
-) {
+) : TaskProcessor {
 
     private val concurrencySemaphore = Semaphore(config.maxConcurrentTasks)
 
-    suspend fun run(task: Task) = coroutineScope {
+    override suspend fun run(task: Task) = coroutineScope {
 
         val actualTask = MutableStateFlow<Task?>(task)
 

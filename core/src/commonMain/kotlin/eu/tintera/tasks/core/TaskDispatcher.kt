@@ -1,46 +1,49 @@
 package eu.tintera.tasks.core
 
 import eu.tintera.tasks.core.data.Repository
-import kotlinx.coroutines.*
+import eu.tintera.tasks.core.data.Task
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
+import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 internal class TaskDispatcher(
     private val taskProcessor: TaskProcessor,
-    private val repository: Repository
+    private val repository: Repository,
+    private val scope: ApplicationScope,
+    dispatchers: AppDispatchers
 ) {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
     private fun tasks() = repository.tasksByState(runningStates).distinctUntilChanged()
 
-    init {
-        scope.launch {
+    private fun Task.executionKey() = ExecutionKey(id, retriesCount, processTime)
 
-            val runningJobs = mutableMapOf<Uuid, Job>()
+    init {
+        scope.launch(dispatchers.io) {
+
+            val runningJobs = mutableMapOf<ExecutionKey, Job>()
 
             tasks().distinctUntilChanged().collect { tasks ->
 
-                val currentTaskIds = tasks.map { it.id }.toSet()
+                val currentExecutionKeys = tasks.map { it.executionKey() }.toSet()
 
-                // 1. Úklid: Odstraň z mapy joby tasků, které už nejsou v seznamu z DB
                 val iterator = runningJobs.iterator()
                 while (iterator.hasNext()) {
-                    val (id, job) = iterator.next()
-                    if (id !in currentTaskIds) {
+                    val (key, job) = iterator.next()
+                    if (key !in currentExecutionKeys) {
+                        job.cancel()
                         iterator.remove()
                     }
                 }
 
-                // 2. Spouštění: Spusť jen ty, které nemáme v mapě
-                val newTasks = tasks.filter { !runningJobs.containsKey(it.id) }
+                val newTasks = tasks.filter { !runningJobs.containsKey(it.executionKey()) }
 
                 if (newTasks.isNotEmpty()) {
-
                     newTasks.forEach { task ->
-                        val job = scope.launch {
+                        val job = scope.launch(dispatchers.io) {
                             taskProcessor.run(task)
                         }
-                        runningJobs[task.id] = job
+                        runningJobs[task.executionKey()] = job
                     }
                 }
             }
@@ -51,3 +54,9 @@ internal class TaskDispatcher(
         private const val TAG = "TaskDispatcher"
     }
 }
+
+internal data class ExecutionKey(
+    val id: Uuid,
+    val retriesCount: Int,
+    val processTime: Instant
+)

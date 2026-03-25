@@ -5,14 +5,12 @@ import eu.tintera.tasks.Data
 import eu.tintera.tasks.State
 import eu.tintera.tasks.TaskResult
 import eu.tintera.tasks.core.data.Task
-import eu.tintera.tasks.core.locks.SharedExecutionContextProvider
-import eu.tintera.tasks.core.locks.TokenProvider
+import eu.tintera.tasks.core.fakes.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
@@ -24,21 +22,11 @@ import kotlin.test.assertTrue
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
 
 class TaskProcessorTest {
-
-
-    private fun TestScope.executionContextProvider(
-        tokenProvider: TokenProvider
-    ) = SharedExecutionContextProvider(
-        tokenProvider = tokenProvider,
-        scope = backgroundScope,
-        releaseDebounce = 1500.milliseconds
-    )
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
@@ -63,7 +51,7 @@ class TaskProcessorTest {
             }
         )
 
-        val processor = TaskProcessor(
+        val processor = TaskProcessorImpl(
             repository = fakeRepository,
             taskEvaluator = fakeEvaluator,
             networkState = fakeNetworkState,
@@ -135,7 +123,7 @@ class TaskProcessorTest {
                 register("successTask") { { TaskResult.success() } }
             }
         )
-        val processor = TaskProcessor(
+        val processor = TaskProcessorImpl(
             repository = fakeRepository,
             taskEvaluator = fakeEvaluator,
             networkState = FakeNetworkState(),
@@ -159,7 +147,7 @@ class TaskProcessorTest {
                 register("retryTask") { { TaskResult.Retry } }
             }
         )
-        val processor = TaskProcessor(
+        val processor = TaskProcessorImpl(
             repository = fakeRepository,
             taskEvaluator = fakeEvaluator,
             networkState = FakeNetworkState(),
@@ -181,7 +169,7 @@ class TaskProcessorTest {
     @Test
     fun `when parent task failed, child task fails too`() = runTest {
         val fakeRepository = FakeRepository()
-        val processor = TaskProcessor(
+        val processor = TaskProcessorImpl(
             repository = fakeRepository,
             taskEvaluator = TaskEvaluator(TaskRegistry()),
             networkState = FakeNetworkState(),
@@ -213,7 +201,7 @@ class TaskProcessorTest {
             }
         )
 
-        val processor = TaskProcessor(
+        val processor = TaskProcessorImpl(
             repository = fakeRepository,
             taskEvaluator = fakeEvaluator,
             networkState = fakeNetworkState,
@@ -255,7 +243,7 @@ class TaskProcessorTest {
                 register("delayedTask") { { TaskResult.success() } }
             }
         )
-        val processor = TaskProcessor(
+        val processor = TaskProcessorImpl(
             repository = fakeRepository,
             taskEvaluator = fakeEvaluator,
             networkState = FakeNetworkState(),
@@ -293,7 +281,7 @@ class TaskProcessorTest {
                 register("exceptionTask") { { throw RuntimeException("Crash!") } }
             }
         )
-        val processor = TaskProcessor(
+        val processor = TaskProcessorImpl(
             repository = fakeRepository,
             taskEvaluator = fakeEvaluator,
             networkState = FakeNetworkState(),
@@ -327,7 +315,7 @@ class TaskProcessorTest {
 
         val fakeProvider = FakeTokenProvider()
 
-        val processor = TaskProcessor(
+        val processor = TaskProcessorImpl(
             repository = fakeRepository,
             taskEvaluator = fakeEvaluator,
             networkState = FakeNetworkState(),
@@ -387,7 +375,7 @@ class TaskProcessorTest {
 
         val fakeProvider = FakeTokenProvider()
 
-        val processor = TaskProcessor(
+        val processor = TaskProcessorImpl(
             repository = fakeRepository,
             taskEvaluator = fakeEvaluator,
             networkState = FakeNetworkState(),
@@ -424,32 +412,5 @@ class TaskProcessorTest {
         // ASSERT: job.isCancelled musí být true!
         // Náš DB Watcher zjistil, že state.terminal() je true, a zavolal mainJob.cancelAndJoin()
         assertTrue(job.isCompleted, "Processor musí zrušit běh, pokud je task zrušen v DB")
-    }
-
-    private fun createTask(
-        identifier: String,
-        state: State = State.Enqueued,
-        id: Uuid = Uuid.random(),
-        networkRequired: Boolean = false,
-        initialDelay: Duration = Duration.ZERO
-    ): Task {
-        return Task(
-            id = id,
-            state = state,
-            identifier = identifier,
-            uniqueName = identifier,
-            retriesCount = 0,
-            initialDelay = initialDelay,
-            processTime = Clock.System.now(),
-            inputData = Data.EMPTY,
-            outputData = Data.EMPTY,
-            networkRequired = networkRequired,
-            createdAt = Clock.System.now(),
-            finishedAt = if (state.terminal()) Clock.System.now() else null,
-            repeatInterval = null,
-            backoffCriteria = BackoffCriteria.DEFAULT,
-            progressData = null,
-            retentionDelay = 24.hours
-        )
     }
 }

@@ -24,8 +24,8 @@ import kotlin.time.Duration
  */
 class SharedExecutionContextProvider(
     private val tokenProvider: TokenProvider,
-    private val scope: ApplicationScope,
-    private val dispatchers: AppDispatchers,
+    private val scope: CoroutineScope,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val config: ExecutionContextConfig
 ) : ExecutionContextProvider {
     private val mutex = Mutex()
@@ -86,8 +86,9 @@ class SharedExecutionContextProvider(
             // Pokud jsme na nule A ZÁROVEŇ se nám podaří tuto session odstranit z globálního stavu
             if (newCount == 0) {
 
-                debounceJob = scope.launch(dispatchers.default) {
-                    if (config.releaseDebounce.isPositive()) delay(config.releaseDebounce)
+                debounceJob = scope.launch(dispatcher) {
+                    if (config.releaseDebounce.isPositive())
+                        delay(config.releaseDebounce)
 
                     mutex.withLock {
                         // Pokud jsme na nule, zkusíme tuto session odstranit z "currentSession"

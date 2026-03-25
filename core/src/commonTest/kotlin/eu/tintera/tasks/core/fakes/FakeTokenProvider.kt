@@ -1,7 +1,7 @@
-package eu.tintera.tasks.core
+package eu.tintera.tasks.core.fakes
 
-import eu.tintera.tasks.core.locks.TokenProvider
 import eu.tintera.tasks.core.locks.Token
+import eu.tintera.tasks.core.locks.TokenProvider
 
 class FakeTokenProvider : TokenProvider {
     var acquireCount = 0
