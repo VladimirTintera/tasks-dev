@@ -6,10 +6,9 @@ import eu.tintera.tasks.TaskScope
 import eu.tintera.tasks.core.data.Repository
 import kotlin.uuid.Uuid
 
-class IosTaskScopeFactory(
+class RepositoryTaskScopeFactory(
     private val repository: Repository
 ) : TaskScopeFactory {
-
     override fun createScope(
         taskId: Uuid,
         data: Data,

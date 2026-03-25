@@ -1,16 +1,17 @@
 package eu.tintera.tasks.koin
 
-import eu.tintera.tasks.IosNetworkState
+import eu.tintera.tasks.JvmExecutionContextProvider
+import eu.tintera.tasks.JvmNetworkState
+import eu.tintera.tasks.JvmTokenProvider
 import eu.tintera.tasks.core.*
 import eu.tintera.tasks.core.locks.ExecutionContextProvider
+import eu.tintera.tasks.core.locks.TokenProvider
 import eu.tintera.tasks.db.databaseModule
 import org.koin.core.module.Module
-import org.koin.core.module.dsl.createdAtStart
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.bind
 import org.koin.dsl.module
-import platform.Foundation.NSBundle
 
 internal actual fun platformModule(): Module = module {
 
@@ -21,19 +22,10 @@ internal actual fun platformModule(): Module = module {
     factoryOf(::RepositoryCoreTaskManager) bind CoreTaskManager::class
 
 
-    singleOf<NetworkState>(::IosNetworkState)
+    singleOf<NetworkState>(::JvmNetworkState)
 
-    single(createdAtStart = true) {
-        BgTaskManager(
-            appPackage = NSBundle.mainBundle.bundleIdentifier ?: "eu.tintera.tasks",
-            repository = get()
-        )
-    }
 
-    singleOf(::IosExecutionContextProvider) bind ExecutionContextProvider::class
+    singleOf(::JvmExecutionContextProvider) bind ExecutionContextProvider::class
 
-    singleOf(::AppLifecycleManager) {
-        createdAtStart()
-    }
-    singleOf(::IosTokenProvider)
+    singleOf(::JvmTokenProvider) bind TokenProvider::class
 }

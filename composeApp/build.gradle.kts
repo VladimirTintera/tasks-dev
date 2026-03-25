@@ -16,6 +16,17 @@ kotlin {
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
+
+    compilerOptions {
+        freeCompilerArgs.addAll(
+            "-Xexpect-actual-classes",
+            "-Xexplicit-backing-fields"
+        )
+        optIn.addAll(
+            "kotlin.uuid.ExperimentalUuidApi",
+            "kotlin.concurrent.atomics.ExperimentalAtomicApi"
+        )
+    }
     
     listOf(
         iosArm64(),
@@ -29,22 +40,23 @@ kotlin {
     
     jvm()
     
-    js {
-        browser()
-        binaries.executable()
-    }
+    //js {
+    //    browser()
+    //    binaries.executable()
+    //}
     
-    @OptIn(ExperimentalWasmDsl::class)
-    wasmJs {
-        browser()
-        binaries.executable()
-    }
+    //@OptIn(ExperimentalWasmDsl::class)
+    //wasmJs {
+    //    browser()
+    //    binaries.executable()
+    //}
     
     sourceSets {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
         }
+
         commonMain.dependencies {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
@@ -54,6 +66,10 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+
+            implementation(projects.tasks)
+
+
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

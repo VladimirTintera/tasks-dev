@@ -58,6 +58,8 @@ androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref =
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
+androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
+androidx-sqlite = { module = "androidx.sqlite:sqlite", version.ref = "sqlite" }
 
 kotlinx-serialization-protobuf = {module = "org.jetbrains.kotlinx:kotlinx-serialization-protobuf", version.ref = "serialization"}
 androidx-work-runtime-ktx = {module = "androidx.work:work-runtime-ktx", version.ref = "androidx-work"}

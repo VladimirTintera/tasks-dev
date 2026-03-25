@@ -23,16 +23,11 @@ kotlin {
         optIn.addAll("kotlin.uuid.ExperimentalUuidApi")
     }
 
-    listOf(
-        iosX64(),
-        iosArm64(),
-        iosSimulatorArm64()
-    ).forEach {
-        it.binaries.framework {
-            baseName = "TasksDb"
-            isStatic = true
-        }
-    }
+    iosX64()
+    iosArm64()
+    iosSimulatorArm64()
+
+    jvm()
 
     sourceSets {
         commonMain.dependencies {
@@ -53,6 +48,9 @@ kotlin {
         iosMain.dependencies {
 
         }
+        jvmMain.dependencies {
+
+        }
     }
 }
 
@@ -66,9 +64,11 @@ android {
 }
 
 dependencies {
-    //add("kspCommonMainMetadata", libs.room.compiler) // Run KSP on [commonMain] code
-    add("kspAndroid", libs.androidx.room.compiler)
-    add("kspIosX64", libs.androidx.room.compiler)
-    add("kspIosArm64", libs.androidx.room.compiler)
-    add("kspIosSimulatorArm64", libs.androidx.room.compiler)
+    with(libs.androidx.room.compiler) {
+        add("kspAndroid", this)
+        add("kspIosX64", this)
+        add("kspIosArm64", this)
+        add("kspIosSimulatorArm64", this)
+        add("kspJvm", this)
+    }
 }

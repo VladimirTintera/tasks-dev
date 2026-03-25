@@ -11,8 +11,10 @@ val databaseModule = module {
     factory { get<TasksDatabase>().taskDao() }
     factory { get<TasksDatabase>().taskParentTaskDao() }
     factory { get<TasksDatabase>().taskTagDao() }
+    factoryOf(::DatabaseFactory)
 
     factoryOf(::DatabaseRepository) bind Repository::class
+    single { get<DatabaseFactory>().create() }
 }
 
-expect fun Module.platformDb()
+internal expect fun Module.platformDb()

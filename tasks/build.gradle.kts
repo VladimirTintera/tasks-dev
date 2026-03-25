@@ -17,16 +17,11 @@ kotlin {
         )
     }
 
-    listOf(
-        iosX64(),
-        iosArm64(),
-        iosSimulatorArm64()
-    ).forEach {
-        it.binaries.framework {
-            baseName = "MWTasks"
-            isStatic = true
-        }
-    }
+    iosX64()
+    iosArm64()
+    iosSimulatorArm64()
+
+    jvm()
 
     sourceSets {
         commonMain.dependencies {
@@ -38,7 +33,9 @@ kotlin {
             implementation(projects.core)
 
             api(projects.api)
+            api(libs.androidx.sqlite)
         }
+
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
@@ -48,6 +45,10 @@ kotlin {
             implementation(libs.androidx.work.runtime.ktx)
             implementation(libs.androidx.core.ktx)
             implementation(libs.koin.android)
+        }
+
+        jvmMain.dependencies {
+            implementation(libs.androidx.sqlite.bundled)
         }
     }
 }

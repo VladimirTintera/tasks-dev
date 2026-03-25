@@ -1,28 +1,26 @@
 package eu.tintera.tasks
 
 import android.content.Context
+import androidx.sqlite.SQLiteDriver
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.startup.Initializer
-import androidx.work.Configuration
-import androidx.work.WorkManager
 import androidx.work.WorkManagerInitializer
 import eu.tintera.tasks.core.TaskProcessorConfig
 import eu.tintera.tasks.core.locks.ExecutionContextConfig
+import eu.tintera.tasks.db.DatabaseConfiguration
 import eu.tintera.tasks.koin.startTasksKoin
 import org.koin.android.ext.koin.androidContext
-import org.koin.core.KoinApplication
 import org.koin.dsl.module
-import java.util.concurrent.Executors
-import kotlin.math.sin
 
-class TasksInitializer : Initializer<KoinApplication> {
+class TasksInitializer : Initializer<Unit> {
     override fun create(
         context: Context
-    ): KoinApplication {
+    ) {
 
         val config = if (context is TaskManagerConfigProvider)
-            context.taskManagerConfig
+            context.tasksManagerConfig
         else
-            TaskManagerConfig()
+            AndroidTasksConfiguration()
 
         // Vytvoříme thread pool s přesně takovým limitem, jaký si vývojář nastavil v maxConcurrentTasks
         //val customExecutor = Executors.newFixedThreadPool(config.maxConcurrentTasks)
@@ -34,20 +32,27 @@ class TasksInitializer : Initializer<KoinApplication> {
         // Manuální inicializace WorkManageru
         //WorkManager.initialize(context, workManagerConfig)
 
-        return startTasksKoin {
+        startTasksKoin {
             androidContext(context)
             modules(
                 module {
-                    single { config }
                     single {
                         TaskProcessorConfig(
-                            maxConcurrentTasks = config.maxConcurrentTasks
+                            maxConcurrentTasks = 10
                         )
                     }
                     single {
                         ExecutionContextConfig(
                             releaseDebounce = config.executionContextReleaseDebounce
                         )
+                    }
+
+                    single<SQLiteDriver> { AndroidSQLiteDriver() }
+
+                    single<DatabaseConfiguration> {
+                        object : DatabaseConfiguration {
+                            override val databaseName: String = ""
+                        }
                     }
                 }
             )

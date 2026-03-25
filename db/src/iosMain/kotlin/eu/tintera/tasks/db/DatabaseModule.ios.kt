@@ -1,7 +1,9 @@
 package eu.tintera.tasks.db
 
 import org.koin.core.module.Module
+import org.koin.core.module.dsl.factoryOf
+import org.koin.dsl.bind
 
-actual fun Module.platformDb() {
-    single { getDatabase() }
+internal actual fun Module.platformDb() {
+    factoryOf(::IosDatabaseBuilderFactory) bind DatabaseBuilderFactory::class
 }
