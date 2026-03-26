@@ -5,6 +5,7 @@ import eu.tintera.tasks.State
 import eu.tintera.tasks.TaskEvent
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.locks.Token
+import eu.tintera.tasks.core.locks.TokenProducer
 import eu.tintera.tasks.log
 import kotlinx.cinterop.*
 import kotlinx.coroutines.*
@@ -33,7 +34,7 @@ import kotlin.time.Instant
 internal class BgTaskManager(
     appPackage: String,
     private val repository: Repository,
-) {
+) : TokenProducer {
     private class JobToken(
         private val job: Job
     ) : Token {
@@ -63,6 +64,17 @@ internal class BgTaskManager(
 
     // True, pokud nám iOS právě oznámil, že nám končí čas pro velký task
     val isBgTaskExpired = MutableStateFlow(false)
+
+    override fun token(onExpire: () -> Unit): Flow<Token> = channelFlow {
+        isRunningBgTask.first { it }
+        val token = JobToken(
+            job = scope.launch {
+                isRunningBgTask.first { !it }
+                if (isBgTaskExpired.value) onExpire()
+            }
+        )
+        send(token)
+    }
     private val taskIdentifier = "$appPackage.bgtask"
 
     init {
@@ -214,7 +226,7 @@ internal class BgTaskManager(
             ).also {
                 log("state: $it")
             }
-        }.filter { it.finished }.first()
+        }.first { it.finished }
     }
 
     suspend fun pendingTasks(): List<PendingIosTask> = suspendCancellableCoroutine { continuation ->
@@ -234,22 +246,6 @@ internal class BgTaskManager(
 
             continuation.resume(mappedTasks)
         }
-    }
-
-    /**
-     * Pokud běží velký BGProcessingTask, vytvoří a vrátí Job,
-     * který po expiraci tasku zavolá předaný handler.
-     * Pokud task neběží, vrátí null.
-     */
-    fun createExpirationToken(onExpire: () -> Unit): Token? {
-        if (!isRunningBgTask.value) return null
-
-        return JobToken(
-            job = scope.launch {
-                isRunningBgTask.first { !it }
-                if (isBgTaskExpired.value) onExpire()
-            }
-        )
     }
 
     companion object {

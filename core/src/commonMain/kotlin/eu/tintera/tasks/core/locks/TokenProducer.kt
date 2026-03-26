@@ -1,0 +1,7 @@
+package eu.tintera.tasks.core.locks
+
+import kotlinx.coroutines.flow.Flow
+
+interface TokenProducer {
+    fun token(onExpire: () -> Unit): Flow<Token>
+}

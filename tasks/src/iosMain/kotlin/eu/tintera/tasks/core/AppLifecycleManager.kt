@@ -2,8 +2,13 @@ package eu.tintera.tasks.core
 
 import eu.tintera.tasks.State
 import eu.tintera.tasks.core.data.Repository
+import eu.tintera.tasks.core.locks.Token
+import eu.tintera.tasks.core.locks.TokenProducer
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
@@ -21,7 +26,7 @@ import platform.UIKit.UIApplicationWillEnterForegroundNotification
 internal class AppLifecycleManager(
     private val repository: Repository,
     private val bgTaskManager: BgTaskManager,
-) {
+) : TokenProducer {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val isBackground = MutableStateFlow(
         UIApplication.sharedApplication.applicationState == UIApplicationState.UIApplicationStateBackground
@@ -31,15 +36,6 @@ internal class AppLifecycleManager(
         setupLifecycleObservers()
         recoverStuckTasks()
     }
-
-    fun createExpirationToken(
-        onExpire: () -> Unit
-    ) = LifecycleToken(
-        scope = scope,
-        expirationHandler = onExpire,
-        isBackground = isBackground,
-        bgTaskManager = bgTaskManager,
-    )
 
     private fun setupLifecycleObservers() {
         val center = NSNotificationCenter.defaultCenter
@@ -77,5 +73,15 @@ internal class AppLifecycleManager(
                 to = State.Enqueued
             )
         }
+    }
+
+    override fun token(onExpire: () -> Unit): Flow<Token> = flow {
+        val token = LifecycleToken(
+            scope = scope,
+            expirationHandler = onExpire,
+            isBackground = isBackground,
+            bgTaskManager = bgTaskManager,
+        )
+        emit(token)
     }
 }
