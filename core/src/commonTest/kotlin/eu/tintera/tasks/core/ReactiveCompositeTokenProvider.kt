@@ -1,7 +1,7 @@
-package eu.tintera.tasks.core.fakes
+package eu.tintera.tasks.core
 
-import eu.tintera.tasks.core.ApplicationScope
-import eu.tintera.tasks.core.dispatchers
+import eu.tintera.tasks.core.fakes.FakeToken
+import eu.tintera.tasks.core.fakes.FakeTokenProducer
 import eu.tintera.tasks.core.locks.ReactiveCompositeTokenProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
