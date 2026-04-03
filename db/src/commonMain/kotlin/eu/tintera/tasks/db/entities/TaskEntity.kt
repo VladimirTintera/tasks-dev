@@ -28,7 +28,7 @@ internal data class TaskEntity(
     val id: Uuid,
     val identifier: String,
     val uniqueName: String,
-    val retriesCount: Int,
+    val runAttemptCount: Int,
     val initialDelay: Duration,
     val processTime: Instant,
     val state: State,
@@ -47,8 +47,11 @@ internal data class TaskEntity(
 @Dao
 internal interface TaskDao {
 
-    @Query("UPDATE Task set retriesCount = :retriesCount, state = :state, processTime = :processTime WHERE id = :id")
-    suspend fun updateRetry(id: Uuid, retriesCount: Int, processTime: Instant, state: State)
+    @Query("UPDATE Task set state = :state, processTime = :processTime WHERE id = :id")
+    suspend fun updateRetry(id: Uuid, processTime: Instant, state: State)
+
+    @Query("UPDATE Task set runAttemptCount = :runAttemptCount WHERE id = :id")
+    suspend fun updateRunAttemptCount(id: Uuid, runAttemptCount: Int)
 
     @Query("UPDATE Task set progressData = :progressData WHERE id = :id")
     suspend fun updateProgressData(id: Uuid, progressData: SerializableTaskData)

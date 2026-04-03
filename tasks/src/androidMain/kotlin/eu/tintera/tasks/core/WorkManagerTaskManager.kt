@@ -223,7 +223,7 @@ internal class WorkManagerCoreTaskManager(
             tags = tags.filterNot { tag ->
                 tag == TaskWorker::class.java.name
             }.toSet(),
-            retriesCount = runAttemptCount,
+            runAttemptCount = runAttemptCount,
             outputData = outputData.toData(),
             nextScheduledTime = Instant.fromEpochMilliseconds(nextScheduleTimeMillis),
             progress = progress.toData()

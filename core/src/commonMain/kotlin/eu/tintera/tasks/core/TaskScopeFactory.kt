@@ -8,6 +8,6 @@ interface TaskScopeFactory {
     fun createScope(
         taskId: Uuid,
         data: Data,
-        retriesCount: Int,
+        runAttemptsCount: Int,
     ): TaskScope
 }

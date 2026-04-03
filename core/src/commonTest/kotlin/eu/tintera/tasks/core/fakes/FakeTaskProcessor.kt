@@ -10,7 +10,7 @@ internal class FakeTaskProcessor : TaskProcessor{
     val currentlyRunningKeys = mutableSetOf<ExecutionKey>()
 
     override suspend fun run(task: Task) {
-        val key = ExecutionKey(task.id, task.retriesCount, task.processTime)
+        val key = ExecutionKey(task.id, task.processTime)
         currentlyRunningKeys.add(key)
         try {
             // awaitCancellation() simuluje task, který běží "donekonečna",

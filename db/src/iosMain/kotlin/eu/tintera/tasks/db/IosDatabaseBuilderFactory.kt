@@ -17,8 +17,6 @@ internal class IosDatabaseBuilderFactory : DatabaseBuilderFactory {
             name = dbFilePath,
         )
     }
-
-    override fun driver(): SQLiteDriver = NativeSQLiteDriver()
 }
 
 @OptIn(ExperimentalForeignApi::class)

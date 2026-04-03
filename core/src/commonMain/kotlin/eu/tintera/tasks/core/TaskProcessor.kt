@@ -50,7 +50,6 @@ internal class TaskProcessorImpl(
             }.first { t ->
                 when {
                     t == null -> true
-                    t.retriesCount != task.retriesCount -> true
                     t.processTime != task.processTime -> true
                     t.state.terminal() -> true
                     else -> false
@@ -97,12 +96,12 @@ internal class TaskProcessorImpl(
 
         updateState(task.id, State.Enqueued)
 
-        if (task.retriesCount == 0 && task.initialDelay.isPositive()) {
+        if (task.runAttemptCount == 0 && task.initialDelay.isPositive()) {
             delay(task.initialDelay)
         }
 
         if (actualTask.value?.networkRequired == true) {
-            networkState.state().filter { it == NetworkState.State.Connected }.first()
+            networkState.state().first { it == NetworkState.State.Connected }
         }
 
         if (actualTask.value?.state?.terminal() != false) {
@@ -130,9 +129,10 @@ internal class TaskProcessorImpl(
                     taskScopeFactory.createScope(
                         taskId = task.id,
                         data = taskData,
-                        retriesCount = task.retriesCount
+                        runAttemptsCount = task.runAttemptCount
                     )
                 ) {
+                    repository.updateRunAttemptCount(task.id, task.runAttemptCount + 1)
                     handle(taskIdentifier = task.identifier) ?: TaskResult.failure()
                 }
             }
@@ -167,9 +167,8 @@ internal class TaskProcessorImpl(
             TaskResult.Failure -> {
                 val duration = task.repeatInterval
                 if (duration != null) {
-                    repository.updateRetry(
+                    repository.updateNextRun(
                         id = task.id,
-                        retriesCount = 0,
                         state = State.Enqueued,
                         processTime = now + duration
                     )
@@ -187,9 +186,8 @@ internal class TaskProcessorImpl(
                 val duration = task.repeatInterval
 
                 if (duration != null) {
-                    repository.updateRetry(
+                    repository.updateNextRun(
                         id = task.id,
-                        retriesCount = 0,
                         state = State.Enqueued,
                         processTime = now + duration
                     )
@@ -204,10 +202,9 @@ internal class TaskProcessorImpl(
             }
 
             TaskResult.Retry -> {
-                val backoff = task.backoffCriteriaOrDefault.calculate(task.retriesCount)
-                repository.updateRetry(
+                val backoff = task.backoffCriteriaOrDefault.calculate(task.runAttemptCount)
+                repository.updateNextRun(
                     id = task.id,
-                    retriesCount = task.retriesCount + 1,
                     state = State.Enqueued,
                     processTime = now + backoff
                 )
@@ -218,8 +215,7 @@ internal class TaskProcessorImpl(
     private suspend fun waitForProcessTime(time: Instant) {
         val now = Clock.System.now()
         val diff = time - now
-        if (diff.isPositive())
-            delay(diff.inWholeMilliseconds)
+        if (diff.isPositive()) delay(diff)
     }
 
     companion object {

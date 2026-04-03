@@ -19,7 +19,7 @@ import kotlin.uuid.toKotlinUuid
 internal class TaskWorker(
     context: Context,
     workerParameters: WorkerParameters,
-) : CoroutineWorker(context, workerParameters), TaskScope, TasksKoinComponent {
+) : CoroutineWorker(context, workerParameters), TasksKoinComponent {
 
     private val notificationManager by lazy {
         applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -43,7 +43,9 @@ internal class TaskWorker(
         )
 
         val result = with(taskEvaluator) {
-            handle(taskIdentifier = taskIdentifier)
+            with(taskScope()) {
+                handle(taskIdentifier = taskIdentifier)
+            }
         }
 
         result?.also {
@@ -65,18 +67,7 @@ internal class TaskWorker(
         }
     }
 
-    override val taskId: Uuid
-        get() = id.toKotlinUuid()
-    override val data: eu.tintera.tasks.Data
-        get() = inputData.toData()
-    override val retriesCount: Int
-        get() = runAttemptCount
-
-    companion object {
-        const val TASK_IDENTIFIER = "task_identifier"
-    }
-
-    override suspend fun setForegroundInfo(
+    private suspend fun internalSetForegroundInfo(
         foregroundInfo: ForegroundInfo,
     ): Boolean = try {
         setForeground(foregroundInfo.createForegroundInfo())
@@ -85,10 +76,6 @@ internal class TaskWorker(
         throw e
     } catch (_: Throwable) {
         false
-    }
-
-    override suspend fun setProgress(data: eu.tintera.tasks.Data) {
-        setProgress(Data.Builder().putAll(data.map).build())
     }
 
     private fun ForegroundInfo.createForegroundInfo(): androidx.work.ForegroundInfo {
@@ -123,5 +110,25 @@ internal class TaskWorker(
                 NotificationManager.IMPORTANCE_LOW
             )
         )
+    }
+
+    // Implementace TaskScope jako vnitřní objekt
+    private fun taskScope() = object : TaskScope {
+        override val taskId: Uuid = id.toKotlinUuid()
+        override val data: eu.tintera.tasks.Data = inputData.toData()
+        override val retryCount: Int
+            get() = this@TaskWorker.runAttemptCount
+
+        override suspend fun setForegroundInfo(
+            foregroundInfo: ForegroundInfo
+        ): Boolean = this@TaskWorker.internalSetForegroundInfo(foregroundInfo)
+
+        override suspend fun setProgress(data: eu.tintera.tasks.Data) {
+            this@TaskWorker.setProgress(Data.Builder().putAll(data.map).build())
+        }
+    }
+
+    companion object {
+        const val TASK_IDENTIFIER = "task_identifier"
     }
 }

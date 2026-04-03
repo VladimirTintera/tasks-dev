@@ -12,19 +12,19 @@ class RepositoryTaskScopeFactory(
     override fun createScope(
         taskId: Uuid,
         data: Data,
-        retriesCount: Int
+        runAttemptsCount: Int
     ): TaskScope = TaskScopeImpl(
         repository = repository,
         taskId = taskId,
         data = data,
-        retriesCount = retriesCount
+        retryCount = runAttemptsCount
     )
 
     private class TaskScopeImpl(
         private val repository: Repository,
         override val taskId: Uuid,
         override val data: Data,
-        override val retriesCount: Int,
+        override val retryCount: Int,
     ) : TaskScope {
 
         override suspend fun setForegroundInfo(foregroundInfo: ForegroundInfo): Boolean = true

@@ -24,9 +24,25 @@ class FakeRepository : Repository {
         }
     }
 
-    override suspend fun updateRetry(
+    override suspend fun updateRunAttemptCount(
         id: Uuid,
-        retriesCount: Int,
+        runAttemptsCount: Int
+    ) {
+        tasks.update { currentTasks ->
+            currentTasks.map {
+                if (it.id == id) {
+                    it.copy(
+                        runAttemptCount = runAttemptsCount
+                    )
+                } else {
+                    it
+                }
+            }
+        }
+    }
+
+    override suspend fun updateNextRun(
+        id: Uuid,
         processTime: Instant,
         state: State
     ) {
@@ -34,7 +50,6 @@ class FakeRepository : Repository {
             currentTasks.map {
                 if (it.id == id) {
                     it.copy(
-                        retriesCount = retriesCount,
                         state = state,
                         processTime = processTime
                     )

@@ -16,7 +16,7 @@ internal class TaskDispatcher(
 ) {
     private fun tasks() = repository.tasksByState(runningStates).distinctUntilChanged()
 
-    private fun Task.executionKey() = ExecutionKey(id, retriesCount, processTime)
+    private fun Task.executionKey() = ExecutionKey(id, processTime)
 
     init {
         scope.launch(dispatchers.io) {
@@ -57,6 +57,5 @@ internal class TaskDispatcher(
 
 internal data class ExecutionKey(
     val id: Uuid,
-    val retriesCount: Int,
     val processTime: Instant
 )

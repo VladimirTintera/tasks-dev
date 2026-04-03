@@ -4,6 +4,8 @@ plugins {
 }
 kotlin {
 
+    jvmToolchain(11)
+
     androidTarget()
 
     compilerOptions {
@@ -23,8 +25,8 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(project.dependencies.platform(libs.koin.bom))
-            implementation(libs.koin.core)
+            api(project.dependencies.platform(libs.koin.bom))
+            api(libs.koin.core)
             implementation(projects.tasks)
             api(projects.api)
         }
@@ -40,5 +42,10 @@ android {
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 }

@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.androidLibrary)
 }
 kotlin {
+    jvmToolchain(11)
 
     androidTarget()
 
@@ -47,6 +48,10 @@ kotlin {
             implementation(libs.koin.android)
         }
 
+        iosMain.dependencies {
+            implementation(libs.androidx.sqlite.bundled)
+        }
+
         jvmMain.dependencies {
             implementation(libs.androidx.sqlite.bundled)
         }
@@ -69,6 +74,11 @@ android {
                 "proguard-rules.pro"
             )
         }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 }
 

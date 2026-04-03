@@ -17,13 +17,13 @@ fun createTask(
     networkRequired: Boolean = false,
     initialDelay: Duration = Duration.ZERO,
     processTime: Instant = Clock.System.now(),
-    retriesCount: Int = 0
+    runAttemptCount: Int = 0
 ): Task = Task(
     id = id,
     state = state,
     identifier = identifier,
     uniqueName = identifier,
-    retriesCount = retriesCount,
+    runAttemptCount = runAttemptCount,
     initialDelay = initialDelay,
     processTime = processTime,
     inputData = Data.EMPTY,

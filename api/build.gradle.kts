@@ -4,6 +4,8 @@ plugins {
 }
 kotlin {
 
+    jvmToolchain(11)
+
     androidTarget()
 
     compilerOptions {
@@ -33,10 +35,13 @@ kotlin {
 
 android {
     namespace = "eu.tintera.tasks.api"
-    sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
         consumerProguardFiles("consumer-rules.pro")
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 }

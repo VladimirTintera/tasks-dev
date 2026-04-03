@@ -7,8 +7,8 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
-fun BackoffCriteria.calculate(retriesCount: Int): Duration {
-    val attempt = retriesCount.coerceAtLeast(0)
+fun BackoffCriteria.calculate(runAttemptCount: Int): Duration {
+    val attempt = runAttemptCount.coerceAtLeast(0)
     val baseDelay = delay.coerceAtLeast(MIN_BACKOFF_DELAY)
 
     return when (backoffPolicy) {

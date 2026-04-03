@@ -8,7 +8,9 @@ import kotlin.uuid.Uuid
 
 interface Repository {
     fun parentsFor(id: Uuid): Flow<List<Task>>
-    suspend fun updateRetry(id: Uuid, retriesCount: Int, processTime: Instant, state: State)
+    suspend fun updateNextRun(id: Uuid, processTime: Instant, state: State)
+
+    suspend fun updateRunAttemptCount(id: Uuid, runAttemptsCount: Int)
     suspend fun updateTerminatingState(
         id: Uuid,
         state: State,

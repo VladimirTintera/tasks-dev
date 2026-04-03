@@ -8,6 +8,10 @@ fun tasksKoinModule() = module {
     single { TaskManager.getInstance() }
 
     single(createdAtStart = true) {
-        TasksRegistrations(getKoin(), get(), getAll())
+        TasksRegistrations(
+            koin = getKoin(),
+            taskManager = get(),
+            registrations = getAll()
+        )
     }
 }

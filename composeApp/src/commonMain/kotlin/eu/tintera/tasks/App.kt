@@ -1,47 +1,94 @@
 package eu.tintera.tasks
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.retain.retain
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import org.jetbrains.compose.resources.painterResource
-import taskmanager.composeapp.generated.resources.Res
-import taskmanager.composeapp.generated.resources.compose_multiplatform
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import eu.tintera.tasks.handlers.TestHandler
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.scan
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
 
 @Composable
 @Preview
 fun App() {
     MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding()
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
-            }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
+
+        val taskManager = koinInject<TaskManager>()
+        val scope = rememberCoroutineScope()
+
+        val tasks by retain(taskManager) {
+            taskManager.taskInfosByTag("SuccessTask").map {
+                val finished = it.filter {
+                    it.state == State.Succeeded || it.state == State.Failed || it.state == State.Cancelled
+                }
+
+                TaskState(
+                    finished = finished.sortedBy { it.nextScheduledTime },
+                    ongoing = (it - finished.toSet()).sortedBy { it.nextScheduledTime }
+                )
+            }.stateIn(scope, SharingStarted.Eagerly, TaskState(emptyList(), emptyList()))
+        }.collectAsStateWithLifecycle()
+
+        Scaffold { paddingValues ->
+
+            Column(
+                modifier = Modifier.fillMaxSize().padding(paddingValues).consumeWindowInsets(paddingValues)
+            ) {
+                Button(
+                    onClick = {
+                        scope.launch {
+                            taskManager.enqueueTask(
+                                taskRequest<TestHandler>(
+                                    tags = setOf("SuccessTask")
+                                )
+                            )
+                        }
+                    }
                 ) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
+                    Text("Schedule simple success")
+                }
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(16.dp)
+                ) {
+                    items(tasks.ongoing) {
+                        TaskInfoItem(
+                            info = it
+                        )
+                    }
+
+                    item {
+                        HorizontalDivider()
+                    }
+
+                    items(tasks.finished) {
+                        TaskInfoItem(
+                            info = it
+                        )
+                    }
                 }
             }
         }

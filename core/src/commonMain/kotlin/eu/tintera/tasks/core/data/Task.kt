@@ -12,7 +12,7 @@ data class Task(
     val id: Uuid,
     val identifier: String,
     val uniqueName: String,
-    val retriesCount: Int,
+    val runAttemptCount: Int,
     val initialDelay: Duration,
     val processTime: Instant,
     val state: State,

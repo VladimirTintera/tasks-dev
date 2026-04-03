@@ -2,6 +2,7 @@ package eu.tintera.tasks
 
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.NativeSQLiteDriver
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import eu.tintera.tasks.core.TaskProcessorConfig
 import eu.tintera.tasks.core.locks.ExecutionContextConfig
 import eu.tintera.tasks.db.DatabaseConfiguration
@@ -10,7 +11,7 @@ import org.koin.dsl.module
 
 object TasksInitializer {
     fun initialize(
-        config: IosTasksManagerConfiguration
+        config: IosTasksManagerConfiguration = IosTasksManagerConfiguration()
     ) {
         startTasksKoin {
             modules(
@@ -25,7 +26,7 @@ object TasksInitializer {
                             releaseDebounce = config.executionContextReleaseDebounce
                         )
                     }
-                    single<SQLiteDriver> { NativeSQLiteDriver() }
+                    single<SQLiteDriver> { config.sqLiteDriver ?: BundledSQLiteDriver() }
 
                     single<DatabaseConfiguration> {
                         object : DatabaseConfiguration {

@@ -65,7 +65,7 @@ class TaskProcessorTest {
             state = State.Enqueued,
             identifier = "fakeTask",
             uniqueName = "fakeTask",
-            retriesCount = 0,
+            runAttemptCount = 0,
             initialDelay = Duration.ZERO,
             processTime = Clock.System.now(),
             inputData = Data.EMPTY,
@@ -162,7 +162,7 @@ class TaskProcessorTest {
 
         val updatedTask = fakeRepository.task(task.id).first()!!
         assertEquals(State.Enqueued, updatedTask.state, "Task should be enqueued")
-        assertEquals(1, updatedTask.retriesCount, "Task should have 1 retry")
+        assertEquals(1, updatedTask.runAttemptCount, "Task should have 1 retry")
         assertTrue(updatedTask.processTime > task.processTime, "Task should have been rescheduled")
     }
 

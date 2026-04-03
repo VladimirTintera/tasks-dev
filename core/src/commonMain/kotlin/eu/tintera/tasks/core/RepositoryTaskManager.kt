@@ -44,7 +44,7 @@ class RepositoryCoreTaskManager(
             id = Uuid.random(),
             identifier = task.handler.fullName,
             uniqueName = uniqueName,
-            retriesCount = 0,
+            runAttemptCount = 0,
             state = if (parentIds.isEmpty()) State.Enqueued else State.Blocked,
             processTime = Clock.System.now(),
             inputData = task.data,
@@ -126,7 +126,7 @@ class RepositoryCoreTaskManager(
         id = Uuid.random(),
         identifier = handler.fullName,
         uniqueName = uniqueName,
-        retriesCount = 0,
+        runAttemptCount = 0,
         state = state,
         processTime = Clock.System.now(),
         inputData = data,
@@ -207,7 +207,7 @@ class RepositoryCoreTaskManager(
             id = Uuid.random(),
             identifier = task.handler.fullName,
             uniqueName = uniqueName,
-            retriesCount = 0,
+            runAttemptCount = 0,
             state = State.Enqueued,
             processTime = Clock.System.now(),
             inputData = task.data,
@@ -232,7 +232,7 @@ class RepositoryCoreTaskManager(
         map.map {
             TaskInfo(
                 id = it.task.id,
-                retriesCount = it.task.retriesCount,
+                runAttemptCount = it.task.runAttemptCount,
                 state = it.task.state,
                 tags = it.tags,
                 outputData = it.task.outputData,
@@ -248,7 +248,7 @@ class RepositoryCoreTaskManager(
         task?.let {
             TaskInfo(
                 id = it.task.id,
-                retriesCount = it.task.retriesCount,
+                runAttemptCount = it.task.runAttemptCount,
                 state = it.task.state,
                 tags = it.tags,
                 outputData = it.task.outputData,

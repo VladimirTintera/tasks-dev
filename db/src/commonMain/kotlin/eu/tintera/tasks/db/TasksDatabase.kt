@@ -18,12 +18,13 @@ internal expect object TasksDatabaseConstructor : RoomDatabaseConstructor<TasksD
         TaskTag::class
     ],
     exportSchema = true,
-    version = 5,
+    version = 6,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
         AutoMigration(from = 3, to = 4),
-        AutoMigration(from = 4, to = 5, spec = AutoMigration5to6Spec::class),
+        AutoMigration(from = 4, to = 5, spec = AutoMigration4to5Spec::class),
+        AutoMigration(from = 5, to = 6, spec = AutoMigration5to6Spec::class),
     ]
 )
 @ConstructedBy(TasksDatabaseConstructor::class)
@@ -35,4 +36,7 @@ internal abstract class TasksDatabase : RoomDatabase() {
 }
 
 @DeleteColumn(tableName = "Task", columnName = "requiresSystemKeepAlive")
+class AutoMigration4to5Spec : AutoMigrationSpec
+
+@RenameColumn(tableName = "Task", fromColumnName = "retriesCount", toColumnName = "runAttemptCount")
 class AutoMigration5to6Spec : AutoMigrationSpec

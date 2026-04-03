@@ -4,8 +4,8 @@ import androidx.room.immediateTransaction
 import androidx.room.useWriterConnection
 import eu.tintera.tasks.Data
 import eu.tintera.tasks.State
-import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.FullTask
+import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.db.entities.*
 import kotlinx.coroutines.flow.Flow
@@ -26,16 +26,22 @@ internal class DatabaseRepository(
         list.map { it.toTask() }
     }
 
-    override suspend fun updateRetry(
+    override suspend fun updateNextRun(
         id: Uuid,
-        retriesCount: Int,
         processTime: Instant,
         state: State
     ) = taskDao.updateRetry(
         id = id,
-        retriesCount = retriesCount,
         processTime = processTime,
         state = state.toEntityState()
+    )
+
+    override suspend fun updateRunAttemptCount(
+        id: Uuid,
+        runAttemptsCount: Int
+    ) = taskDao.updateRunAttemptCount(
+        id = id,
+        runAttemptCount = runAttemptsCount
     )
 
     override suspend fun updateTerminatingState(

@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.serialization)
 }
 kotlin {
+    jvmToolchain(11)
+
     androidTarget()
 
     compilerOptions {
@@ -46,5 +48,10 @@ android {
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
         consumerProguardFiles("consumer-rules.pro")
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 }

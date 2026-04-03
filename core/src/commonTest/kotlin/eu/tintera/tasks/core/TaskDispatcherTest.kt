@@ -38,10 +38,10 @@ class TaskDispatcherTest {
             identifier = "cancelledOutside",
             id = taskId,
             processTime = initialTime,
-            retriesCount = 0
+            runAttemptCount = 0
         )
 
-        val keyV1 = ExecutionKey(taskV1.id, taskV1.retriesCount, taskV1.processTime)
+        val keyV1 = ExecutionKey(taskV1.id, taskV1.processTime)
 
         // 2. Akce: Vyemitujeme task z DB
         fakeRepo.insert(taskV1, emptySet(), emptySet())
@@ -57,13 +57,11 @@ class TaskDispatcherTest {
 
         val keyV2 = ExecutionKey(
             id = taskId,
-            retriesCount = 1,
             processTime = initialTime + 1.minutes
         )
 
-        fakeRepo.updateRetry(
+        fakeRepo.updateNextRun(
             id = taskId,
-            retriesCount = keyV2.retriesCount,
             processTime = keyV2.processTime,
             state = State.Enqueued
         )

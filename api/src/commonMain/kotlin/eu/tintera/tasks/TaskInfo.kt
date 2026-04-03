@@ -9,7 +9,7 @@ data class TaskInfo(
     val id: Uuid,
     val state: State,
     val tags: Set<String>,
-    val retriesCount: Int,
+    val runAttemptCount: Int,
     val outputData: Data,
     val nextScheduledTime: Instant,
     val progress: Data

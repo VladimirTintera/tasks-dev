@@ -10,11 +10,11 @@ class FakeTaskScopeFactory : TaskScopeFactory {
     override fun createScope(
         taskId: Uuid,
         data: Data,
-        retriesCount: Int
+        runAttemptsCount: Int
     ): TaskScope = object : TaskScope {
         override val taskId: Uuid = taskId
         override var data: Data = data
-        override val retriesCount: Int = retriesCount
+        override val retryCount: Int = runAttemptsCount
 
         override suspend fun setForegroundInfo(foregroundInfo: ForegroundInfo): Boolean {
             return true
