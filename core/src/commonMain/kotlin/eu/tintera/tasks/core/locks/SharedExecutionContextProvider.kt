@@ -1,7 +1,6 @@
 package eu.tintera.tasks.core.locks
 
-import eu.tintera.tasks.core.AppDispatchers
-import eu.tintera.tasks.core.ApplicationScope
+import eu.tintera.tasks.EventBus
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,7 +11,7 @@ import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.decrementAndFetch
 import kotlin.concurrent.atomics.incrementAndFetch
-import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Implementation of [ExecutionContextProvider] that allows multiple [ExecutionContext]s
@@ -25,8 +24,9 @@ import kotlin.time.Duration
 class SharedExecutionContextProvider(
     private val tokenProvider: TokenProvider,
     private val scope: CoroutineScope,
+    private val config: ExecutionContextConfig,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
-    private val config: ExecutionContextConfig
+    private val lifecycleObserver: ExecutionContextObserver? = null
 ) : ExecutionContextProvider {
     private val mutex = Mutex()
     private val currentSession = AtomicReference<Session?>(null)
@@ -38,8 +38,7 @@ class SharedExecutionContextProvider(
      */
     override suspend fun acquire(): ExecutionContext = mutex.withLock {
 
-        debounceJob?.cancel()
-        debounceJob = null
+        cancelDebounce()
 
         var session = currentSession.load()
 
@@ -49,12 +48,15 @@ class SharedExecutionContextProvider(
 
             // Získáme systémový zámek
             val sysToken = tokenProvider.acquire {
+                EventBus.send(TAG, "token expired")
+                cancelDebounce()
                 // EXPIRATION HANDLER (volán systémem, když dochází čas)
                 newSession.isExpired.value = true
 
                 // Pokud je tato session stále ta "aktuální", odstraníme ji, aby další acquire založil novou
                 currentSession.compareAndSet(newSession, null)
 
+                lifecycleObserver?.onPreCancel()
                 // Zrušíme systémový token (pokud už byl nastaven)
                 newSession.systemToken.exchange(null)?.cancel()
             }
@@ -66,6 +68,8 @@ class SharedExecutionContextProvider(
 
             if (newSession.isExpired.value) {
                 newSession.systemToken.exchange(null)?.release()
+            } else {
+                lifecycleObserver?.onStarted()
             }
 
             session = newSession
@@ -78,6 +82,14 @@ class SharedExecutionContextProvider(
         return ExecutionContextImpl(session, ::releaseSessionToken)
     }
 
+    private fun cancelDebounce() {
+        debounceJob?.also {
+            EventBus.send(TAG, "debounce job canceled")
+            it.cancel()
+        }
+        debounceJob = null
+    }
+
     private suspend fun releaseSessionToken(session: Session) = withContext(NonCancellable) {
         mutex.withLock {
             // Snížíme počítadlo u dané session
@@ -86,9 +98,19 @@ class SharedExecutionContextProvider(
             // Pokud jsme na nule A ZÁROVEŇ se nám podaří tuto session odstranit z globálního stavu
             if (newCount == 0) {
 
+                // FAST-PATH PRO EXPIROVANOU SESSION ---
+                // Pokud už nám systém zabil task, expiration handler udělal veškerý úklid.
+                // Nemá absolutně smysl startovat debounce nebo čekat na PreRelease.
+                if (session.isExpired.value) {
+                    EventBus.send(TAG, "Session is already expired. Skipping debounce.")
+                    return@withLock
+                }
+
                 debounceJob = scope.launch(dispatcher) {
-                    if (config.releaseDebounce.isPositive())
+                    if (config.releaseDebounce.isPositive()) {
+                        EventBus.send(TAG, "debounce delay started")
                         delay(config.releaseDebounce)
+                    }
 
                     mutex.withLock {
                         // Pokud jsme na nule, zkusíme tuto session odstranit z "currentSession"
@@ -96,6 +118,10 @@ class SharedExecutionContextProvider(
                         // Pokud se to nepodaří (protože už ji odstranil expiration handler nebo jiný release),
                         // tak už nemáme co dělat.
                         if (currentSession.compareAndSet(session, null)) {
+                            withTimeoutOrNull(2.seconds) {
+                                lifecycleObserver?.onPreRelease()
+                            }
+
                             // Jsme vítězové, kdo zavírá dveře. Uvolníme systémový zámek.
                             session.systemToken.exchange(null)?.release()
                         }
@@ -120,5 +146,9 @@ class SharedExecutionContextProvider(
         override suspend fun release() {
             releaseAction(session)
         }
+    }
+
+    companion object {
+        private const val TAG = "SharedExecutionContextProvider"
     }
 }

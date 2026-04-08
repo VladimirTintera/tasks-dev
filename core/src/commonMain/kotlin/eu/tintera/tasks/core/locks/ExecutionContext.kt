@@ -37,7 +37,7 @@ suspend inline fun ExecutionContext.use(
 
         // Zrušíme TENTO specifický coroutineScope.
         // Všechny child coroutiny (včetně blocku) dostanou CancellationException.
-        this@coroutineScope.cancel("WakeLock expired by system limit")
+        this@coroutineScope.cancel("Context expired by system limit")
     }
 
     try {

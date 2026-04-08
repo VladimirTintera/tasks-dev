@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.retain.retain
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -54,7 +55,8 @@ fun App() {
         Scaffold { paddingValues ->
 
             Column(
-                modifier = Modifier.fillMaxSize().padding(paddingValues).consumeWindowInsets(paddingValues)
+                modifier = Modifier.fillMaxSize().padding(paddingValues).consumeWindowInsets(paddingValues),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Button(
                     onClick = {

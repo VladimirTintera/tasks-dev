@@ -1,6 +1,5 @@
 package eu.tintera.tasks
 
-import eu.tintera.tasks.core.AppLifecycleManager
 import eu.tintera.tasks.core.BgTaskManager
 import eu.tintera.tasks.core.locks.ExecutionContextProvider
 import eu.tintera.tasks.core.locks.use
@@ -13,6 +12,5 @@ suspend fun TaskManager.Companion.pendingIosTask() = Resolver.get<BgTaskManager>
 suspend fun TaskManager.executeFromIosBackgroundEvent(
     block: suspend TaskManager.() -> Unit
 ) = Resolver.get<ExecutionContextProvider>().acquire().use {
-    Resolver.get<AppLifecycleManager>().onBackgroundWakeup()
     block()
 }

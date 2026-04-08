@@ -34,28 +34,7 @@ class TasksInitializer : Initializer<Unit> {
 
         startTasksKoin {
             androidContext(context)
-            modules(
-                module {
-                    single {
-                        TaskProcessorConfig(
-                            maxConcurrentTasks = 10
-                        )
-                    }
-                    single {
-                        ExecutionContextConfig(
-                            releaseDebounce = config.executionContextReleaseDebounce
-                        )
-                    }
-
-                    single<SQLiteDriver> { AndroidSQLiteDriver() }
-
-                    single<DatabaseConfiguration> {
-                        object : DatabaseConfiguration {
-                            override val databaseName: String = ""
-                        }
-                    }
-                }
-            )
+            modules(androidModule(config))
         }
     }
 

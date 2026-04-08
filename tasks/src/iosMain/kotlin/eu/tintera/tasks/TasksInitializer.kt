@@ -15,25 +15,7 @@ object TasksInitializer {
     ) {
         startTasksKoin {
             modules(
-                module {
-                    single {
-                        TaskProcessorConfig(
-                            maxConcurrentTasks = config.maxConcurrentTasks
-                        )
-                    }
-                    single {
-                        ExecutionContextConfig(
-                            releaseDebounce = config.executionContextReleaseDebounce
-                        )
-                    }
-                    single<SQLiteDriver> { config.sqLiteDriver ?: BundledSQLiteDriver() }
-
-                    single<DatabaseConfiguration> {
-                        object : DatabaseConfiguration {
-                            override val databaseName: String = config.databaseName
-                        }
-                    }
-                }
+                iosModule(config),
             )
         }
     }

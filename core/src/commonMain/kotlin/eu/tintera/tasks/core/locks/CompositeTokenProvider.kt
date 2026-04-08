@@ -1,34 +1,54 @@
 package eu.tintera.tasks.core.locks
 
+import eu.tintera.tasks.EventBus
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
-class ReactiveCompositeTokenProvider(
+class CompositeTokenProvider(
     private val scope: CoroutineScope,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
-    private val producers: List<TokenProducer>
-) : TokenProvider {
+    producers: List<TokenProducer>
+) : TokenProvider, TokenRegistry {
+    private val registeredProducers = MutableStateFlow(producers.toSet())
+    override fun registerProducer(producer: TokenProducer) {
+        registeredProducers.update { it + producer }
+    }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun acquire(
         expirationHandler: () -> Unit
     ): Token {
 
         val activeTokens = MutableStateFlow<Map<TokenProducer, Token>>(emptyMap())
 
-        // Sjednotíme všechny producery do jednoho streamu
-        val mergedFlow = producers.map { producer ->
+        val continuousProducersStream = flow {
+            val seen = mutableSetOf<TokenProducer>()
+            registeredProducers.collect { currentSet ->
+                currentSet.forEach { producer ->
+                    // seen.add() vrátí true jen tehdy, když tam prvek ještě nebyl.
+                    // Tím pádem propustíme dál vždy jen ty úplně nové!
+                    if (seen.add(producer)) {
+                        emit(producer)
+                    }
+                }
+            }
+        }
+
+        val mergedFlow = continuousProducersStream.flatMapMerge(concurrency = Int.MAX_VALUE) { producer ->
             producer.token {
+                EventBus.send("ReactiveCompositeTokenProvider", "token expired: $producer")
+                var token: Token? = null
                 activeTokens.updateAndGet { current ->
+                    token = current[producer]
                     current - producer
                 }.also {
+                    token?.cancel()
                     if (it.isEmpty()) expirationHandler()
                 }
-            }.onEach {
-                println("token emmited")
             }.map {
                 producer to it
             }
-        }.merge()
+        }
 
         // Spustíme asynchronní sběr (job se ukončí, až se zavolá release() na tokenu)
         val collectionJob = scope.launch(dispatcher) {
@@ -62,17 +82,18 @@ class ReactiveCompositeTokenProvider(
 }
 
 private class CompositeToken(
-    private val activeTokens: StateFlow<Map<TokenProducer, Token>>,
+    private val activeTokens: MutableStateFlow<Map<TokenProducer, Token>>,
     private val collectionJob: Job // Potřebujeme zastavit sbírání eventů!
 ) : Token {
 
     override suspend fun release() {
         collectionJob.cancel() // Zastaví channelFlow v producerech = vše se uklidí
-        activeTokens.value.forEach { it.value.release() }
+        activeTokens.getAndUpdate { emptyMap() }.forEach { it.value.release() }
     }
 
     override fun cancel() {
+        EventBus.send("CompositeToken", "cancel called. ActiveTokens: ${activeTokens.value.size}")
         collectionJob.cancel()
-        activeTokens.value.forEach { it.value.cancel() }
+        activeTokens.getAndUpdate { emptyMap() }.forEach { it.value.cancel() }
     }
 }

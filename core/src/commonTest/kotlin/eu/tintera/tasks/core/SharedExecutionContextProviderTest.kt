@@ -1,11 +1,15 @@
 package eu.tintera.tasks.core
 
 import eu.tintera.tasks.core.fakes.FakeTokenProvider
+import eu.tintera.tasks.core.fakes.SpyExecutionContextObserver
+import eu.tintera.tasks.core.locks.ExecutionContextConfig
+import eu.tintera.tasks.core.locks.SharedExecutionContextProvider
 import eu.tintera.tasks.core.locks.use
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -16,6 +20,7 @@ import kotlin.test.assertTrue
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
 
@@ -266,6 +271,103 @@ class SharedExecutionContextProviderTest {
 
         // Assert: Náš defenzivní kód (ÚPRAVA 2) musel okamžitě zavolat release!
         assertEquals(1, fakeProvider.releaseCount, "Provider musel okamžitě zrušit neplatný token")
+    }
+
+    @Test
+    fun `uspesny acquire a release zavola onStarted a po debounce onPreRelease`() = runTest {
+        // Arrange
+        // Použijeme StandardTestDispatcher, abychom měli plnou kontrolu nad virtuálním časem
+        val tokenProvider = FakeTokenProvider()
+        val observer = SpyExecutionContextObserver()
+
+        val contextProvider = SharedExecutionContextProvider(
+            tokenProvider = tokenProvider,
+            scope = backgroundScope, // Poskytuje runTest, automaticky se uklidí
+            dispatcher = dispatchers().default,
+            config = ExecutionContextConfig(releaseDebounce = 5.seconds),
+            lifecycleObserver = observer
+        )
+
+        // Act - Start
+        val executionContext = contextProvider.acquire()
+
+        // Assert - Start
+        assertEquals(1, observer.startedCount, "onStarted melo byt zavolano presne jednou")
+        assertEquals(0, tokenProvider.releaseCount)
+
+        // Act - Zpracování a uvolnění (Release)
+        executionContext.release()
+
+        // Okamžitě po release by observer ještě neměl dostat onPreRelease (kvůli debounce)
+        assertEquals(0, observer.preReleaseCount)
+        assertEquals(0, tokenProvider.releaseCount)
+
+        // Posuneme čas o debounce limit (5 vteřin)
+        advanceTimeBy(5001)
+
+        // Assert - Konec
+        assertEquals(1, observer.preReleaseCount, "onPreRelease melo byt zavolano po uplynuti debounce")
+        assertEquals(1, tokenProvider.releaseCount, "Systemovy token mel byt na konci uvolnen")
+    }
+
+    @Test
+    fun `okamzita expirace systemu zavola onPreCancel a zrusi token`() = runTest {
+        // Arrange
+        val tokenProvider = FakeTokenProvider()
+        val observer = SpyExecutionContextObserver()
+
+        val contextProvider = SharedExecutionContextProvider(
+            tokenProvider = tokenProvider,
+            scope = backgroundScope,
+            dispatcher = dispatchers().default,
+            config = ExecutionContextConfig(releaseDebounce = 5.seconds),
+            lifecycleObserver = observer
+        )
+
+        // Nastartujeme kontext
+        contextProvider.acquire()
+        assertEquals(1, observer.startedCount)
+
+        // Act - Systém náhle oznámí vypršení času
+        tokenProvider.triggerExpiration()
+
+        // Assert
+        assertEquals(1, observer.preCancelCount, "onPreCancel melo byt okamzite zavolano")
+        assertEquals(0, observer.preReleaseCount, "onPreRelease se pri expiraci volat nesmi")
+        assertEquals(1,tokenProvider.cancelCount, "Systemovy token mel byt zrusen (cancel)")
+        assertEquals(0, tokenProvider.releaseCount)
+    }
+
+    @Test
+    fun `pokud onPreRelease trva dele nez timeout pojistka systemovy token se stejne uvolni`() = runTest {
+        // Arrange
+        val tokenProvider = FakeTokenProvider()
+        val observer = SpyExecutionContextObserver().apply {
+            // Observer se zasekne na 10 vteřin (naše withTimeoutOrNull je ale na 2 vteřiny!)
+            delayInPreRelease = 10.seconds
+        }
+
+        val contextProvider = SharedExecutionContextProvider(
+            tokenProvider = tokenProvider,
+            scope = backgroundScope,
+            dispatcher = dispatchers().default,
+            config = ExecutionContextConfig(releaseDebounce = 5.seconds),
+            lifecycleObserver = observer
+        )
+
+        val executionContext = contextProvider.acquire()
+        executionContext.release()
+
+        // Posuneme čas o 5 vteřin (vyprší debounce) a k tomu 2 vteřiny (vyprší withTimeoutOrNull uvnitř provideru)
+        advanceTimeBy((5000 + 2001).milliseconds)
+
+        // Assert
+        assertEquals(1, observer.preReleaseCount, "Observeruv onPreRelease mel byt spusten")
+        assertEquals(
+            1,
+            tokenProvider.releaseCount,
+            "Systemovy token MUSI byt uvolnen bez ohledu na to, ze se observer zasekl"
+        )
     }
 }
 

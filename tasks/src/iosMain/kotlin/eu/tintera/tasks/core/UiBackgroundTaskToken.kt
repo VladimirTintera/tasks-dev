@@ -2,15 +2,14 @@ package eu.tintera.tasks.core
 
 import eu.tintera.tasks.EventBus
 import eu.tintera.tasks.core.locks.Token
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import platform.UIKit.UIApplication
 import platform.UIKit.UIBackgroundTaskInvalid
 import kotlin.concurrent.atomics.AtomicLong
-import kotlin.concurrent.atomics.ExperimentalAtomicApi
-import kotlin.time.Duration.Companion.seconds
 
 
 /**
@@ -22,17 +21,17 @@ import kotlin.time.Duration.Companion.seconds
  * @property isBackground A [StateFlow] indicating whether the application is currently in the background.
  * @property expirationHandler Callback invoked by iOS when the background time is about to expire.
  */
-internal class LifecycleToken(
+internal class UiBackgroundTaskToken(
     private val isBackground: StateFlow<Boolean>,
     scope: CoroutineScope,
-    private val expirationHandler: () -> Unit,
-    private val bgTaskManager: BgTaskManager
+    dispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val expirationHandler: () -> Unit
 ) : Token {
 
     // -1L = Invalid, -2L = Terminated, > 0 = Active Task ID
     private val taskIdentifier = AtomicLong(UIBackgroundTaskInvalid.toLong())
 
-    private val job = scope.launch {
+    private val job = scope.launch(dispatcher) {
         isBackground.collect { background ->
             if (background) {
                 acquire()
@@ -56,7 +55,10 @@ internal class LifecycleToken(
         } else {
             // Pokud se stav změnil (už jsme v popředí nebo je token mrtvý), okamžitě rušíme.
             UIApplication.sharedApplication.endBackgroundTask(newIdentifier)
-            EventBus.send(TAG, "Discarded late background task (state changed): $newIdentifier, isBackground=${isBackground.value}")
+            EventBus.send(
+                TAG,
+                "Discarded late background task (state changed): $newIdentifier, isBackground=${isBackground.value}"
+            )
         }
     }
 
@@ -76,7 +78,10 @@ internal class LifecycleToken(
                 // Pokud jsme předtím drželi skutečný task (> 0), musíme ho ukončit u iOS
                 if (current > 0L) {
                     UIApplication.sharedApplication.endBackgroundTask(current.toULong())
-                    EventBus.send(TAG, "Successfully ended active background task ID: $current, isBackground=${isBackground.value}")
+                    EventBus.send(
+                        TAG,
+                        "Successfully ended active background task ID: $current, isBackground=${isBackground.value}"
+                    )
                 }
                 break
             }
@@ -91,18 +96,7 @@ internal class LifecycleToken(
      * task is properly ended.
      */
     override suspend fun release() {
-        job.cancel()
-
-        EventBus.send(TAG, "Releasing. isBackground=${isBackground.value}")
-
-        // Drobná úprava: Chceme plánovat vždy, když se appka vypíná korektně,
-        // i když zrovna náhodou byla v popředí (current <= 0).
-        // Takže kontrolu 'current > 0' jsem dal pryč, ať se fronta nevylidní!
-        withTimeoutOrNull(2.seconds) {
-            bgTaskManager.evaluateAndScheduleNext()
-        }
-
-        finish()
+        finish("Releasing")
     }
 
     /**
@@ -111,21 +105,21 @@ internal class LifecycleToken(
      * Stops observing background state changes and cleans up any active background tasks.
      */
     override fun cancel() {
-        job.cancel()
-        EventBus.send(TAG, "Canceling. isBackground=${isBackground.value}")
-        finish()
+        finish("Canceling")
     }
 
-    private fun finish() {
+    private fun finish(message: String) {
+        job.cancel()
+        EventBus.send(TAG, "$message. isBackground=${isBackground.value}")
         releaseActiveTask(toState = RELEASED_STATE)
     }
 
     override fun toString(): String {
-        return "LifecycleToken(isBackground=${isBackground.value})"
+        return "UiBackgroundTaskToken(isBackground=${isBackground.value})"
     }
 
     companion object {
         private const val RELEASED_STATE = -2L
-        private const val TAG = "LifecycleToken"
+        private const val TAG = "UiBackgroundTaskToken"
     }
 }

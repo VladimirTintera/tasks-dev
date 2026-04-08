@@ -20,6 +20,12 @@ class FakeTokenProducer : TokenProducer {
         tokenFlow.emit(token)
     }
 
+    suspend fun emitNewToken(): FakeToken {
+        val token = FakeToken()
+        tokenFlow.emit(token)
+        return token
+    }
+
     // Pomocná metoda pro testy: Simuluje, že iOS odpálil Watchdoga
     fun simulateExpiration() {
         expireCallback?.invoke()

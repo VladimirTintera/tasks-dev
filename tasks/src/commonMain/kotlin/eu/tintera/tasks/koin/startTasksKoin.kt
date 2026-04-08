@@ -8,7 +8,6 @@ internal fun startTasksKoin(koinAppInitialization: KoinApplication.() -> Unit = 
         koinAppInitialization()
         modules(
             mainModule(),
-            platformModule()
         )
     }
 
