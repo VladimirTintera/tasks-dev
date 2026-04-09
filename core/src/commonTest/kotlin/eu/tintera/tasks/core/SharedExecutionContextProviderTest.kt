@@ -4,12 +4,10 @@ import eu.tintera.tasks.core.fakes.FakeTokenProvider
 import eu.tintera.tasks.core.fakes.SpyExecutionContextObserver
 import eu.tintera.tasks.core.locks.ExecutionContextConfig
 import eu.tintera.tasks.core.locks.SharedExecutionContextProvider
-import eu.tintera.tasks.core.locks.use
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest

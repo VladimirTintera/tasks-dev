@@ -1,7 +1,7 @@
 package eu.tintera.tasks
 
-import eu.tintera.tasks.core.locks.Token
-import eu.tintera.tasks.core.locks.TokenProvider
+import eu.tintera.guard.Token
+import eu.tintera.guard.TokenProvider
 
 internal class JvmTokenProvider : TokenProvider {
     override suspend fun acquire(

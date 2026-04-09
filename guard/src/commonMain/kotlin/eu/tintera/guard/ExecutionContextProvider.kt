@@ -1,4 +1,4 @@
-package eu.tintera.tasks.core.locks
+package eu.tintera.guard
 
 /**
  * A provider responsible for supplying an [ExecutionContext].

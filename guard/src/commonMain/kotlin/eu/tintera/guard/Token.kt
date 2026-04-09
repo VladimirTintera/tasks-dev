@@ -1,4 +1,4 @@
-package eu.tintera.tasks.core.locks
+package eu.tintera.guard
 
 /**
  * Represents a handle to a held lock or a pending acquisition request.

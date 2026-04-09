@@ -1,16 +1,10 @@
 package eu.tintera.tasks
 
 import android.content.Context
-import androidx.sqlite.SQLiteDriver
-import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.startup.Initializer
 import androidx.work.WorkManagerInitializer
-import eu.tintera.tasks.core.TaskProcessorConfig
-import eu.tintera.tasks.core.locks.ExecutionContextConfig
-import eu.tintera.tasks.db.DatabaseConfiguration
 import eu.tintera.tasks.koin.startTasksKoin
 import org.koin.android.ext.koin.androidContext
-import org.koin.dsl.module
 
 class TasksInitializer : Initializer<Unit> {
     override fun create(

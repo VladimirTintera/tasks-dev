@@ -1,4 +1,4 @@
-package eu.tintera.tasks.core.locks
+package eu.tintera.guard
 
 import kotlin.time.Duration
 

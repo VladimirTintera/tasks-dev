@@ -1,8 +1,8 @@
 package eu.tintera.tasks
 
 import eu.tintera.tasks.core.BgTaskManager
-import eu.tintera.tasks.core.locks.ExecutionContextProvider
-import eu.tintera.tasks.core.locks.use
+import eu.tintera.guard.ExecutionContextProvider
+import eu.tintera.guard.use
 import eu.tintera.tasks.koin.Resolver
 import org.koin.core.component.get
 

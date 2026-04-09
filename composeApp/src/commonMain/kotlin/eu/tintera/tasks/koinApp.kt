@@ -33,6 +33,15 @@ fun koinApp(
                     }
                 }
             }
+
+            single(createdAtStart = true) {
+                val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+                scope.launch {
+                    eu.tintera.guard.EventBus.events.collect {
+                        Logger.i(it.tag) { it.message }
+                    }
+                }
+            }
         }
     )
 }

@@ -1,8 +1,8 @@
 package eu.tintera.tasks.core
 
-import eu.tintera.tasks.core.locks.CompositeTokenProvider
-import eu.tintera.tasks.core.locks.TokenProducer
-import eu.tintera.tasks.core.locks.TokenProvider
+import eu.tintera.guard.CompositeTokenProvider
+import eu.tintera.guard.TokenProducer
+import eu.tintera.guard.TokenProvider
 
 internal class IosTokenProvider(
     private val scope: ApplicationScope,

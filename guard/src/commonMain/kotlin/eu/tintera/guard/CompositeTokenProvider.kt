@@ -1,6 +1,6 @@
-package eu.tintera.tasks.core.locks
+package eu.tintera.guard
 
-import eu.tintera.tasks.EventBus
+import eu.tintera.guard.EventBus
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 

@@ -1,10 +1,9 @@
 package eu.tintera.tasks.core
 
-import eu.tintera.tasks.core.locks.CompositeExecutionContextObserver
-import eu.tintera.tasks.core.locks.ExecutionContextConfig
-import eu.tintera.tasks.core.locks.ExecutionContextObserver
-import eu.tintera.tasks.core.locks.ExecutionContextProvider
-import eu.tintera.tasks.core.locks.SharedExecutionContextProvider
+import eu.tintera.guard.CompositeExecutionContextObserver
+import eu.tintera.guard.ExecutionContextConfig
+import eu.tintera.guard.ExecutionContextProvider
+import eu.tintera.guard.SharedExecutionContextProvider
 
 internal class IosExecutionContextProvider(
     tokenProvider: IosTokenProvider,

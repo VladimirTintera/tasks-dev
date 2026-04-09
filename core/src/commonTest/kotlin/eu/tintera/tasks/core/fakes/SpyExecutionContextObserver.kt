@@ -3,7 +3,6 @@ package eu.tintera.tasks.core.fakes
 import eu.tintera.tasks.core.locks.ExecutionContextObserver
 import kotlinx.coroutines.delay
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 
 class SpyExecutionContextObserver : ExecutionContextObserver {
     var startedCount = 0

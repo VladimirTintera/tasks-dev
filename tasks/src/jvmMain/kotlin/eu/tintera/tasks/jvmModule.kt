@@ -3,9 +3,9 @@ package eu.tintera.tasks
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import eu.tintera.tasks.core.*
-import eu.tintera.tasks.core.locks.ExecutionContextConfig
-import eu.tintera.tasks.core.locks.ExecutionContextProvider
-import eu.tintera.tasks.core.locks.TokenProvider
+import eu.tintera.guard.ExecutionContextConfig
+import eu.tintera.guard.ExecutionContextProvider
+import eu.tintera.guard.TokenProvider
 import eu.tintera.tasks.db.DatabaseConfiguration
 import eu.tintera.tasks.db.JvmDatabaseConfiguration
 import eu.tintera.tasks.db.databaseModule

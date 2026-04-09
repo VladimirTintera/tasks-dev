@@ -39,6 +39,7 @@ class AppLifecycleObserver(
             `object` = null,
             queue = NSOperationQueue.mainQueue
         ) { _ ->
+            recoverStuckTasks()
             _isBackground.update { false }
         }
 

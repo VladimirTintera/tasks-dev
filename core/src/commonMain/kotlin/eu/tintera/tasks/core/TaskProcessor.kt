@@ -1,11 +1,11 @@
 package eu.tintera.tasks.core
 
+import eu.tintera.guard.ExecutionContextProvider
+import eu.tintera.guard.invoke
 import eu.tintera.tasks.*
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.core.data.backoffCriteriaOrDefault
-import eu.tintera.tasks.core.locks.ExecutionContextProvider
-import eu.tintera.tasks.core.locks.invoke
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Semaphore

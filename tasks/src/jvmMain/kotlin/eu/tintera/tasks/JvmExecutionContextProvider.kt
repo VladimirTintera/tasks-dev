@@ -2,9 +2,9 @@ package eu.tintera.tasks
 
 import eu.tintera.tasks.core.AppDispatchers
 import eu.tintera.tasks.core.ApplicationScope
-import eu.tintera.tasks.core.locks.ExecutionContextConfig
-import eu.tintera.tasks.core.locks.ExecutionContextProvider
-import eu.tintera.tasks.core.locks.SharedExecutionContextProvider
+import eu.tintera.guard.ExecutionContextConfig
+import eu.tintera.guard.ExecutionContextProvider
+import eu.tintera.guard.SharedExecutionContextProvider
 
 internal class JvmExecutionContextProvider(
     tokenProvider: JvmTokenProvider,

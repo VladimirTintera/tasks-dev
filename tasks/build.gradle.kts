@@ -35,6 +35,7 @@ kotlin {
 
             api(projects.api)
             api(libs.androidx.sqlite)
+            api(projects.guard)
         }
 
         commonTest.dependencies {

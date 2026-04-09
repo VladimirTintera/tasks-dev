@@ -1,4 +1,4 @@
-package eu.tintera.tasks.core.locks
+package eu.tintera.guard
 
 /**
  * Rozhraní pro kohokoliv, kdo chce do systému přidat vlastní zdroj probuzení.
