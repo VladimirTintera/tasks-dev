@@ -1,30 +1,10 @@
 package eu.tintera.tasks.core
 
-import eu.tintera.guard.ExecutionContextObserver
-import eu.tintera.guard.Token
-import eu.tintera.guard.TokenProducer
-import eu.tintera.tasks.EventBus
-import eu.tintera.tasks.State
-import eu.tintera.tasks.TaskEvent
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
-import kotlinx.cinterop.*
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.datetime.toKotlinInstant
-import kotlinx.datetime.toNSDate
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import platform.BackgroundTasks.BGAppRefreshTaskRequest
-import platform.BackgroundTasks.BGProcessingTaskRequest
-import platform.BackgroundTasks.BGTask
-import platform.BackgroundTasks.BGTaskRequest
-import platform.BackgroundTasks.BGTaskScheduler
-import platform.Foundation.NSError
-import kotlin.coroutines.resume
-import kotlin.time.Clock
-import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Instant
 
 internal class AppRefreshTaskManager(
     scope: ApplicationScope,
@@ -39,12 +19,15 @@ internal class AppRefreshTaskManager(
     repository = repository,
     appLifecycleObserver = appLifecycleObserver,
     tag = "AppRefreshTaskManager"
-) {
+), ExecutionCapabilityProvider {
     override fun List<Task>.filter(): List<Task> = filterNot {
         it.requiresDeviceIdle
     }
 
     override fun createRequest() = BGAppRefreshTaskRequest(taskIdentifier)
+    override fun capabilities(): Flow<Set<ExecutionCapability>> = currentToken.map {
+        setOfNotNull(it?.let { ExecutionCapability.SHORT_LIVED })
+    }
 
     companion object {
         private const val TAG = "AppRefreshTaskManager"

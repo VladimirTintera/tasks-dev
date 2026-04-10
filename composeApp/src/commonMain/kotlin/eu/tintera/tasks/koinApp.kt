@@ -29,7 +29,6 @@ fun koinApp(
                             EventBus.events.collect {
                                 when(it) {
                                     is TaskEvent.Custom -> Logger.i(tag = it.tag) { it.message }
-                                    else -> Logger.i { it.toString() }
                                 }
 
                             }

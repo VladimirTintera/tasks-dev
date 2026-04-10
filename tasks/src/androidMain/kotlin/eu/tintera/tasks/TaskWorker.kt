@@ -35,12 +35,7 @@ internal class TaskWorker(
             it.isNotBlank()
         } ?: return Result.failure()
 
-        EventBus.send(
-            TaskEvent.TaskStarted(
-                identifier = taskIdentifier,
-                data = inputData.toData()
-            )
-        )
+        EventBus.send("TaskWorker", "Task started '$taskIdentifier', data = ${inputData.toData()}")
 
         val result = with(taskEvaluator) {
             with(taskScope()) {
@@ -49,12 +44,7 @@ internal class TaskWorker(
         }
 
         result?.also {
-            EventBus.send(
-                TaskEvent.TaskFinished(
-                    identifier = taskIdentifier,
-                    result = result
-                )
-            )
+            EventBus.send("TaskWorker", "Task finishded '${taskIdentifier}', result = $result")
         }
 
         return when (result) {

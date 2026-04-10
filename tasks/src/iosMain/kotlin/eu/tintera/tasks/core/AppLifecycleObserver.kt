@@ -18,12 +18,12 @@ class AppLifecycleObserver(
     private val scope: ApplicationScope,
     private val dispatchers: AppDispatchers,
     private val repository: Repository
-) {
+) : AppStateObserver {
     private val _isBackground = MutableStateFlow(
         UIApplication.sharedApplication.applicationState == UIApplicationState.UIApplicationStateBackground
     )
 
-    val isBackground: StateFlow<Boolean> = _isBackground.asStateFlow()
+    override val isBackground: StateFlow<Boolean> = _isBackground.asStateFlow()
 
     init {
         recoverStuckTasks()

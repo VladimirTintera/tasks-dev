@@ -31,7 +31,7 @@ internal abstract class BgTaskManager(
     private val appLifecycleObserver: AppLifecycleObserver,
     private val tag: String
 ) : TokenProducer, ExecutionContextObserver {
-    private val currentToken = MutableStateFlow<BGTask?>(null)
+    protected val currentToken = MutableStateFlow<BGTask?>(null)
 
     init {
         register()

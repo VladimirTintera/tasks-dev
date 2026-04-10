@@ -12,6 +12,12 @@ val coreModule = module {
     singleOf(::TaskDispatcher) {
         createdAtStart()
     }
+    single {
+        ExecutionCapabilityEvaluator(
+            providers = getAll(),
+            appStateObserver = get()
+        )
+    }
 
     singleOf<AppDispatchers>(::RealDispatchers)
     single { ApplicationScope(SupervisorJob()) }

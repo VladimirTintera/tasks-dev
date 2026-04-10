@@ -63,7 +63,10 @@ fun App() {
                         scope.launch {
                             taskManager.enqueueTask(
                                 taskRequest<TestHandler>(
-                                    tags = setOf("SuccessTask")
+                                    tags = setOf("SuccessTask"),
+                                    constraints = Constraints(
+                                        requiresDeviceIdle = false
+                                    )
                                 )
                             )
                         }

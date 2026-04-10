@@ -1,13 +1,10 @@
 package eu.tintera.tasks.core
 
-import eu.tintera.tasks.State
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
-import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import platform.BackgroundTasks.BGProcessingTaskRequest
-import kotlin.time.Clock
-import kotlin.time.Duration.Companion.minutes
 
 internal class BgProcessingTaskManager(
     scope: ApplicationScope,
@@ -23,7 +20,7 @@ internal class BgProcessingTaskManager(
     repository = repository,
     appLifecycleObserver = appLifecycleObserver,
     tag = "BgProcessingTaskManager"
-) {
+), ExecutionCapabilityProvider {
 
     override fun List<Task>.filter(): List<Task> = if (!isAppRefreshTaskAllowed) this else filter {
         it.requiresDeviceIdle
@@ -32,5 +29,9 @@ internal class BgProcessingTaskManager(
     override fun createRequest() = BGProcessingTaskRequest(taskIdentifier).apply {
         requiresExternalPower = false
         requiresNetworkConnectivity = true
+    }
+
+    override fun capabilities(): Flow<Set<ExecutionCapability>> = currentToken.map {
+        setOfNotNull(it?.let { ExecutionCapability.HEAVY_PROCESSING })
     }
 }

@@ -2,7 +2,10 @@ package eu.tintera.tasks.core
 
 import eu.tintera.guard.ExecutionContextProvider
 import eu.tintera.guard.invoke
-import eu.tintera.tasks.*
+import eu.tintera.tasks.Data
+import eu.tintera.tasks.EventBus
+import eu.tintera.tasks.State
+import eu.tintera.tasks.TaskResult
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.core.data.backoffCriteriaOrDefault
@@ -25,7 +28,8 @@ internal class TaskProcessorImpl(
     private val networkState: NetworkState,
     private val executionContextProvider: ExecutionContextProvider,
     private val taskScopeFactory: TaskScopeFactory,
-    config: TaskProcessorConfig = TaskProcessorConfig()
+    config: TaskProcessorConfig = TaskProcessorConfig(),
+    private val capabilityEvaluator: ExecutionCapabilityEvaluator
 ) : TaskProcessor {
 
     private val concurrencySemaphore = Semaphore(config.maxConcurrentTasks)
@@ -45,18 +49,10 @@ internal class TaskProcessorImpl(
 
         // 2. ZDE BĚŽÍ GLOBÁLNÍ HLÍDAČ (Paralelně vedle pracovníka)
         val observeJob = launch {
-            repository.task(task.id).onEach {
-                actualTask.update { it }
-            }.first { t ->
-                when {
-                    t == null -> true
-                    t.processTime != task.processTime -> true
-                    t.state.terminal() -> true
-                    else -> false
+            repository.task(task.id).onEach { actualTask.update { it } }
+                .first { t ->
+                    t == null || t.processTime != task.processTime || t.state.terminal()
                 }
-            }
-
-            // ... tak nekompromisně ZABIJE CELÝ PRACOVNÍ PROCES!
             workflowJob.cancelAndJoin()
         }
 
@@ -86,7 +82,7 @@ internal class TaskProcessorImpl(
         val taskParents = combine(timeFlow, parentsFlow) { _, parentList -> parentList }.first()
 
         if (taskParents.any { it.state == State.Failed }) {
-            val result = TaskResult.failure()
+            val result = ExecutionResult.Finished(TaskResult.failure())
             withContext(NonCancellable) {
                 EventBus.send(TAG, "task finished '${task.identifier}', result = $result")
                 handleTaskResult(task, result)
@@ -96,19 +92,42 @@ internal class TaskProcessorImpl(
 
         updateState(task.id, State.Enqueued)
 
-        if (task.runAttemptCount == 0 && task.initialDelay.isPositive()) {
-            delay(task.initialDelay)
-        }
-
-        if (actualTask.value?.networkRequired == true) {
-            networkState.state().first { it == NetworkState.State.Connected }
-        }
+        combine(
+            task.delayFullFilled().onEach {
+                EventBus.send(TAG, "delay fullfilled = $it, task: ${actualTask.value?.id}")
+            },
+            actualTask.value.networkFulfilled().onEach {
+                EventBus.send(TAG, "network fullfilled = $it, task: ${actualTask.value?.id}")
+            },
+            task.capabilitiesFullFilled().onEach {
+                EventBus.send(TAG, "capability fullfilled = $it, task: ${actualTask.value?.id}")
+            }
+        ) {
+            it.all { it }
+        }.first { it }
 
         if (actualTask.value?.state?.terminal() != false) {
             return null // Konec, nepokračujeme
         }
 
         return taskParents // Vše připraveno, vracíme data pro další fázi
+    }
+
+    private fun Task.capabilitiesFullFilled() = if (requiresDeviceIdle) capabilityEvaluator.capabilities().onEach {
+        EventBus.send(TAG, "checked capabilities: $it")
+    }.map {
+        it.contains(ExecutionCapability.HEAVY_PROCESSING)
+    } else flowOf(true)
+
+    private fun Task?.networkFulfilled() = if (this?.networkRequired == true) networkState.state().map {
+        it == NetworkState.State.Connected
+    } else flowOf(true)
+
+    private fun Task.delayFullFilled() = flow {
+        if (runAttemptCount == 0 && initialDelay.isPositive()) {
+            delay(initialDelay)
+        }
+        emit(true)
     }
 
     private suspend fun executeTask(
@@ -119,30 +138,51 @@ internal class TaskProcessorImpl(
         updateState(task.id, State.Running)
 
         val taskResult = try {
-            val taskData = task.inputData + taskParents.sortedByDescending {
-                it.finishedAt
-            }.map { it.outputData }.sum()
+            coroutineScope {
 
-            with(taskEvaluator) {
-                EventBus.send(TAG, "Task started '${task.identifier}, data = $taskData'")
-                with(
-                    taskScopeFactory.createScope(
-                        taskId = task.id,
-                        data = taskData,
-                        runAttemptsCount = task.runAttemptCount
-                    )
-                ) {
-                    repository.updateRunAttemptCount(task.id, task.runAttemptCount + 1)
-                    handle(taskIdentifier = task.identifier) ?: TaskResult.failure()
+                val capabilityWatcher = launch {
+                    if (task.requiresDeviceIdle) {
+                        capabilityEvaluator.capabilities().first { currentCaps ->
+                            ExecutionCapability.HEAVY_PROCESSING !in currentCaps
+                        }
+                        // Ztratili jsme potřebnou sílu!
+                        // Zrušíme tento lokální scope (a tím i běžící taskEvaluator)
+                        this@coroutineScope.cancel(CapabilityLostException())
+                    }
                 }
+
+                val taskData = task.inputData + taskParents.sortedByDescending {
+                    it.finishedAt
+                }.map { it.outputData }.sum()
+
+                val result = with(taskEvaluator) {
+                    EventBus.send(TAG, "Task started '${task.identifier}, data = $taskData'")
+                    with(
+                        taskScopeFactory.createScope(
+                            taskId = task.id,
+                            data = taskData,
+                            runAttemptsCount = task.runAttemptCount
+                        )
+                    ) {
+                        repository.updateRunAttemptCount(task.id, task.runAttemptCount + 1)
+                        handle(taskIdentifier = task.identifier) ?: TaskResult.failure()
+                    }
+                }
+
+                capabilityWatcher.cancel()
+                ExecutionResult.Finished(result)
             }
+        } catch (e: CapabilityLostException) {
+            // BINGO! Přesně tvůj nápad. Ztráta síly = Retry s BackoffPolicy!
+            EventBus.send(TAG, "Task interrupted '${task.identifier}' due to lost capability. Retrying.")
+            ExecutionResult.Yielded
         } catch (e: CancellationException) {
             // when canceled, do nothing. Invalid Running states are handled by sweep mechanism
             // Let it crash
             throw e
         } catch (e: Throwable) {
             EventBus.send(TAG, "Task failed '${task.identifier}'")
-            TaskResult.failure()
+            ExecutionResult.Finished(TaskResult.failure())
         }
 
         withContext(NonCancellable) {
@@ -161,55 +201,74 @@ internal class TaskProcessorImpl(
         allowedSourceStates = state.allowedSourceStatesForChangeTo().toSet()
     )
 
-    private suspend fun handleTaskResult(task: Task, result: TaskResult) {
+    private suspend fun handleTaskResult(task: Task, result: ExecutionResult) {
         val now = Clock.System.now()
-        when (result) {
-            TaskResult.Failure -> {
-                val duration = task.repeatInterval
-                if (duration != null) {
-                    repository.updateNextRun(
-                        id = task.id,
-                        state = State.Enqueued,
-                        processTime = now + duration
-                    )
-                } else {
-                    repository.updateTerminatingState(
-                        id = task.id,
-                        state = State.Failed,
-                        finishedAt = now,
-                        outputData = Data.EMPTY
-                    )
+        when(result) {
+            is ExecutionResult.Finished -> {
+                when (val taskResult = result.result) {
+                    TaskResult.Failure -> {
+                        val duration = task.repeatInterval
+                        if (duration != null) {
+                            repository.updateNextRun(
+                                id = task.id,
+                                state = State.Enqueued,
+                                processTime = now + duration
+                            )
+                        } else {
+                            repository.updateTerminatingState(
+                                id = task.id,
+                                state = State.Failed,
+                                finishedAt = now,
+                                outputData = Data.EMPTY
+                            )
+                        }
+                    }
+
+                    is TaskResult.Success -> {
+                        val duration = task.repeatInterval
+
+                        if (duration != null) {
+                            repository.updateNextRun(
+                                id = task.id,
+                                state = State.Enqueued,
+                                processTime = now + duration
+                            )
+                        } else {
+                            repository.updateTerminatingState(
+                                id = task.id,
+                                state = State.Succeeded,
+                                finishedAt = now,
+                                outputData = taskResult.outputData
+                            )
+                        }
+                    }
+
+                    TaskResult.Retry -> {
+                        val backoff = task.backoffCriteriaOrDefault.calculate(task.runAttemptCount)
+                        repository.updateNextRun(
+                            id = task.id,
+                            state = State.Enqueued,
+                            processTime = now + backoff
+                        )
+                    }
                 }
             }
-
-            is TaskResult.Success -> {
-                val duration = task.repeatInterval
-
-                if (duration != null) {
-                    repository.updateNextRun(
-                        id = task.id,
-                        state = State.Enqueued,
-                        processTime = now + duration
-                    )
-                } else {
-                    repository.updateTerminatingState(
-                        id = task.id,
-                        state = State.Succeeded,
-                        finishedAt = now,
-                        outputData = result.outputData
-                    )
-                }
-            }
-
-            TaskResult.Retry -> {
-                val backoff = task.backoffCriteriaOrDefault.calculate(task.runAttemptCount)
+            ExecutionResult.Yielded -> {
+                // Žádný backoff! Task je okamžitě znovu připraven k exekuci.
+                // (Volitelně zde můžeš i snížit task.runAttemptCount o 1,
+                // aby se mu tento pokus nepočítal jako selhání)
+                repository.updateRunAttemptCount(
+                    id = task.id,
+                    runAttemptsCount = task.runAttemptCount
+                )
                 repository.updateNextRun(
                     id = task.id,
                     state = State.Enqueued,
-                    processTime = now + backoff
+                    processTime = now
                 )
             }
         }
+
     }
 
     private suspend fun waitForProcessTime(time: Instant) {
