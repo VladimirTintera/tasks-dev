@@ -17,7 +17,8 @@ fun createTask(
     networkRequired: Boolean = false,
     initialDelay: Duration = Duration.ZERO,
     processTime: Instant = Clock.System.now(),
-    runAttemptCount: Int = 0
+    runAttemptCount: Int = 0,
+    requiresDeviceIdle: Boolean = false
 ): Task = Task(
     id = id,
     state = state,
@@ -34,5 +35,6 @@ fun createTask(
     repeatInterval = null,
     backoffCriteria = BackoffCriteria.DEFAULT,
     progressData = null,
-    retentionDelay = 24.hours
+    retentionDelay = 24.hours,
+    requiresDeviceIdle = requiresDeviceIdle
 )

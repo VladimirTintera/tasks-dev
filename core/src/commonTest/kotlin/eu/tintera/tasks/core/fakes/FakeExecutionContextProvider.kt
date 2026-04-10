@@ -1,7 +1,7 @@
 package eu.tintera.tasks.core.fakes
 
-import eu.tintera.tasks.core.locks.ExecutionContext
-import eu.tintera.tasks.core.locks.ExecutionContextProvider
+import eu.tintera.guard.ExecutionContext
+import eu.tintera.guard.ExecutionContextProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update

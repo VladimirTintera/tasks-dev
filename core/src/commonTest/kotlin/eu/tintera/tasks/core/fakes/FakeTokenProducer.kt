@@ -1,7 +1,7 @@
 package eu.tintera.tasks.core.fakes
 
-import eu.tintera.tasks.core.locks.Token
-import eu.tintera.tasks.core.locks.TokenProducer
+import eu.tintera.guard.Token
+import eu.tintera.guard.TokenProducer
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 

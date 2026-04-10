@@ -3,6 +3,7 @@ package eu.tintera.tasks.core
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import platform.BackgroundTasks.BGProcessingTaskRequest
 
@@ -20,7 +21,7 @@ internal class BgProcessingTaskManager(
     repository = repository,
     appLifecycleObserver = appLifecycleObserver,
     tag = "BgProcessingTaskManager"
-), ExecutionCapabilityProvider {
+), ExecutionWindowProvider , TaskPrecondition {
 
     override fun List<Task>.filter(): List<Task> = if (!isAppRefreshTaskAllowed) this else filter {
         it.requiresDeviceIdle
@@ -31,7 +32,13 @@ internal class BgProcessingTaskManager(
         requiresNetworkConnectivity = true
     }
 
-    override fun capabilities(): Flow<Set<ExecutionCapability>> = currentToken.map {
-        setOfNotNull(it?.let { ExecutionCapability.HEAVY_PROCESSING })
+    override fun capabilities(): Flow<Set<ExecutionWindo>> = currentToken.map {
+        setOfNotNull(it?.let { ExecutionWindo.LONG })
+    }
+
+    override fun isValid(task: Task): Flow<Boolean> {
+        return currentToken.map {
+            if (task.requiresDeviceIdle) it != null else true
+        }
     }
 }

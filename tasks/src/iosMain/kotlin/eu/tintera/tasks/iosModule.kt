@@ -62,7 +62,7 @@ internal fun iosModule(
                 appLifecycleObserver = get(),
                 isAppRefreshTaskAllowed = config.appRefreshTaskIdentifier != null
             )
-        } binds arrayOf(TokenProducer::class, ExecutionContextObserver::class, ExecutionCapabilityProvider::class)
+        } binds arrayOf(TokenProducer::class, ExecutionContextObserver::class, ExecutionWindowProvider::class)
     }
 
     config.appRefreshTaskIdentifier?.also { identifier ->
@@ -74,7 +74,7 @@ internal fun iosModule(
                 repository = get(),
                 appLifecycleObserver = get()
             )
-        } binds arrayOf(TokenProducer::class, ExecutionContextObserver::class, ExecutionCapabilityProvider::class)
+        } binds arrayOf(TokenProducer::class, ExecutionContextObserver::class, ExecutionWindowProvider::class)
     }
 
 

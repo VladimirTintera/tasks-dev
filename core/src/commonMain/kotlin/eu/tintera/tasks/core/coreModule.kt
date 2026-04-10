@@ -13,7 +13,7 @@ val coreModule = module {
         createdAtStart()
     }
     single {
-        ExecutionCapabilityEvaluator(
+        ExecutionWindowEvaluator(
             providers = getAll(),
             appStateObserver = get()
         )

@@ -1,8 +1,8 @@
 package eu.tintera.tasks.core
 
+import eu.tintera.guard.CompositeTokenProvider
 import eu.tintera.tasks.core.fakes.FakeToken
 import eu.tintera.tasks.core.fakes.FakeTokenProducer
-import eu.tintera.tasks.core.locks.CompositeTokenProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.test.UnconfinedTestDispatcher

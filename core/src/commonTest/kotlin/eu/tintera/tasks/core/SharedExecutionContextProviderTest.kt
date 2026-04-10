@@ -1,9 +1,10 @@
 package eu.tintera.tasks.core
 
+import eu.tintera.guard.ExecutionContextConfig
+import eu.tintera.guard.SharedExecutionContextProvider
+import eu.tintera.guard.use
 import eu.tintera.tasks.core.fakes.FakeTokenProvider
 import eu.tintera.tasks.core.fakes.SpyExecutionContextObserver
-import eu.tintera.tasks.core.locks.ExecutionContextConfig
-import eu.tintera.tasks.core.locks.SharedExecutionContextProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
@@ -332,7 +333,7 @@ class SharedExecutionContextProviderTest {
         // Assert
         assertEquals(1, observer.preCancelCount, "onPreCancel melo byt okamzite zavolano")
         assertEquals(0, observer.preReleaseCount, "onPreRelease se pri expiraci volat nesmi")
-        assertEquals(1,tokenProvider.cancelCount, "Systemovy token mel byt zrusen (cancel)")
+        assertEquals(1, tokenProvider.cancelCount, "Systemovy token mel byt zrusen (cancel)")
         assertEquals(0, tokenProvider.releaseCount)
     }
 

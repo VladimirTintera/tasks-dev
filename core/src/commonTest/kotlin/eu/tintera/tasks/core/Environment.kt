@@ -1,8 +1,8 @@
 package eu.tintera.tasks.core
 
-import eu.tintera.tasks.core.locks.ExecutionContextConfig
-import eu.tintera.tasks.core.locks.SharedExecutionContextProvider
-import eu.tintera.tasks.core.locks.TokenProvider
+import eu.tintera.guard.ExecutionContextConfig
+import eu.tintera.guard.SharedExecutionContextProvider
+import eu.tintera.guard.TokenProvider
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope

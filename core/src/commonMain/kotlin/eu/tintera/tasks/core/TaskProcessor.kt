@@ -29,7 +29,7 @@ internal class TaskProcessorImpl(
     private val executionContextProvider: ExecutionContextProvider,
     private val taskScopeFactory: TaskScopeFactory,
     config: TaskProcessorConfig = TaskProcessorConfig(),
-    private val capabilityEvaluator: ExecutionCapabilityEvaluator
+    private val capabilityEvaluator: ExecutionWindowEvaluator
 ) : TaskProcessor {
 
     private val concurrencySemaphore = Semaphore(config.maxConcurrentTasks)
@@ -116,7 +116,7 @@ internal class TaskProcessorImpl(
     private fun Task.capabilitiesFullFilled() = if (requiresDeviceIdle) capabilityEvaluator.capabilities().onEach {
         EventBus.send(TAG, "checked capabilities: $it")
     }.map {
-        it.contains(ExecutionCapability.HEAVY_PROCESSING)
+        it.contains(ExecutionWindo.LONG)
     } else flowOf(true)
 
     private fun Task?.networkFulfilled() = if (this?.networkRequired == true) networkState.state().map {
@@ -143,17 +143,19 @@ internal class TaskProcessorImpl(
                 val capabilityWatcher = launch {
                     if (task.requiresDeviceIdle) {
                         capabilityEvaluator.capabilities().first { currentCaps ->
-                            ExecutionCapability.HEAVY_PROCESSING !in currentCaps
+                            ExecutionWindo.LONG !in currentCaps
                         }
                         // Ztratili jsme potřebnou sílu!
                         // Zrušíme tento lokální scope (a tím i běžící taskEvaluator)
                         this@coroutineScope.cancel(CapabilityLostException())
                     }
                 }
+                
+                val taskData = taskParents
+                    .sortedBy { it.finishedAt }
+                    .map { it.outputData }
+                    .sum() + task.inputData
 
-                val taskData = task.inputData + taskParents.sortedByDescending {
-                    it.finishedAt
-                }.map { it.outputData }.sum()
 
                 val result = with(taskEvaluator) {
                     EventBus.send(TAG, "Task started '${task.identifier}, data = $taskData'")
@@ -203,7 +205,7 @@ internal class TaskProcessorImpl(
 
     private suspend fun handleTaskResult(task: Task, result: ExecutionResult) {
         val now = Clock.System.now()
-        when(result) {
+        when (result) {
             is ExecutionResult.Finished -> {
                 when (val taskResult = result.result) {
                     TaskResult.Failure -> {
@@ -253,6 +255,7 @@ internal class TaskProcessorImpl(
                     }
                 }
             }
+
             ExecutionResult.Yielded -> {
                 // Žádný backoff! Task je okamžitě znovu připraven k exekuci.
                 // (Volitelně zde můžeš i snížit task.runAttemptCount o 1,

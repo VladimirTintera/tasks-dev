@@ -1,6 +1,6 @@
 package eu.tintera.tasks.core.fakes
 
-import eu.tintera.tasks.core.locks.ExecutionContextObserver
+import eu.tintera.guard.ExecutionContextObserver
 import kotlinx.coroutines.delay
 import kotlin.time.Duration
 

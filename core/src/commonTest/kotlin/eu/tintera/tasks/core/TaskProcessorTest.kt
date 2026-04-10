@@ -9,6 +9,7 @@ import eu.tintera.tasks.core.fakes.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceTimeBy
@@ -56,7 +57,11 @@ class TaskProcessorTest {
             taskEvaluator = fakeEvaluator,
             networkState = fakeNetworkState,
             executionContextProvider = fakeWakeLock,
-            taskScopeFactory = FakeTaskScopeFactory()
+            taskScopeFactory = FakeTaskScopeFactory(),
+            capabilityEvaluator = ExecutionWindowEvaluator(
+                emptyList(),
+                FakeAppStateObserver(MutableStateFlow(true))
+            )
         )
 
         // Vytvoříme testovací task, který vyžaduje iOS KeepAlive
@@ -76,7 +81,8 @@ class TaskProcessorTest {
             repeatInterval = null,
             backoffCriteria = BackoffCriteria.DEFAULT,
             progressData = null,
-            retentionDelay = 24.hours
+            retentionDelay = 24.hours,
+            requiresDeviceIdle = false
         )
 
         fakeRepository.insert(task, emptySet(), emptySet())
@@ -128,7 +134,11 @@ class TaskProcessorTest {
             taskEvaluator = fakeEvaluator,
             networkState = FakeNetworkState(),
             executionContextProvider = FakeExecutionContextProvider(),
-            taskScopeFactory = FakeTaskScopeFactory()
+            taskScopeFactory = FakeTaskScopeFactory(),
+            capabilityEvaluator = ExecutionWindowEvaluator(
+                emptyList(),
+                FakeAppStateObserver(MutableStateFlow(true))
+            )
         )
 
         val task = createTask(identifier = "successTask")
@@ -152,7 +162,11 @@ class TaskProcessorTest {
             taskEvaluator = fakeEvaluator,
             networkState = FakeNetworkState(),
             executionContextProvider = FakeExecutionContextProvider(),
-            taskScopeFactory = FakeTaskScopeFactory()
+            taskScopeFactory = FakeTaskScopeFactory(),
+            capabilityEvaluator = ExecutionWindowEvaluator(
+                emptyList(),
+                FakeAppStateObserver(MutableStateFlow(true))
+            )
         )
 
         val task = createTask(identifier = "retryTask")
@@ -174,7 +188,11 @@ class TaskProcessorTest {
             taskEvaluator = TaskEvaluator(TaskRegistry()),
             networkState = FakeNetworkState(),
             executionContextProvider = FakeExecutionContextProvider(),
-            taskScopeFactory = FakeTaskScopeFactory()
+            taskScopeFactory = FakeTaskScopeFactory(),
+            capabilityEvaluator = ExecutionWindowEvaluator(
+                emptyList(),
+                FakeAppStateObserver(MutableStateFlow(true))
+            )
         )
 
         val parentTask = createTask(identifier = "parent", state = State.Failed)
@@ -206,7 +224,11 @@ class TaskProcessorTest {
             taskEvaluator = fakeEvaluator,
             networkState = fakeNetworkState,
             executionContextProvider = FakeExecutionContextProvider(),
-            taskScopeFactory = FakeTaskScopeFactory()
+            taskScopeFactory = FakeTaskScopeFactory(),
+            capabilityEvaluator = ExecutionWindowEvaluator(
+                emptyList(),
+                FakeAppStateObserver(MutableStateFlow(true))
+            )
         )
 
         val task = createTask(identifier = "networkTask", networkRequired = true)
@@ -248,7 +270,11 @@ class TaskProcessorTest {
             taskEvaluator = fakeEvaluator,
             networkState = FakeNetworkState(),
             executionContextProvider = FakeExecutionContextProvider(),
-            taskScopeFactory = FakeTaskScopeFactory()
+            taskScopeFactory = FakeTaskScopeFactory(),
+            capabilityEvaluator = ExecutionWindowEvaluator(
+                emptyList(),
+                FakeAppStateObserver(MutableStateFlow(true))
+            )
         )
 
         val delayDuration = 10.seconds
@@ -286,7 +312,11 @@ class TaskProcessorTest {
             taskEvaluator = fakeEvaluator,
             networkState = FakeNetworkState(),
             executionContextProvider = FakeExecutionContextProvider(),
-            taskScopeFactory = FakeTaskScopeFactory()
+            taskScopeFactory = FakeTaskScopeFactory(),
+            capabilityEvaluator = ExecutionWindowEvaluator(
+                emptyList(),
+                FakeAppStateObserver(MutableStateFlow(true))
+            )
         )
 
         val task = createTask(identifier = "exceptionTask")
@@ -320,7 +350,11 @@ class TaskProcessorTest {
             taskEvaluator = fakeEvaluator,
             networkState = FakeNetworkState(),
             executionContextProvider = executionContextProvider(fakeProvider),
-            taskScopeFactory = FakeTaskScopeFactory()
+            taskScopeFactory = FakeTaskScopeFactory(),
+            capabilityEvaluator = ExecutionWindowEvaluator(
+                emptyList(),
+                FakeAppStateObserver(MutableStateFlow(true))
+            )
         )
 
 
@@ -380,7 +414,11 @@ class TaskProcessorTest {
             taskEvaluator = fakeEvaluator,
             networkState = FakeNetworkState(),
             executionContextProvider = executionContextProvider(fakeProvider),
-            taskScopeFactory = FakeTaskScopeFactory()
+            taskScopeFactory = FakeTaskScopeFactory(),
+            capabilityEvaluator = ExecutionWindowEvaluator(
+                emptyList(),
+                FakeAppStateObserver(MutableStateFlow(true))
+            )
         )
 
 

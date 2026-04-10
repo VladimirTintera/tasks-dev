@@ -1,6 +1,6 @@
 package eu.tintera.tasks.core.fakes
 
-import eu.tintera.tasks.core.locks.Token
+import eu.tintera.guard.Token
 
 // Falešný token, který si jen pamatuje, co se s ním stalo
 class FakeToken(val name: String = "Fake") : Token {

@@ -7,18 +7,18 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 
-internal class ExecutionCapabilityEvaluator(
-    private val providers: List<ExecutionCapabilityProvider>,
+internal class ExecutionWindowEvaluator(
+    private val providers: List<ExecutionWindowProvider>,
     private val appStateObserver: AppStateObserver
 ) {
     init {
         EventBus.send("ExecutionCapabilityProvider", "provider = $providers")
     }
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun capabilities(): Flow<Set<ExecutionCapability>> = appStateObserver.isBackground.flatMapLatest { isBg ->
+    fun capabilities(): Flow<Set<ExecutionWindo>> = appStateObserver.isBackground.flatMapLatest { isBg ->
         when {
-            !isBg -> flowOf(setOf(ExecutionCapability.SHORT_LIVED, ExecutionCapability.HEAVY_PROCESSING))
-            providers.isEmpty() -> flowOf(setOf())
+            !isBg -> flowOf(setOf(ExecutionWindo.SHORT))
+            providers.isEmpty() -> flowOf(emptySet())
             else -> combine(providers.map { it.capabilities() }) { all ->
                 all.flatMap { it }.toSet()
             }
