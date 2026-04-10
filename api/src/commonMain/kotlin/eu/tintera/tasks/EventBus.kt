@@ -21,39 +21,6 @@ object EventBus {
 }
 
 sealed interface TaskEvent {
-    data class TaskStarted(
-        val identifier: String,
-        val data: Data
-    ) : TaskEvent
-
-    data class TaskFinished(
-        val identifier: String,
-        val result: TaskResult
-    ) : TaskEvent
-
-    data class TaskFailed(
-        val identifier: String,
-        val message: String,
-        val cause: Throwable?
-    ) : TaskEvent
-
-    data class BackgroundProcessingStarted(val time: Instant) : TaskEvent
-
-    data class BackgroundProcessingExpirationCalled(val time: Instant) : TaskEvent
-
-    data class BackgroundProcessingScheduling(val time: Instant) : TaskEvent
-
-    data class BackgroundAlreadyPlaned(val forTime: Instant) : TaskEvent
-
-    data class BackgroundProcessingCompleted(
-        val wasSuccess: Boolean,
-        val nextProcessTime: Instant?
-    ) : TaskEvent
-
-    data class BackgroundInitializationFailed(
-        val code: Long,
-        val description: String
-    ) : TaskEvent
 
     data class Custom(
         val tag: String,

@@ -21,7 +21,8 @@ internal fun TaskEntity.toTask() = Task(
     repeatInterval = repeatInterval,
     backoffCriteria = backoffCriteria?.toTaskBackoffCriteria(),
     progressData = progressData?.toData(),
-    retentionDelay = retentionDelay
+    retentionDelay = retentionDelay,
+    requiresDeviceIdle = requiresDeviceIdle,
 )
 
 internal fun Task.toTaskEntity() = TaskEntity(
@@ -40,7 +41,8 @@ internal fun Task.toTaskEntity() = TaskEntity(
     repeatInterval = repeatInterval,
     backoffCriteria = backoffCriteria?.toEntityBackoffCriteria(),
     progressData = progressData?.toSerializableTaskData(),
-    retentionDelay = retentionDelay
+    retentionDelay = retentionDelay,
+    requiresDeviceIdle = requiresDeviceIdle,
 )
 
 internal fun State.toTaskState() = when (this) {

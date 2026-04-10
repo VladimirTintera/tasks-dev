@@ -5,15 +5,14 @@ import eu.tintera.guard.Token
 import eu.tintera.guard.TokenProducer
 import eu.tintera.tasks.EventBus
 import eu.tintera.tasks.State
-import eu.tintera.tasks.TaskEvent
 import eu.tintera.tasks.core.data.Repository
+import eu.tintera.tasks.core.data.Task
 import kotlinx.cinterop.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.datetime.toKotlinInstant
 import kotlinx.datetime.toNSDate
-import platform.BackgroundTasks.BGProcessingTaskRequest
 import platform.BackgroundTasks.BGTask
 import platform.BackgroundTasks.BGTaskRequest
 import platform.BackgroundTasks.BGTaskScheduler
@@ -24,12 +23,13 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
-internal class BgTaskManager(
+internal abstract class BgTaskManager(
     scope: ApplicationScope,
     dispatchers: AppDispatchers,
     private val taskIdentifier: String,
     private val repository: Repository,
-    private val appLifecycleObserver: AppLifecycleObserver
+    private val appLifecycleObserver: AppLifecycleObserver,
+    private val tag: String
 ) : TokenProducer, ExecutionContextObserver {
     private val currentToken = MutableStateFlow<BGTask?>(null)
 
@@ -65,14 +65,15 @@ internal class BgTaskManager(
         }
     }
 
+    abstract fun List<Task>.filter() : List<Task>
+
     private suspend fun nextPlanedTime() = repository.tasksByState(
         listOf(State.Enqueued, State.Blocked, State.Running)
     ).map { tasks ->
-        tasks.minOfOrNull { it.processTime }
+        tasks.filter().minOfOrNull { it.processTime }
     }.firstOrNull()?.coerceAtLeast(Clock.System.now() + 30.minutes)
 
     suspend fun evaluateAndScheduleNext() {
-        EventBus.send(TAG, "calling evaluateAndScheduleNext")
         nextPlanedTime()?.also {
             schedule(it)
         }
@@ -83,7 +84,7 @@ internal class BgTaskManager(
             identifier = taskIdentifier,
             usingQueue = null
         ) { task ->
-            EventBus.send(TAG, "BgProcessingTask started")
+            EventBus.send(tag, "BGTask started")
 
             task?.also {
                 currentToken.update { it }
@@ -91,15 +92,15 @@ internal class BgTaskManager(
         }
     }
 
+    abstract fun createRequest(): BGTaskRequest
+
     @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
     private fun schedule(time: Instant) {
         EventBus.send(
-            TAG, "scheduling BgProcessingTask to $time"
+            tag, "scheduling to $time"
         )
 
-        val request = BGProcessingTaskRequest(taskIdentifier)
-        request.requiresExternalPower = false
-        request.requiresNetworkConnectivity = true
+        val request = createRequest()
         request.earliestBeginDate = time.toNSDate()
 
         memScoped {
@@ -108,31 +109,9 @@ internal class BgTaskManager(
 
             error.value?.also {
                 EventBus.send(
-                    TaskEvent.BackgroundInitializationFailed(
-                        code = it.code,
-                        description = it.description ?: ""
-                    )
+                    tag, "BgTask schedule failed, code = ${it.code}, description = ${it.description}"
                 )
             }
-        }
-    }
-
-    suspend fun pendingTasks(): List<PendingIosTask> = suspendCancellableCoroutine { continuation ->
-
-        BGTaskScheduler.sharedScheduler.getPendingTaskRequestsWithCompletionHandler { requests ->
-
-            val pendingRequests = requests ?: emptyList<Any>()
-
-            val mappedTasks = pendingRequests.mapNotNull { item ->
-                val request = item as? BGTaskRequest ?: return@mapNotNull null
-
-                PendingIosTask(
-                    identifier = request.identifier,
-                    earliestBeginTime = request.earliestBeginDate?.toKotlinInstant()
-                )
-            }
-
-            continuation.resume(mappedTasks)
         }
     }
 
@@ -142,9 +121,5 @@ internal class BgTaskManager(
 
     override fun onPreCancel() {
         if (appLifecycleObserver.isBackground.value) schedule(Clock.System.now() + 1.hours)
-    }
-
-    companion object {
-        private const val TAG = "BgTaskManager"
     }
 }

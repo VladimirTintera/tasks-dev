@@ -22,23 +22,34 @@ fun koinApp(
             taskHandlerOf(::TestHandler)
 
             single(createdAtStart = true) {
-                val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-                scope.launch {
-                    EventBus.events.collect {
-                        when(it) {
-                            is TaskEvent.Custom -> Logger.i(it.tag) { it.message }
-                            else -> Logger.i { it.toString() }
-                        }
+                object {
+                    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+                    init {
+                        scope.launch {
+                            EventBus.events.collect {
+                                when(it) {
+                                    is TaskEvent.Custom -> Logger.i(tag = it.tag) { it.message }
+                                    else -> Logger.i { it.toString() }
+                                }
 
+                            }
+                        }
                     }
                 }
+
+
             }
 
             single(createdAtStart = true) {
-                val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-                scope.launch {
-                    eu.tintera.guard.EventBus.events.collect {
-                        Logger.i(it.tag) { it.message }
+                object {
+                    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+                    init {
+                        scope.launch {
+                            eu.tintera.guard.EventBus.events.collect {
+                                Logger.i(tag = it.tag) { it.message }
+                            }
+                        }
                     }
                 }
             }

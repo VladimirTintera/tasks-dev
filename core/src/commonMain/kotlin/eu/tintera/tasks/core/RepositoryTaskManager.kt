@@ -56,7 +56,8 @@ class RepositoryCoreTaskManager(
             initialDelay = task.initialDelay,
             backoffCriteria = task.backoffCriteria ?: BackoffCriteria.DEFAULT,
             progressData = Data.EMPTY,
-            retentionDelay = task.keepResultsForAtLeast
+            retentionDelay = task.keepResultsForAtLeast,
+            requiresDeviceIdle = task.constraints.requiresDeviceIdle
         )
 
         insert(t, task.tags + uniqueName + t.identifier, parentIds.toSet())
@@ -138,7 +139,8 @@ class RepositoryCoreTaskManager(
         initialDelay = initialDelay,
         backoffCriteria = backoffCriteria ?: BackoffCriteria.DEFAULT,
         progressData = Data.EMPTY,
-        retentionDelay = keepResultsForAtLeast
+        retentionDelay = keepResultsForAtLeast,
+        requiresDeviceIdle = constraints.requiresDeviceIdle
     )
 
     override suspend fun enqueueTask(
@@ -219,7 +221,8 @@ class RepositoryCoreTaskManager(
             initialDelay = task.initialDelay,
             backoffCriteria = task.backoffCriteria ?: BackoffCriteria.DEFAULT,
             progressData = Data.EMPTY,
-            retentionDelay = task.keepResultsForAtLeast
+            retentionDelay = task.keepResultsForAtLeast,
+            requiresDeviceIdle = task.constraints.requiresDeviceIdle
         )
 
         insert(t, task.tags + uniqueName + t.identifier, emptySet())

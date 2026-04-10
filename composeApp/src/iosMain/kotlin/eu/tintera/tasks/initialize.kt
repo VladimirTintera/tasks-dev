@@ -5,9 +5,8 @@ import platform.Foundation.NSBundle
 fun initialize() {
     TasksInitializer.initialize(
         config = IosTasksManagerConfiguration(
-            bgProcessingTaskIdentifier = (NSBundle.mainBundle.bundleIdentifier + ".BgProcessingTask").also {
-                EventBus.send("Initialization", "Task identifier: $it")
-            }
+            bgProcessingTaskIdentifier = (NSBundle.mainBundle.bundleIdentifier + ".BgProcessingTask"),
+            appRefreshTaskIdentifier = (NSBundle.mainBundle.bundleIdentifier + ".AppRefreshTask")
         )
     )
     koinApp {

@@ -24,7 +24,8 @@ data class Task(
     val repeatInterval: Duration?,
     val backoffCriteria: BackoffCriteria?,
     val progressData: Data?,
-    val retentionDelay: Duration
+    val retentionDelay: Duration,
+    val requiresDeviceIdle: Boolean
 )
 
 internal val Task.backoffCriteriaOrDefault: BackoffCriteria get() = backoffCriteria ?: BackoffCriteria.DEFAULT

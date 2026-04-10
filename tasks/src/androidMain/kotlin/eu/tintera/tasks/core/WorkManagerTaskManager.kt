@@ -27,7 +27,7 @@ internal class WorkManagerCoreTaskManager(
                 initialDelay = initialDelay,
                 data = data,
                 constraints = constraints,
-                tags= tags + handler.fullName,
+                tags = tags + handler.fullName,
                 backoffCriteria = backoffCriteria,
                 keepResultsForAtLeast = keepResultsForAtLeast
             )
@@ -166,8 +166,13 @@ internal class WorkManagerCoreTaskManager(
             androidx.work.Data.Builder().putString(TaskWorker.TASK_IDENTIFIER, handler.fullName)
                 .putAll(data.map).build()
         setInputData(inputData)
-        if (constraints.requiresNetwork)
-            setConstraints(androidx.work.Constraints(requiredNetworkType = NetworkType.CONNECTED))
+        if (constraints.requiresNetwork || constraints.requiresDeviceIdle)
+            setConstraints(
+                androidx.work.Constraints(
+                    requiredNetworkType = NetworkType.CONNECTED,
+                    requiresDeviceIdle = constraints.requiresDeviceIdle
+                )
+            )
 
         if (initialDelay.isPositive())
             setInitialDelay(initialDelay.inWholeMilliseconds, TimeUnit.MILLISECONDS)

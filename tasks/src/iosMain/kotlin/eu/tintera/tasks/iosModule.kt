@@ -54,14 +54,27 @@ internal fun iosModule(
 
     config.bgProcessingTaskIdentifier?.also { identifier ->
         single(createdAtStart = true) {
-            BgTaskManager(
+            BgProcessingTaskManager(
+                scope = get(),
+                dispatchers = get(),
+                taskIdentifier = identifier,
+                repository = get(),
+                appLifecycleObserver = get(),
+                isAppRefreshTaskAllowed = config.appRefreshTaskIdentifier != null
+            )
+        } binds arrayOf(TokenProducer::class, ExecutionContextObserver::class)
+    }
+
+    config.appRefreshTaskIdentifier?.also { identifier ->
+        single(createdAtStart = true) {
+            AppRefreshTaskManager(
                 scope = get(),
                 dispatchers = get(),
                 taskIdentifier = identifier,
                 repository = get(),
                 appLifecycleObserver = get()
             )
-        } binds arrayOf(BgTaskManager::class, TokenProducer::class, ExecutionContextObserver::class)
+        } binds arrayOf(TokenProducer::class, ExecutionContextObserver::class)
     }
 
 
@@ -71,7 +84,7 @@ internal fun iosModule(
             scope = get<ApplicationScope>() + Dispatchers.Default,
             config = get(),
             tokenProducers = getAll(),
-            observer = getAll()
+            observers = getAll()
         )
     } bind ExecutionContextProvider::class
 

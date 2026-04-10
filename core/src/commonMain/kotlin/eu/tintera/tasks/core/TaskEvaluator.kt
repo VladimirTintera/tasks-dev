@@ -15,7 +15,7 @@ class TaskEvaluator(
             run()
         }
     } ?: run {
-        EventBus.send(TaskEvent.TaskFailed(taskIdentifier, "Task '$taskIdentifier' not registered", null))
+        EventBus.send("Task", "Task '$taskIdentifier' not registered")
         null
     }
 }

@@ -10,4 +10,15 @@ data class IosTasksManagerConfiguration(
     val maxConcurrentTasks: Int = 10,
     val executionContextReleaseDebounce: Duration = 1.5.seconds,
     val bgProcessingTaskIdentifier: String? = null,
-)
+    val appRefreshTaskIdentifier: String? = null
+) {
+    init {
+        bgProcessingTaskIdentifier?.also {
+            require(!it.isBlank()) { "BG processing task identifier must be set" }
+        }
+
+        appRefreshTaskIdentifier?.also {
+            require(!it.isBlank()) { "App refresh task identifier must be set" }
+        }
+    }
+}

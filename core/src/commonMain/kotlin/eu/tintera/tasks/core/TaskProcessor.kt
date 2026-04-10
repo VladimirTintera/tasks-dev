@@ -88,7 +88,7 @@ internal class TaskProcessorImpl(
         if (taskParents.any { it.state == State.Failed }) {
             val result = TaskResult.failure()
             withContext(NonCancellable) {
-                EventBus.send(TaskEvent.TaskFinished(task.identifier, result))
+                EventBus.send(TAG, "task finished '${task.identifier}', result = $result")
                 handleTaskResult(task, result)
             }
             return null // Konec, nepokračujeme
@@ -124,7 +124,7 @@ internal class TaskProcessorImpl(
             }.map { it.outputData }.sum()
 
             with(taskEvaluator) {
-                EventBus.send(TaskEvent.TaskStarted(task.identifier, taskData))
+                EventBus.send(TAG, "Task started '${task.identifier}, data = $taskData'")
                 with(
                     taskScopeFactory.createScope(
                         taskId = task.id,
@@ -141,12 +141,12 @@ internal class TaskProcessorImpl(
             // Let it crash
             throw e
         } catch (e: Throwable) {
-            EventBus.send(TaskEvent.TaskFailed(task.identifier, "Task failed", e))
+            EventBus.send(TAG, "Task failed '${task.identifier}'")
             TaskResult.failure()
         }
 
         withContext(NonCancellable) {
-            EventBus.send(TaskEvent.TaskFinished(task.identifier, taskResult))
+            EventBus.send(TAG, "Task finished '${task.identifier}', result = $taskResult")
             handleTaskResult(task, taskResult)
         }
     }

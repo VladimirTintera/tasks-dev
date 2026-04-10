@@ -41,7 +41,9 @@ internal data class TaskEntity(
     val backoffCriteria: BackoffCriteria?,
     val progressData: SerializableTaskData?,
     @ColumnInfo(defaultValue = "86400000")
-    val retentionDelay: Duration
+    val retentionDelay: Duration,
+    @ColumnInfo(defaultValue = "0")
+    val requiresDeviceIdle: Boolean
 )
 
 @Dao

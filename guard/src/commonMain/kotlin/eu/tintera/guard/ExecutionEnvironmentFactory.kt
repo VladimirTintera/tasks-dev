@@ -13,7 +13,7 @@ object ExecutionEnvironmentFactory {
         scope: CoroutineScope,
         config: ExecutionContextConfig = ExecutionContextConfig(releaseDebounce = 1.5.seconds),
         tokenProducers: List<TokenProducer> = emptyList(),
-        observer: List<ExecutionContextObserver> = emptyList()
+        observers: List<ExecutionContextObserver> = emptyList()
     ): ExecutionEnvironment {
 
         val tokenProvider = CompositeTokenProvider(
@@ -30,7 +30,7 @@ object ExecutionEnvironmentFactory {
             ) + tokenProducers
         )
 
-        val lifecycleRegistry = CompositeExecutionContextObserver(observer)
+        val lifecycleRegistry = CompositeExecutionContextObserver(observers)
 
         val contextProvider = SharedExecutionContextProvider(
             tokenProvider = tokenProvider,
