@@ -65,7 +65,8 @@ fun App() {
                                 taskRequest<TestHandler>(
                                     tags = setOf("SuccessTask"),
                                     constraints = Constraints(
-                                        requiresDeviceIdle = false
+                                        requiresDeviceIdle = false,
+                                        requiresNetwork = true
                                     )
                                 )
                             )

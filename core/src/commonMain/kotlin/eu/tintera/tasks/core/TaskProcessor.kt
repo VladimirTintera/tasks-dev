@@ -9,6 +9,8 @@ import eu.tintera.tasks.TaskResult
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.core.data.backoffCriteriaOrDefault
+import eu.tintera.tasks.core.preconditions.PreconditionLostException
+import eu.tintera.tasks.core.preconditions.TaskPreconditionController
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Semaphore
@@ -25,16 +27,17 @@ internal interface TaskProcessor {
 internal class TaskProcessorImpl(
     private val repository: Repository,
     private val taskEvaluator: TaskEvaluator,
-    private val networkState: NetworkState,
     private val executionContextProvider: ExecutionContextProvider,
     private val taskScopeFactory: TaskScopeFactory,
     config: TaskProcessorConfig = TaskProcessorConfig(),
-    private val capabilityEvaluator: ExecutionWindowEvaluator
+    private val preconditionController: TaskPreconditionController
 ) : TaskProcessor {
 
     private val concurrencySemaphore = Semaphore(config.maxConcurrentTasks)
 
     override suspend fun run(task: Task) = coroutineScope {
+
+        EventBus.send(TAG, "running task ${task.id}")
 
         val actualTask = MutableStateFlow<Task?>(task)
 
@@ -92,42 +95,13 @@ internal class TaskProcessorImpl(
 
         updateState(task.id, State.Enqueued)
 
-        combine(
-            task.delayFullFilled().onEach {
-                EventBus.send(TAG, "delay fullfilled = $it, task: ${actualTask.value?.id}")
-            },
-            actualTask.value.networkFulfilled().onEach {
-                EventBus.send(TAG, "network fullfilled = $it, task: ${actualTask.value?.id}")
-            },
-            task.capabilitiesFullFilled().onEach {
-                EventBus.send(TAG, "capability fullfilled = $it, task: ${actualTask.value?.id}")
-            }
-        ) {
-            it.all { it }
-        }.first { it }
+        preconditionController.waitForAll(task)
 
         if (actualTask.value?.state?.terminal() != false) {
             return null // Konec, nepokračujeme
         }
 
         return taskParents // Vše připraveno, vracíme data pro další fázi
-    }
-
-    private fun Task.capabilitiesFullFilled() = if (requiresDeviceIdle) capabilityEvaluator.capabilities().onEach {
-        EventBus.send(TAG, "checked capabilities: $it")
-    }.map {
-        it.contains(ExecutionWindo.LONG)
-    } else flowOf(true)
-
-    private fun Task?.networkFulfilled() = if (this?.networkRequired == true) networkState.state().map {
-        it == NetworkState.State.Connected
-    } else flowOf(true)
-
-    private fun Task.delayFullFilled() = flow {
-        if (runAttemptCount == 0 && initialDelay.isPositive()) {
-            delay(initialDelay)
-        }
-        emit(true)
     }
 
     private suspend fun executeTask(
@@ -141,16 +115,10 @@ internal class TaskProcessorImpl(
             coroutineScope {
 
                 val capabilityWatcher = launch {
-                    if (task.requiresDeviceIdle) {
-                        capabilityEvaluator.capabilities().first { currentCaps ->
-                            ExecutionWindo.LONG !in currentCaps
-                        }
-                        // Ztratili jsme potřebnou sílu!
-                        // Zrušíme tento lokální scope (a tím i běžící taskEvaluator)
-                        this@coroutineScope.cancel(CapabilityLostException())
-                    }
+                    preconditionController.waitForFail(task)
+                    this@coroutineScope.cancel(PreconditionLostException())
                 }
-                
+
                 val taskData = taskParents
                     .sortedBy { it.finishedAt }
                     .map { it.outputData }
@@ -174,7 +142,7 @@ internal class TaskProcessorImpl(
                 capabilityWatcher.cancel()
                 ExecutionResult.Finished(result)
             }
-        } catch (e: CapabilityLostException) {
+        } catch (e: PreconditionLostException) {
             // BINGO! Přesně tvůj nápad. Ztráta síly = Retry s BackoffPolicy!
             EventBus.send(TAG, "Task interrupted '${task.identifier}' due to lost capability. Retrying.")
             ExecutionResult.Yielded
@@ -257,13 +225,6 @@ internal class TaskProcessorImpl(
             }
 
             ExecutionResult.Yielded -> {
-                // Žádný backoff! Task je okamžitě znovu připraven k exekuci.
-                // (Volitelně zde můžeš i snížit task.runAttemptCount o 1,
-                // aby se mu tento pokus nepočítal jako selhání)
-                repository.updateRunAttemptCount(
-                    id = task.id,
-                    runAttemptsCount = task.runAttemptCount
-                )
                 repository.updateNextRun(
                     id = task.id,
                     state = State.Enqueued,

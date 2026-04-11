@@ -14,6 +14,9 @@ interface ExecutionWindowProvider {
 
 
 interface TaskPrecondition {
+    fun hasConstraint(task: Task) : Boolean
     fun isValid(task: Task) : Flow<Boolean>
+
+    val monitorDuringExecution: Boolean
 }
 

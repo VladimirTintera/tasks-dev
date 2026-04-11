@@ -1,5 +1,8 @@
 package eu.tintera.tasks.core
 
+import eu.tintera.tasks.core.preconditions.InitialDelayTaskPrecondition
+import eu.tintera.tasks.core.preconditions.NetworkStateTaskPrecondition
+import eu.tintera.tasks.core.preconditions.TaskPreconditionController
 import kotlinx.coroutines.SupervisorJob
 import org.koin.core.module.dsl.createdAtStart
 import org.koin.core.module.dsl.factoryOf
@@ -21,4 +24,10 @@ val coreModule = module {
 
     singleOf<AppDispatchers>(::RealDispatchers)
     single { ApplicationScope(SupervisorJob()) }
+
+    singleOf(::InitialDelayTaskPrecondition) bind TaskPrecondition::class
+    singleOf(::NetworkStateTaskPrecondition) bind TaskPrecondition::class
+    single {
+        TaskPreconditionController(preconditions = getAll())
+    }
 }

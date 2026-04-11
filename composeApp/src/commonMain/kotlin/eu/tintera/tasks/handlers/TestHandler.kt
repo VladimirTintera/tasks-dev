@@ -15,8 +15,8 @@ class TestHandler : TaskHandler {
     override suspend fun TaskScope.run(): TaskResult {
 
         logger.i { "Running test: ${this@TestHandler::class.getFullName()}, retryCount: $retryCount, data: $data" }
-        delay(5.seconds)
+        delay(20.seconds)
         logger.i { "Test finished: ${this@TestHandler::class.getFullName()}, retryCount: $retryCount, data: $data" }
-        return if (retryCount >= 2) TaskResult.success() else TaskResult.retry()
+        return if (retryCount >= 2) TaskResult.success() else TaskResult.success()
     }
 }
