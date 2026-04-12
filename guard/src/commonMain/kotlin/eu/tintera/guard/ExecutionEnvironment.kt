@@ -1,3 +1,0 @@
-package eu.tintera.guard
-
-interface ExecutionEnvironment : ExecutionContextProvider, TokenRegistry, ExecutionContextObserverRegistry

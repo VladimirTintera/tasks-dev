@@ -68,6 +68,8 @@ androidx-sqlite = { module = "androidx.sqlite:sqlite", version.ref = "sqlite" }
 kotlinx-serialization-protobuf = {module = "org.jetbrains.kotlinx:kotlinx-serialization-protobuf", version.ref = "serialization"}
 androidx-work-runtime-ktx = {module = "androidx.work:work-runtime-ktx", version.ref = "androidx-work"}
 
+guard = { module = "eu.tintera:guard", version = "1.0.0" }
+
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
