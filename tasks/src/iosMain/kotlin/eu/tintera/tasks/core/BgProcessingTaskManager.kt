@@ -20,7 +20,7 @@ internal class BgProcessingTaskManager(
     repository = repository,
     appLifecycleObserver = appLifecycleObserver,
     tag = "BgProcessingTaskManager"
-), ExecutionWindowProvider, TaskPrecondition {
+), TaskPrecondition {
 
     override fun List<Task>.filter(): List<Task> = if (!isAppRefreshTaskAllowed) this else filter {
         it.requiresDeviceIdle
@@ -29,10 +29,6 @@ internal class BgProcessingTaskManager(
     override fun createRequest() = BGProcessingTaskRequest(taskIdentifier).apply {
         requiresExternalPower = false
         requiresNetworkConnectivity = true
-    }
-
-    override fun capabilities(): Flow<Set<ExecutionWindo>> = currentToken.map {
-        setOfNotNull(it?.let { ExecutionWindo.LONG })
     }
 
     override fun hasConstraint(task: Task) = task.requiresDeviceIdle

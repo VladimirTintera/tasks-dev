@@ -145,7 +145,8 @@ class FakeRepository : Repository {
 
     override suspend fun resetState(
         from: State,
-        to: State
+        to: State,
+        excludedIds: Set<Uuid>
     ) {
         TODO("Not yet implemented")
     }

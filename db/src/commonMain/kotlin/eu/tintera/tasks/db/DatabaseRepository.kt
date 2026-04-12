@@ -141,10 +141,21 @@ internal class DatabaseRepository(
         it.toTask()
     }
 
+
     override suspend fun resetState(
         from: State,
-        to: State
-    ) = taskDao.resetState(from.toEntityState(), to.toEntityState())
+        to: State,
+        excludedIds: Set<Uuid>
+    ) {
+        if (excludedIds.isEmpty()) taskDao.resetState(
+            from = from.toEntityState(),
+            to = to.toEntityState()
+        ) else taskDao.resetStateWithExclusion(
+            from = from.toEntityState(),
+            to = to.toEntityState(),
+            excludedIds = excludedIds
+        )
+    }
 
     override suspend fun updateProgressData(
         id: Uuid,

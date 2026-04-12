@@ -1,5 +1,6 @@
 package eu.tintera.tasks.core
 
+import eu.tintera.guard.ExecutionContextObserver
 import eu.tintera.tasks.core.preconditions.InitialDelayTaskPrecondition
 import eu.tintera.tasks.core.preconditions.NetworkStateTaskPrecondition
 import eu.tintera.tasks.core.preconditions.TaskPreconditionController
@@ -15,12 +16,6 @@ val coreModule = module {
     singleOf(::TaskDispatcher) {
         createdAtStart()
     }
-    single {
-        ExecutionWindowEvaluator(
-            providers = getAll(),
-            appStateObserver = get()
-        )
-    }
 
     singleOf<AppDispatchers>(::RealDispatchers)
     single { ApplicationScope(SupervisorJob()) }
@@ -30,4 +25,10 @@ val coreModule = module {
     single {
         TaskPreconditionController(preconditions = getAll())
     }
+
+    singleOf(::ActiveTaskTrackerImpl) bind ActiveTaskTracker::class
+
+    singleOf(::OrphanTaskSweeper) {
+        createdAtStart()
+    } bind ExecutionContextObserver::class
 }

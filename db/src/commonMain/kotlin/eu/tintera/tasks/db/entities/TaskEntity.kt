@@ -127,6 +127,9 @@ internal interface TaskDao {
     @Query("UPDATE Task set state = :to WHERE state = :from")
     suspend fun resetState(from: State, to: State)
 
+    @Query("UPDATE Task set state = :to WHERE state = :from AND id NOT IN (:excludedIds)")
+    suspend fun resetStateWithExclusion(from: State, to: State, excludedIds: Set<Uuid>)
+
     @Query(
         """
     WITH RECURSIVE Descendants(id) AS (

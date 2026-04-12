@@ -37,7 +37,7 @@ interface Repository {
 
     suspend fun tasksByTagAndState(states: List<State>, tag: String): List<Task>
 
-    suspend fun resetState(from: State, to: State)
+    suspend fun resetState(from: State, to: State, excludedIds: Set<Uuid>)
 
     suspend fun updateProgressData(id: Uuid, progressData: Data)
 

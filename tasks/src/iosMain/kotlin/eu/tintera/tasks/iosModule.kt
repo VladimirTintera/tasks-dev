@@ -4,6 +4,7 @@ import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import eu.tintera.guard.ExecutionContextConfig
 import eu.tintera.guard.ExecutionContextObserver
+import eu.tintera.guard.ExecutionContextObserverRegistry
 import eu.tintera.guard.ExecutionContextProvider
 import eu.tintera.guard.ExecutionEnvironmentFactory
 import eu.tintera.guard.PlatformContext
@@ -62,7 +63,7 @@ internal fun iosModule(
                 appLifecycleObserver = get(),
                 isAppRefreshTaskAllowed = config.appRefreshTaskIdentifier != null
             )
-        } binds arrayOf(TokenProducer::class, ExecutionContextObserver::class, ExecutionWindowProvider::class)
+        } binds arrayOf(TokenProducer::class, ExecutionContextObserver::class)
     }
 
     config.appRefreshTaskIdentifier?.also { identifier ->
@@ -74,7 +75,7 @@ internal fun iosModule(
                 repository = get(),
                 appLifecycleObserver = get()
             )
-        } binds arrayOf(TokenProducer::class, ExecutionContextObserver::class, ExecutionWindowProvider::class)
+        } binds arrayOf(TokenProducer::class, ExecutionContextObserver::class)
     }
 
 
@@ -86,7 +87,7 @@ internal fun iosModule(
             tokenProducers = getAll(),
             observers = getAll()
         )
-    } bind ExecutionContextProvider::class
+    } binds arrayOf(ExecutionContextProvider::class, ExecutionContextObserverRegistry::class)
 
     singleOf(::AppLifecycleObserver) bind AppStateObserver::class
 }

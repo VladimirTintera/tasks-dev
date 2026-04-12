@@ -19,15 +19,12 @@ internal class AppRefreshTaskManager(
     repository = repository,
     appLifecycleObserver = appLifecycleObserver,
     tag = "AppRefreshTaskManager"
-), ExecutionWindowProvider {
+) {
     override fun List<Task>.filter(): List<Task> = filterNot {
         it.requiresDeviceIdle
     }
 
     override fun createRequest() = BGAppRefreshTaskRequest(taskIdentifier)
-    override fun capabilities(): Flow<Set<ExecutionWindo>> = currentToken.map {
-        setOfNotNull(it?.let { ExecutionWindo.SHORT })
-    }
 
     companion object {
         private const val TAG = "AppRefreshTaskManager"
