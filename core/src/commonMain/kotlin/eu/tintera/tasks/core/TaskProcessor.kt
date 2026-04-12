@@ -115,8 +115,8 @@ internal class TaskProcessorImpl(
             coroutineScope {
 
                 val capabilityWatcher = launch {
-                    preconditionController.waitForFail(task)
-                    this@coroutineScope.cancel(PreconditionLostException())
+                    val failedPreconditions =preconditionController.waitForFail(task)
+                    this@coroutineScope.cancel(PreconditionLostException(failedPreconditions))
                 }
 
                 val taskData = taskParents
@@ -143,8 +143,7 @@ internal class TaskProcessorImpl(
                 ExecutionResult.Finished(result)
             }
         } catch (e: PreconditionLostException) {
-            // BINGO! Přesně tvůj nápad. Ztráta síly = Retry s BackoffPolicy!
-            EventBus.send(TAG, "Task interrupted '${task.identifier}' due to lost capability. Retrying.")
+            EventBus.send(TAG, "Task interrupted '${task.identifier}' due to lost capability (${e.failedPreconditions}). Enqueueing back.")
             ExecutionResult.Yielded
         } catch (e: CancellationException) {
             // when canceled, do nothing. Invalid Running states are handled by sweep mechanism

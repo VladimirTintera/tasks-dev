@@ -27,7 +27,8 @@ class TaskDispatcherTest {
             taskProcessor = fakeProcessor,
             repository = fakeRepo,
             scope = ApplicationScope(SupervisorJob()),
-            dispatchers = dispatchers()
+            dispatchers = dispatchers(),
+            activeTaskTracker = ActiveTaskTrackerImpl()
         )
 
         val taskId = Uuid.random()

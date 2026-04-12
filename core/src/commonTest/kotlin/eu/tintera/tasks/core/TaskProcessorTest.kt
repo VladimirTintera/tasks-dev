@@ -6,10 +6,11 @@ import eu.tintera.tasks.State
 import eu.tintera.tasks.TaskResult
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.core.fakes.*
+import eu.tintera.tasks.core.preconditions.NetworkStateTaskPrecondition
+import eu.tintera.tasks.core.preconditions.TaskPreconditionController
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceTimeBy
@@ -55,13 +56,9 @@ class TaskProcessorTest {
         val processor = TaskProcessorImpl(
             repository = fakeRepository,
             taskEvaluator = fakeEvaluator,
-            networkState = fakeNetworkState,
             executionContextProvider = fakeWakeLock,
             taskScopeFactory = FakeTaskScopeFactory(),
-            capabilityEvaluator = ExecutionWindowEvaluator(
-                emptyList(),
-                FakeAppStateObserver(MutableStateFlow(true))
-            )
+            preconditionController = TaskPreconditionController(emptyList())
         )
 
         // Vytvoříme testovací task, který vyžaduje iOS KeepAlive
@@ -132,13 +129,9 @@ class TaskProcessorTest {
         val processor = TaskProcessorImpl(
             repository = fakeRepository,
             taskEvaluator = fakeEvaluator,
-            networkState = FakeNetworkState(),
             executionContextProvider = FakeExecutionContextProvider(),
             taskScopeFactory = FakeTaskScopeFactory(),
-            capabilityEvaluator = ExecutionWindowEvaluator(
-                emptyList(),
-                FakeAppStateObserver(MutableStateFlow(true))
-            )
+            preconditionController = TaskPreconditionController(emptyList())
         )
 
         val task = createTask(identifier = "successTask")
@@ -160,13 +153,9 @@ class TaskProcessorTest {
         val processor = TaskProcessorImpl(
             repository = fakeRepository,
             taskEvaluator = fakeEvaluator,
-            networkState = FakeNetworkState(),
             executionContextProvider = FakeExecutionContextProvider(),
             taskScopeFactory = FakeTaskScopeFactory(),
-            capabilityEvaluator = ExecutionWindowEvaluator(
-                emptyList(),
-                FakeAppStateObserver(MutableStateFlow(true))
-            )
+            preconditionController = TaskPreconditionController(emptyList())
         )
 
         val task = createTask(identifier = "retryTask")
@@ -186,13 +175,9 @@ class TaskProcessorTest {
         val processor = TaskProcessorImpl(
             repository = fakeRepository,
             taskEvaluator = TaskEvaluator(TaskRegistry()),
-            networkState = FakeNetworkState(),
             executionContextProvider = FakeExecutionContextProvider(),
             taskScopeFactory = FakeTaskScopeFactory(),
-            capabilityEvaluator = ExecutionWindowEvaluator(
-                emptyList(),
-                FakeAppStateObserver(MutableStateFlow(true))
-            )
+            preconditionController = TaskPreconditionController(emptyList())
         )
 
         val parentTask = createTask(identifier = "parent", state = State.Failed)
@@ -210,24 +195,27 @@ class TaskProcessorTest {
     @Test
     fun `when network is required but not connected, task waits`() = runTest {
         val fakeRepository = FakeRepository()
-        val fakeNetworkState = FakeNetworkState()
-        fakeNetworkState.networkState.value = NetworkState.State.Disconnected
+        val fakeNetworkState = FakeNetworkState(NetworkState.State.Disconnected)
 
         val fakeEvaluator = TaskEvaluator(
             taskRegistry = TaskRegistry().apply {
-                register("networkTask") { { TaskResult.success() } }
+                register("networkTask") {
+                    {
+                        TaskResult.success()
+                    }
+                }
             }
         )
 
         val processor = TaskProcessorImpl(
             repository = fakeRepository,
             taskEvaluator = fakeEvaluator,
-            networkState = fakeNetworkState,
             executionContextProvider = FakeExecutionContextProvider(),
             taskScopeFactory = FakeTaskScopeFactory(),
-            capabilityEvaluator = ExecutionWindowEvaluator(
-                emptyList(),
-                FakeAppStateObserver(MutableStateFlow(true))
+            preconditionController = TaskPreconditionController(
+                listOf(
+                    NetworkStateTaskPrecondition(fakeNetworkState)
+                )
             )
         )
 
@@ -239,21 +227,78 @@ class TaskProcessorTest {
         }
 
         advanceUntilIdle()
+
+        //advanceUntilIdle()
         // Task should be waiting for network, so it's not finished yet
         // Note: In the current implementation, it might be Enqueued or Running depending on where it pauses.
         // Based on TaskProcessor code:
         // updateState(task.id, TaskState.Enqueued) happens before network check.
         // Then it waits for network.
         // So state should be Enqueued.
-        assertEquals(State.Enqueued, fakeRepository.taskState(task.id))
-        assertFalse(job.isCompleted)
+        assertEquals(State.Enqueued, fakeRepository.taskState(task.id), "Task should be waiting for network")
+        assertFalse(job.isCompleted, "Job should not be completed")
 
         // Connect network
         fakeNetworkState.networkState.value = NetworkState.State.Connected
         advanceUntilIdle()
 
-        assertTrue(job.isCompleted)
-        assertEquals(State.Succeeded, fakeRepository.taskState(task.id))
+        assertTrue(job.isCompleted, "Job should be completed")
+        assertEquals(State.Succeeded, fakeRepository.taskState(task.id), "Task should be succeeded")
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `when network is required but not connected, task waits, when network disconnects, task cancels`() = runTest {
+        val fakeRepository = FakeRepository()
+        val fakeNetworkState = FakeNetworkState(NetworkState.State.Disconnected)
+
+        val fakeEvaluator = TaskEvaluator(
+            taskRegistry = TaskRegistry().apply {
+                register("networkTask") {
+                    {
+                        delay(10.seconds)
+                        TaskResult.success()
+                    }
+                }
+            }
+        )
+
+        val processor = TaskProcessorImpl(
+            repository = fakeRepository,
+            taskEvaluator = fakeEvaluator,
+            executionContextProvider = FakeExecutionContextProvider(),
+            taskScopeFactory = FakeTaskScopeFactory(),
+            preconditionController = TaskPreconditionController(
+                listOf(
+                    NetworkStateTaskPrecondition(fakeNetworkState)
+                )
+            )
+        )
+
+        val task = createTask(identifier = "networkTask", networkRequired = true)
+        fakeRepository.insert(task, emptySet(), emptySet())
+
+        val job = launch {
+            processor.run(task)
+        }
+
+        advanceUntilIdle()
+
+        assertEquals(State.Enqueued, fakeRepository.taskState(task.id), "Task should be waiting for network")
+        assertFalse(job.isCompleted, "Job should not be completed")
+
+        // Connect network
+        fakeNetworkState.networkState.value = NetworkState.State.Connected
+        advanceTimeBy(5.seconds)
+
+        assertEquals(State.Running, fakeRepository.taskState(task.id), "Task should be running")
+        assertFalse(job.isCompleted, "Job should not be completed")
+
+        fakeNetworkState.networkState.value = NetworkState.State.Disconnected
+        advanceTimeBy(1.seconds)
+
+        assertTrue(job.isCompleted, "Job should be completed")
+        assertEquals(State.Enqueued, fakeRepository.taskState(task.id), "Task should be enqueued")
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -268,13 +313,9 @@ class TaskProcessorTest {
         val processor = TaskProcessorImpl(
             repository = fakeRepository,
             taskEvaluator = fakeEvaluator,
-            networkState = FakeNetworkState(),
             executionContextProvider = FakeExecutionContextProvider(),
             taskScopeFactory = FakeTaskScopeFactory(),
-            capabilityEvaluator = ExecutionWindowEvaluator(
-                emptyList(),
-                FakeAppStateObserver(MutableStateFlow(true))
-            )
+            preconditionController = TaskPreconditionController(emptyList())
         )
 
         val delayDuration = 10.seconds
@@ -310,13 +351,9 @@ class TaskProcessorTest {
         val processor = TaskProcessorImpl(
             repository = fakeRepository,
             taskEvaluator = fakeEvaluator,
-            networkState = FakeNetworkState(),
             executionContextProvider = FakeExecutionContextProvider(),
             taskScopeFactory = FakeTaskScopeFactory(),
-            capabilityEvaluator = ExecutionWindowEvaluator(
-                emptyList(),
-                FakeAppStateObserver(MutableStateFlow(true))
-            )
+            preconditionController = TaskPreconditionController(emptyList())
         )
 
         val task = createTask(identifier = "exceptionTask")
@@ -348,13 +385,9 @@ class TaskProcessorTest {
         val processor = TaskProcessorImpl(
             repository = fakeRepository,
             taskEvaluator = fakeEvaluator,
-            networkState = FakeNetworkState(),
             executionContextProvider = executionContextProvider(fakeProvider),
             taskScopeFactory = FakeTaskScopeFactory(),
-            capabilityEvaluator = ExecutionWindowEvaluator(
-                emptyList(),
-                FakeAppStateObserver(MutableStateFlow(true))
-            )
+            preconditionController = TaskPreconditionController(emptyList())
         )
 
 
@@ -412,13 +445,9 @@ class TaskProcessorTest {
         val processor = TaskProcessorImpl(
             repository = fakeRepository,
             taskEvaluator = fakeEvaluator,
-            networkState = FakeNetworkState(),
             executionContextProvider = executionContextProvider(fakeProvider),
             taskScopeFactory = FakeTaskScopeFactory(),
-            capabilityEvaluator = ExecutionWindowEvaluator(
-                emptyList(),
-                FakeAppStateObserver(MutableStateFlow(true))
-            )
+            preconditionController = TaskPreconditionController(emptyList())
         )
 
 
