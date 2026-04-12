@@ -39,7 +39,7 @@ include(":db")
 include(":api")
 include(":koin")
 
-includeBuild("../guard") {
+includeBuild("external/guard") {
     dependencySubstitution {
         substitute(module("eu.tintera:guard")).using(project(":guard"))
     }
