@@ -1,5 +1,4 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -27,7 +26,7 @@ kotlin {
             "kotlin.concurrent.atomics.ExperimentalAtomicApi"
         )
     }
-    
+
     listOf(
         iosArm64(),
         iosSimulatorArm64()
@@ -39,20 +38,20 @@ kotlin {
             linkerOpts.add("-lsqlite3")
         }
     }
-    
+
     jvm()
-    
+
     //js {
     //    browser()
     //    binaries.executable()
     //}
-    
+
     //@OptIn(ExperimentalWasmDsl::class)
     //wasmJs {
     //    browser()
     //    binaries.executable()
     //}
-    
+
     sourceSets {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
