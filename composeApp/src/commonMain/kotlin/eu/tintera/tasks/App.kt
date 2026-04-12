@@ -81,9 +81,11 @@ fun App() {
                     contentPadding = PaddingValues(16.dp)
                 ) {
                     items(tasks.ongoing) {
-                        TaskInfoItem(
+                        TaskRow(
                             info = it
-                        )
+                        ) {
+                            scope.launch { taskManager.cancelTaskById(id = it.id) }
+                        }
                     }
 
                     item {
@@ -91,9 +93,11 @@ fun App() {
                     }
 
                     items(tasks.finished) {
-                        TaskInfoItem(
+                        TaskRow(
                             info = it
-                        )
+                        ) {
+                            scope.launch { taskManager.cancelTaskById(id = it.id) }
+                        }
                     }
                 }
             }

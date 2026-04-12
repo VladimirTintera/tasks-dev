@@ -1,6 +1,6 @@
 package eu.tintera.tasks.core
 
-import eu.tintera.guard.CompositeTokenProvider
+import eu.tintera.guard.CompositeTokenProducerProvider
 import eu.tintera.tasks.core.fakes.FakeToken
 import eu.tintera.tasks.core.fakes.FakeTokenProducer
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -18,7 +18,7 @@ class CompositeTokenProviderTest {
     @Test
     fun `when only one token expires, global expiration is triggered`() = runTest {
         val producer = FakeTokenProducer()
-        val provider = CompositeTokenProvider(
+        val provider = CompositeTokenProducerProvider(
             scope = ApplicationScope(SupervisorJob()),
             dispatcher = dispatchers().default,
             producers = listOf(producer)
@@ -46,7 +46,7 @@ class CompositeTokenProviderTest {
     fun `when multiple tokens exist, global expiration waits for the last one`() = runTest {
         val producerA = FakeTokenProducer()
         val producerB = FakeTokenProducer()
-        val provider = CompositeTokenProvider(
+        val provider = CompositeTokenProducerProvider(
             scope = ApplicationScope(SupervisorJob()),
             dispatcher = dispatchers().default,
             producers = listOf(producerA, producerB)
@@ -77,7 +77,7 @@ class CompositeTokenProviderTest {
     @Test
     fun `when producer emits a new token, the old one is canceled immediately`() = runTest {
         val producer = FakeTokenProducer()
-        val provider = CompositeTokenProvider(
+        val provider = CompositeTokenProducerProvider(
             scope = ApplicationScope(SupervisorJob()),
             dispatcher = dispatchers().default,
             producers = listOf(producer)
@@ -110,7 +110,7 @@ class CompositeTokenProviderTest {
 
         val producerA = FakeTokenProducer()
         val producerB = FakeTokenProducer()
-        val provider = CompositeTokenProvider(
+        val provider = CompositeTokenProducerProvider(
             scope = this,
             dispatcher = dispatchers().default,
             producers = listOf(producerA, producerB)
@@ -144,7 +144,7 @@ class CompositeTokenProviderTest {
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
         val producer1 = FakeTokenProducer()
 
-        val compositeProvider = CompositeTokenProvider(
+        val compositeProvider = CompositeTokenProducerProvider(
             scope = backgroundScope, // Poskytuje coroutines-test pro background joby
             dispatcher = dispatcher,
             producers = listOf(producer1)
@@ -168,7 +168,7 @@ class CompositeTokenProviderTest {
     fun `dynamicky pridany producer po acquire je korektne sledovan`() = runTest {
         // Arrange
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
-        val compositeProvider = CompositeTokenProvider(
+        val compositeProvider = CompositeTokenProducerProvider(
             scope = backgroundScope,
             dispatcher = dispatcher,
             producers = emptyList() // Startujeme prázdní!
@@ -194,7 +194,7 @@ class CompositeTokenProviderTest {
         // Arrange
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
         val producer = FakeTokenProducer()
-        val compositeProvider = CompositeTokenProvider(
+        val compositeProvider = CompositeTokenProducerProvider(
             scope = backgroundScope,
             dispatcher = dispatcher,
             producers = listOf(producer)
@@ -222,7 +222,7 @@ class CompositeTokenProviderTest {
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
         val producer1 = FakeTokenProducer()
         val producer2 = FakeTokenProducer()
-        val compositeProvider = CompositeTokenProvider(
+        val compositeProvider = CompositeTokenProducerProvider(
             scope = backgroundScope,
             dispatcher = dispatcher,
             producers = listOf(producer1, producer2)
@@ -248,7 +248,7 @@ class CompositeTokenProviderTest {
         // Arrange
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
         val producer = FakeTokenProducer()
-        val compositeProvider = CompositeTokenProvider(
+        val compositeProvider = CompositeTokenProducerProvider(
             scope = backgroundScope,
             dispatcher = dispatcher,
             producers = listOf(producer)

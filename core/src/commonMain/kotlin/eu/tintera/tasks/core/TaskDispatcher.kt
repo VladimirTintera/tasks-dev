@@ -4,6 +4,7 @@ import eu.tintera.tasks.EventBus
 import eu.tintera.tasks.State
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -56,20 +57,23 @@ internal class TaskDispatcher(
                 newTasks.forEach { task ->
                     val key = task.executionKey()
 
-                    val job = scope.launch(dispatchers.io) {
+                    // 1. Vytvoříme Job, ale zatím ho NEspustíme
+                    val job = scope.launch(context = dispatchers.io, start = CoroutineStart.LAZY) {
                         taskProcessor.run(task)
                     }
 
-                    // 4. Atomické přidání do mapy
+                    // 2. Nejdřív ho bezpečně zaregistrujeme do map a trackerů
                     runningJobs.update { it + (key to job) }
                     activeTaskTracker.track(task.id)
 
-                    // 5. Atomické smazání z mapy po dokončení/zrušení
-                    // (Tohle je ta krása StateFlow - nepotřebuje suspend!)
+                    // 3. Zaregistrujeme úklid
                     job.invokeOnCompletion {
                         runningJobs.update { it - key }
                         activeTaskTracker.untrack(task.id)
                     }
+
+                    // 4. Až teď ho bezpečně odstartujeme!
+                    job.start()
                 }
             }
         }

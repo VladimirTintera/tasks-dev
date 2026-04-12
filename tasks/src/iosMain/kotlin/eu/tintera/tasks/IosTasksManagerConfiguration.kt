@@ -1,6 +1,7 @@
 package eu.tintera.tasks
 
 import androidx.sqlite.SQLiteDriver
+import eu.tintera.guard.ExecutionEnvironment
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -10,7 +11,8 @@ data class IosTasksManagerConfiguration(
     val maxConcurrentTasks: Int = 10,
     val executionContextReleaseDebounce: Duration = 1.5.seconds,
     val bgProcessingTaskIdentifier: String? = null,
-    val appRefreshTaskIdentifier: String? = null
+    val appRefreshTaskIdentifier: String? = null,
+    val executionEnvironment: ExecutionEnvironment? = null,
 ) {
     init {
         bgProcessingTaskIdentifier?.also {

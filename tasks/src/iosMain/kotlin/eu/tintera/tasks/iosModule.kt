@@ -2,19 +2,14 @@ package eu.tintera.tasks
 
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import eu.tintera.guard.ExecutionContextConfig
-import eu.tintera.guard.ExecutionContextObserver
-import eu.tintera.guard.ExecutionContextObserverRegistry
-import eu.tintera.guard.ExecutionContextProvider
-import eu.tintera.guard.ExecutionEnvironmentFactory
-import eu.tintera.guard.PlatformContext
-import eu.tintera.guard.TokenProducer
+import eu.tintera.guard.*
 import eu.tintera.tasks.core.*
 import eu.tintera.tasks.db.DatabaseConfiguration
 import eu.tintera.tasks.db.databaseModule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.plus
 import org.koin.core.module.Module
+import org.koin.core.module.dsl.createdAtStart
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.bind
@@ -78,16 +73,29 @@ internal fun iosModule(
         } binds arrayOf(TokenProducer::class, ExecutionContextObserver::class)
     }
 
-
     single {
-        ExecutionEnvironmentFactory.createDefault(
+        config.executionEnvironment ?: ExecutionEnvironmentFactory.create(
             context = PlatformContext(),
             scope = get<ApplicationScope>() + Dispatchers.Default,
             config = get(),
-            tokenProducers = getAll(),
+            additionalTokenProviders = getAll(),
             observers = getAll()
         )
-    } binds arrayOf(ExecutionContextProvider::class, ExecutionContextObserverRegistry::class)
+    } binds arrayOf(ExecutionContextProvider::class, ExecutionContextObserverRegistry::class, TokenProducerRegistry::class)
 
-    singleOf(::AppLifecycleObserver) bind AppStateObserver::class
+    config.executionEnvironment?.also {
+        single(createdAtStart = true) {
+            ExecutionContextBootstrapper(
+                observerRegistry = get(),
+                tokenProducerRegistry = get(),
+                observers = getAll(),
+                tokenProducers = getAll()
+            )
+        }
+    }
+
+
+    singleOf(::AppLifecycleObserver) {
+        createdAtStart()
+    } bind AppStateObserver::class
 }
