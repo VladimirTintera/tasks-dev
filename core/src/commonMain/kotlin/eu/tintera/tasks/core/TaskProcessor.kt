@@ -181,7 +181,8 @@ internal class TaskProcessorImpl(
                             repository.updateNextRun(
                                 id = task.id,
                                 state = State.Enqueued,
-                                processTime = now + duration
+                                processTime = now + duration,
+                                progressData = Data.EMPTY
                             )
                         } else {
                             repository.updateTerminatingState(
@@ -200,7 +201,8 @@ internal class TaskProcessorImpl(
                             repository.updateNextRun(
                                 id = task.id,
                                 state = State.Enqueued,
-                                processTime = now + duration
+                                processTime = now + duration,
+                                progressData = Data.EMPTY
                             )
                         } else {
                             repository.updateTerminatingState(
@@ -213,11 +215,12 @@ internal class TaskProcessorImpl(
                     }
 
                     TaskResult.Retry -> {
-                        val backoff = task.backoffCriteriaOrDefault.calculate(task.runAttemptCount)
+                        val backoff = task.backoffCriteriaOrDefault.calculate(task.runAttemptCount + 1)
                         repository.updateNextRun(
                             id = task.id,
                             state = State.Enqueued,
-                            processTime = now + backoff
+                            processTime = now + backoff,
+                            progressData = Data.EMPTY
                         )
                     }
                 }
@@ -227,7 +230,8 @@ internal class TaskProcessorImpl(
                 repository.updateNextRun(
                     id = task.id,
                     state = State.Enqueued,
-                    processTime = now
+                    processTime = now,
+                    progressData = Data.EMPTY
                 )
             }
         }

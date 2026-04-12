@@ -82,7 +82,10 @@ fun App() {
                 ) {
                     items(tasks.ongoing) {
                         TaskRow(
-                            info = it
+                            info = it,
+                            onRetryClick = {
+                                TestHandler.interrupt(it.id)
+                            }
                         ) {
                             scope.launch { taskManager.cancelTaskById(id = it.id) }
                         }

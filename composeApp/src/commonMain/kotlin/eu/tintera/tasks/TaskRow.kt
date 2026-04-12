@@ -1,5 +1,6 @@
 package eu.tintera.tasks
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -14,15 +15,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import co.touchlab.kermit.Logger
 import org.jetbrains.compose.resources.painterResource
 import taskmanager.composeapp.generated.resources.Res
+import taskmanager.composeapp.generated.resources.cancel_24dp_1f1f1f_fill0_wght400_grad0_opsz24
 import taskmanager.composeapp.generated.resources.close_24dp_1f1f1f_fill0_wght400_grad0_opsz24
 
 @Composable
 fun TaskRow(
     info: TaskInfo,
-    onCancelClick: () -> Unit
+    onRetryClick: (() -> Unit)? = null,
+    onCancelClick: () -> Unit,
 ) {
     val stateColor = when (info.state) {
         State.Running -> Color(0xFF4CAF50)
@@ -108,7 +110,7 @@ fun TaskRow(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "ID: $shortId... | Pokusy: ${info.runAttemptCount}",
+                    text = "ID: $shortId... | Run attempts: ${info.runAttemptCount}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -123,12 +125,26 @@ fun TaskRow(
             // 3. Tlačítko pro zrušení
             if (info.state == State.Running || info.state == State.Enqueued || info.state == State.Blocked) {
                 Spacer(modifier = Modifier.width(8.dp))
-                IconButton(onClick = onCancelClick) {
-                    Icon(
-                        painter = painterResource(Res.drawable.close_24dp_1f1f1f_fill0_wght400_grad0_opsz24),
-                        contentDescription = "Zrušit Task",
-                        tint = MaterialTheme.colorScheme.error
-                    )
+                Column {
+                    IconButton(onClick = onCancelClick) {
+                        Icon(
+                            painter = painterResource(Res.drawable.close_24dp_1f1f1f_fill0_wght400_grad0_opsz24),
+                            contentDescription = "Cancel Task",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+
+                    AnimatedVisibility(info.state == State.Running) {
+                        onRetryClick?.also {
+                            IconButton(onClick = onRetryClick) {
+                                Icon(
+                                    painter = painterResource(Res.drawable.cancel_24dp_1f1f1f_fill0_wght400_grad0_opsz24),
+                                    contentDescription = "Retry Task",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

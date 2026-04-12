@@ -29,11 +29,13 @@ internal class DatabaseRepository(
     override suspend fun updateNextRun(
         id: Uuid,
         processTime: Instant,
-        state: State
+        state: State,
+        progressData: Data
     ) = taskDao.updateRetry(
         id = id,
         processTime = processTime,
-        state = state.toEntityState()
+        state = state.toEntityState(),
+        progress = progressData.toSerializableTaskData()
     )
 
     override suspend fun updateRunAttemptCount(

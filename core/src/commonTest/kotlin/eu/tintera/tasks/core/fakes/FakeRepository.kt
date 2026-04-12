@@ -44,14 +44,16 @@ class FakeRepository : Repository {
     override suspend fun updateNextRun(
         id: Uuid,
         processTime: Instant,
-        state: State
+        state: State,
+        progressData: Data
     ) {
         tasks.update { currentTasks ->
             currentTasks.map {
                 if (it.id == id) {
                     it.copy(
                         state = state,
-                        processTime = processTime
+                        processTime = processTime,
+                        progressData = progressData
                     )
                 } else {
                     it

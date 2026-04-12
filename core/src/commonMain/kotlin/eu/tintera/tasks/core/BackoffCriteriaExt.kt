@@ -8,17 +8,20 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 fun BackoffCriteria.calculate(runAttemptCount: Int): Duration {
-    val attempt = runAttemptCount.coerceAtLeast(0)
+    // Pokud je hodnota 0 (např. ruční retry před prvním reálným během), budeme to brát jako 1. pokus.
+    val attempt = runAttemptCount.coerceAtLeast(1)
     val baseDelay = delay.coerceAtLeast(MIN_BACKOFF_DELAY)
 
     return when (backoffPolicy) {
         BackoffPolicy.Linear -> {
-            (baseDelay * (attempt + 1)).coerceAtMost(MAX_BACKOFF_DELAY)
+            // Změna: Už nepřičítáme +1
+            (baseDelay * attempt).coerceAtMost(MAX_BACKOFF_DELAY)
         }
 
         BackoffPolicy.Exponential -> {
             var currentDelay = baseDelay
-            repeat(attempt) {
+            // Změna: Opakujeme o jedenkrát méně. Pro attempt = 1 se repeat neprovede vůbec.
+            repeat(attempt - 1) {
                 currentDelay *= 2
                 if (currentDelay >= MAX_BACKOFF_DELAY) {
                     return MAX_BACKOFF_DELAY
