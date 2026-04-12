@@ -1,9 +1,11 @@
 package eu.tintera.tasks.core
 
+import eu.tintera.tasks.State
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
@@ -12,6 +14,7 @@ internal class TaskDispatcher(
     private val taskProcessor: TaskProcessor,
     private val repository: Repository,
     private val scope: ApplicationScope,
+    private val appStateObserver: AppStateObserver,
     dispatchers: AppDispatchers
 ) {
     private fun tasks() = repository.tasksByState(runningStates).distinctUntilChanged()
@@ -19,6 +22,12 @@ internal class TaskDispatcher(
     private fun Task.executionKey() = ExecutionKey(id, processTime)
 
     init {
+        scope.launch(dispatchers.io) {
+            appStateObserver.isBackground.filter { !it }.collect {
+                recoverStuckTasks()
+            }
+        }
+
         scope.launch(dispatchers.io) {
 
             val runningJobs = mutableMapOf<ExecutionKey, Job>()
@@ -48,6 +57,13 @@ internal class TaskDispatcher(
                 }
             }
         }
+    }
+
+    private suspend fun recoverStuckTasks() {
+        repository.resetState(
+            from = State.Running,
+            to = State.Enqueued
+        )
     }
 
     companion object {
