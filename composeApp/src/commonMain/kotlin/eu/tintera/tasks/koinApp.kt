@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.koin.core.context.startKoin
+import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.KoinAppDeclaration
 import org.koin.dsl.module
 
@@ -20,6 +21,7 @@ fun koinApp(
         tasksKoinModule(),
         module {
             taskHandlerOf(::TestHandler)
+            viewModelOf(::MainViewModel)
 
             single(createdAtStart = true) {
                 object {

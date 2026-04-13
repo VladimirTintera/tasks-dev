@@ -23,8 +23,7 @@ import taskmanager.composeapp.generated.resources.close_24dp_1f1f1f_fill0_wght40
 @Composable
 fun TaskRow(
     info: TaskInfo,
-    onRetryClick: (() -> Unit)? = null,
-    onCancelClick: () -> Unit,
+    actions: @Composable () -> Unit = {}
 ) {
     val stateColor = when (info.state) {
         State.Running -> Color(0xFF4CAF50)
@@ -123,31 +122,7 @@ fun TaskRow(
                 )
             }
 
-            // 3. Tlačítko pro zrušení
-            if (info.state == State.Running || info.state == State.Enqueued || info.state == State.Blocked) {
-                Spacer(modifier = Modifier.width(8.dp))
-                Column {
-                    IconButton(onClick = onCancelClick) {
-                        Icon(
-                            painter = painterResource(Res.drawable.close_24dp_1f1f1f_fill0_wght400_grad0_opsz24),
-                            contentDescription = "Cancel Task",
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    }
-
-                    AnimatedVisibility(info.state == State.Running) {
-                        onRetryClick?.also {
-                            IconButton(onClick = onRetryClick) {
-                                Icon(
-                                    painter = painterResource(Res.drawable.cancel_24dp_1f1f1f_fill0_wght400_grad0_opsz24),
-                                    contentDescription = "Retry Task",
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+            actions()
         }
 
         ProgressSection(info.progress.map)

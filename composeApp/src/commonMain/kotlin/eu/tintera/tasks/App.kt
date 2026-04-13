@@ -1,75 +1,64 @@
 package eu.tintera.tasks
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.retain.retain
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import eu.tintera.tasks.handlers.TestHandler
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
-import org.koin.compose.koinInject
+import org.jetbrains.compose.resources.painterResource
+import org.koin.compose.viewmodel.koinViewModel
+import taskmanager.composeapp.generated.resources.Res
+import taskmanager.composeapp.generated.resources.cancel_24dp_1f1f1f_fill0_wght400_grad0_opsz24
+import taskmanager.composeapp.generated.resources.close_24dp_1f1f1f_fill0_wght400_grad0_opsz24
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview
 fun App() {
     MaterialTheme {
 
-        val taskManager = koinInject<TaskManager>()
-        val scope = rememberCoroutineScope()
+        val viewModel = koinViewModel<MainViewModel>()
 
-        val tasks by retain(taskManager) {
-            combine(
-                taskManager.taskInfosByTag("SuccessTask"),
-                taskManager.taskInfosByTag("sys:task_manager_cleanup")
-            ) {
-                it.flatMap { it }
-            }.map {
-                val finished = it.filter {
-                    it.state == State.Succeeded || it.state == State.Failed || it.state == State.Cancelled
-                }
+        val tasks by viewModel.tasks.collectAsStateWithLifecycle()
 
-                TaskState(
-                    finished = finished.sortedBy { it.nextScheduledTime },
-                    ongoing = (it - finished.toSet()).sortedBy { it.nextScheduledTime }
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Tasks") },
+                    actions = {
+                        IconButton(onClick = viewModel::cancelTasks) {
+                            Icon(
+                                painter = painterResource(Res.drawable.close_24dp_1f1f1f_fill0_wght400_grad0_opsz24),
+                                contentDescription = "Cancel all tasks"
+                            )
+                        }
+                    }
                 )
-            }.stateIn(scope, SharingStarted.Eagerly, TaskState(emptyList(), emptyList()))
-        }.collectAsStateWithLifecycle()
-
-        Scaffold { paddingValues ->
+            }
+        ) { paddingValues ->
 
             Column(
                 modifier = Modifier.fillMaxSize().padding(paddingValues).consumeWindowInsets(paddingValues),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Button(
-                    onClick = {
-                        scope.launch {
-                            taskManager.enqueueTask(
-                                taskRequest<TestHandler>(
-                                    tags = setOf("SuccessTask"),
-                                    constraints = Constraints(
-                                        requiresDeviceIdle = false,
-                                        requiresNetwork = true
-                                    )
-                                )
-                            )
-                        }
-                    }
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Text("Schedule simple success")
+                    Button(
+                        onClick = viewModel::enqueueTask
+                    ) { Text("Enqueue task") }
                 }
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -78,12 +67,32 @@ fun App() {
                 ) {
                     items(tasks.ongoing) {
                         TaskRow(
-                            info = it,
-                            onRetryClick = {
-                                TestHandler.interrupt(it.id)
-                            }
+                            info = it
                         ) {
-                            scope.launch { taskManager.cancelTaskById(id = it.id) }
+                            if (it.state == State.Running || it.state == State.Enqueued || it.state == State.Blocked) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    IconButton(onClick = { viewModel.cancelTaskGyId(it.id) }) {
+                                        Icon(
+                                            painter = painterResource(Res.drawable.close_24dp_1f1f1f_fill0_wght400_grad0_opsz24),
+                                            contentDescription = "Cancel Task",
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+
+                                    AnimatedVisibility(it.state == State.Running) {
+                                        IconButton(onClick = {
+                                            TestHandler.interrupt(it.id)
+                                        }) {
+                                            Icon(
+                                                painter = painterResource(Res.drawable.cancel_24dp_1f1f1f_fill0_wght400_grad0_opsz24),
+                                                contentDescription = "Retry Task",
+                                                tint = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -92,11 +101,7 @@ fun App() {
                     }
 
                     items(tasks.finished) {
-                        TaskRow(
-                            info = it
-                        ) {
-                            scope.launch { taskManager.cancelTaskById(id = it.id) }
-                        }
+                        TaskRow(info = it)
                     }
                 }
             }
