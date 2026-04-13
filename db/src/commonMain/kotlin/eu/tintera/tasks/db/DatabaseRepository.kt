@@ -79,12 +79,12 @@ internal class DatabaseRepository(
         task: Task,
         tags: Set<String>,
         parentIds: Set<Uuid>
-    ) {
+    ) = withTransaction {
         taskDao.insert(
             task.toTaskEntity()
         )
 
-        taskTagDao.insert(
+        if (tags.isNotEmpty()) taskTagDao.insert(
             tags.map {
                 TaskTag(
                     taskId = task.id,
