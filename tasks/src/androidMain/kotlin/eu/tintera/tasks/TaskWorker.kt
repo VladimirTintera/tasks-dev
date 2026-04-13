@@ -44,7 +44,7 @@ internal class TaskWorker(
         }
 
         result?.also {
-            EventBus.send("TaskWorker", "Task finishded '${taskIdentifier}', result = $result")
+            EventBus.send("TaskWorker", "Task finished '${taskIdentifier}', result = $result")
         }
 
         return when (result) {

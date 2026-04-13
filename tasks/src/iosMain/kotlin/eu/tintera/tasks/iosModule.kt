@@ -5,7 +5,6 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import eu.tintera.guard.*
 import eu.tintera.tasks.core.*
 import eu.tintera.tasks.db.DatabaseConfiguration
-import eu.tintera.tasks.db.databaseModule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.plus
 import org.koin.core.module.Module
@@ -20,7 +19,7 @@ internal fun iosModule(
     config: IosTasksManagerConfiguration
 ): Module = module {
 
-    includes(databaseModule, coreModule)
+    includes(coreModule)
 
     single {
         TaskProcessorConfig(
@@ -58,7 +57,7 @@ internal fun iosModule(
                 appLifecycleObserver = get(),
                 isAppRefreshTaskAllowed = config.appRefreshTaskIdentifier != null
             )
-        } binds arrayOf(TokenProducer::class, ExecutionContextObserver::class)
+        } binds arrayOf(TokenProducer::class, ExecutionContextObserver::class, TaskPrecondition::class)
     }
 
     config.appRefreshTaskIdentifier?.also { identifier ->
@@ -81,7 +80,11 @@ internal fun iosModule(
             additionalTokenProviders = getAll(),
             observers = getAll()
         )
-    } binds arrayOf(ExecutionContextProvider::class, ExecutionContextObserverRegistry::class, TokenProducerRegistry::class)
+    } binds arrayOf(
+        ExecutionContextProvider::class,
+        ExecutionContextObserverRegistry::class,
+        TokenProducerRegistry::class
+    )
 
     config.executionEnvironment?.also {
         single(createdAtStart = true) {

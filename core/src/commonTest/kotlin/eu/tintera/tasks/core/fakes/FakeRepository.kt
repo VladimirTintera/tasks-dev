@@ -45,7 +45,8 @@ class FakeRepository : Repository {
         id: Uuid,
         processTime: Instant,
         state: State,
-        progressData: Data
+        progressData: Data,
+        runAttemptsCount: Int?
     ) {
         tasks.update { currentTasks ->
             currentTasks.map {
@@ -53,7 +54,8 @@ class FakeRepository : Repository {
                     it.copy(
                         state = state,
                         processTime = processTime,
-                        progressData = progressData
+                        progressData = progressData,
+                        runAttemptCount = runAttemptsCount ?: it.runAttemptCount
                     )
                 } else {
                     it

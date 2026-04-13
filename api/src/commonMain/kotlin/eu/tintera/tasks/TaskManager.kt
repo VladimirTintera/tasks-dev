@@ -13,7 +13,7 @@ interface TaskManager {
 
     suspend fun enqueueUniqueTask(
         task: TaskRequest,
-        uniqueName: String = task.handler.fullName,
+        uniqueName: String = task.identifier,
         existingTaskPolicy: ExistingTaskPolicy = ExistingTaskPolicy.Keep
     ) : Uuid
 
@@ -34,7 +34,7 @@ interface TaskManager {
     suspend fun enqueuePeriodicUniqueTask(
         task: TaskRequest,
         repeatInterval: Duration,
-        uniqueName: String = task.handler.fullName,
+        uniqueName: String = task.identifier,
         existingTaskPolicy: ExistingPeriodicTaskPolicy = ExistingPeriodicTaskPolicy.Keep
     ) : Uuid
 

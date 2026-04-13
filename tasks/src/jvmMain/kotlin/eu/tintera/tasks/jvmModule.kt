@@ -2,13 +2,12 @@ package eu.tintera.tasks
 
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import eu.tintera.tasks.core.*
 import eu.tintera.guard.ExecutionContextConfig
 import eu.tintera.guard.ExecutionContextProvider
 import eu.tintera.guard.TokenProvider
+import eu.tintera.tasks.core.*
 import eu.tintera.tasks.db.DatabaseConfiguration
 import eu.tintera.tasks.db.JvmDatabaseConfiguration
-import eu.tintera.tasks.db.databaseModule
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
@@ -20,7 +19,7 @@ internal fun jvmModule(
     config: JvmTasksManagerConfiguration
 ): Module = module {
 
-    includes(databaseModule, coreModule)
+    includes(coreModule)
 
     factoryOf(::RepositoryTaskScopeFactory) bind TaskScopeFactory::class
 

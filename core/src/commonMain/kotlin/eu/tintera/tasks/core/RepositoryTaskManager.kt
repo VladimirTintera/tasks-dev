@@ -19,7 +19,6 @@ class RepositoryCoreTaskManager(
         uniqueName: String,
         existingTaskPolicy: ExistingTaskPolicy,
     ): Uuid = repository.withTransaction {
-        cleanOld()
 
         val existing = allUndoneByUniqueName(uniqueName)
 
@@ -42,7 +41,7 @@ class RepositoryCoreTaskManager(
 
         val t = Task(
             id = Uuid.random(),
-            identifier = task.handler.fullName,
+            identifier = task.identifier,
             uniqueName = uniqueName,
             runAttemptCount = 0,
             state = if (parentIds.isEmpty()) State.Enqueued else State.Blocked,
@@ -69,7 +68,6 @@ class RepositoryCoreTaskManager(
     override suspend fun enqueueContinuation(
         continuation: TaskContinuation,
     ) = repository.withTransaction {
-        cleanOld()
         val uniqueName = Uuid.random().toString()
         insertContinuation(
             taskContinuation = continuation,
@@ -93,7 +91,6 @@ class RepositoryCoreTaskManager(
         uniqueName: String,
         existingTaskPolicy: ExistingTaskPolicy,
     ) = repository.withTransaction {
-        cleanOld()
 
         val existing = allUndoneByUniqueName(uniqueName)
 
@@ -125,7 +122,7 @@ class RepositoryCoreTaskManager(
         state: State,
     ) = Task(
         id = Uuid.random(),
-        identifier = handler.fullName,
+        identifier = identifier,
         uniqueName = uniqueName,
         runAttemptCount = 0,
         state = state,
@@ -146,7 +143,6 @@ class RepositoryCoreTaskManager(
     override suspend fun enqueueTask(
         task: TaskRequest,
     ): Uuid = repository.withTransaction {
-        cleanOld()
         insertTask(task, Uuid.random().toString(), setOf())
     }
 
@@ -173,7 +169,7 @@ class RepositoryCoreTaskManager(
             uniqueName,
             if (parentIds.isEmpty()) State.Enqueued else State.Blocked
         )
-        insert(task, taskRequest.tags + taskRequest.handler.fullName, parentIds)
+        insert(task, taskRequest.tags + taskRequest.identifier, parentIds)
         return task.id
     }
 
@@ -183,8 +179,6 @@ class RepositoryCoreTaskManager(
         uniqueName: String,
         existingTaskPolicy: ExistingPeriodicTaskPolicy,
     ): Uuid = repository.withTransaction {
-
-        cleanOld()
 
         val existing = allByUniqueName(uniqueName)
 
@@ -207,7 +201,7 @@ class RepositoryCoreTaskManager(
 
         val t = Task(
             id = Uuid.random(),
-            identifier = task.handler.fullName,
+            identifier = task.identifier,
             uniqueName = uniqueName,
             runAttemptCount = 0,
             state = State.Enqueued,
@@ -278,10 +272,6 @@ class RepositoryCoreTaskManager(
             cancelTask(it.id)
         }
     }
-
-    private suspend fun Repository.cleanOld() = cleanOld(
-        states = terminalStates
-    )
 
     private suspend fun Repository.cancelTask(taskId: Uuid) {
         updateStateWithDescendants(

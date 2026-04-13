@@ -5,5 +5,5 @@ import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.bind
 
 internal actual fun Module.platformDb() {
-    factoryOf(::AndroidDatabaseBuilderFactory) bind AndroidDatabaseBuilderFactory::class
+    factoryOf(::AndroidDatabaseBuilderFactory) bind DatabaseBuilderFactory::class
 }

@@ -1,14 +1,20 @@
 package eu.tintera.tasks.core
 
+import android.annotation.SuppressLint
 import androidx.work.*
 import eu.tintera.tasks.*
 import eu.tintera.tasks.BackoffPolicy
 import eu.tintera.tasks.Constraints
 import eu.tintera.tasks.Data
+import eu.tintera.tasks.core.data.Repository
+import eu.tintera.tasks.core.data.Task
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
+import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Instant
 import kotlin.time.toJavaDuration
@@ -18,16 +24,17 @@ import kotlin.uuid.toKotlinUuid
 
 internal class WorkManagerCoreTaskManager(
     private val workManager: WorkManager,
+    private val repository: Repository,
 ) : CoreTaskManager {
 
     private fun TaskRequest.oneTimeWorkRequest() =
         OneTimeWorkRequestBuilder<TaskWorker>().apply {
             set(
-                handler = handler,
+                identifier = identifier,
                 initialDelay = initialDelay,
                 data = data,
                 constraints = constraints,
-                tags = tags + handler.fullName,
+                tags = tags + identifier,
                 backoffCriteria = backoffCriteria,
                 keepResultsForAtLeast = keepResultsForAtLeast
             )
@@ -39,46 +46,51 @@ internal class WorkManagerCoreTaskManager(
         uniqueName: String,
         existingTaskPolicy: ExistingTaskPolicy,
     ): Uuid {
-        val existingInfos = workManager.getWorkInfosForUniqueWorkFlow(uniqueName).first()
-
-        val request = task.oneTimeWorkRequest()
-
-        workManager.enqueueUniqueWork(
-            uniqueName,
-            existingTaskPolicy.toWorkPolicy(),
-            request
-        ).await()
 
         if (existingTaskPolicy == ExistingTaskPolicy.Keep) {
-            // Pokud je policy Keep, podíváme se, jestli existoval nějaký nedokončený task
-            val uncompletedExisting = existingInfos.firstOrNull {
-                it.state == WorkInfo.State.ENQUEUED ||
-                        it.state == WorkInfo.State.RUNNING ||
-                        it.state == WorkInfo.State.BLOCKED
-            }
-
-            // Pokud ano, WorkManager náš nový request zahodil a my vracíme ID toho starého
-            if (uncompletedExisting != null) {
-                return uncompletedExisting.id.toKotlinUuid()
+            val existingId = findExistingId(uniqueName)
+            if (existingId != null) {
+                return existingId
             }
         }
 
-        // Pro Replace, Append, nebo když Keep nic neblokoval, vracíme ID nového requestu
-        return request.id.toKotlinUuid()
+        val request = task.oneTimeWorkRequest()
+        val id = request.id.toKotlinUuid()
+
+        return withContext(NonCancellable) {
+            saveTask(
+                id = id,
+                task = task,
+                uniqueName = uniqueName
+            )
+            workManager.enqueueUniqueWork(
+                uniqueName,
+                existingTaskPolicy.toWorkPolicy(),
+                request
+            ).await()
+
+            id
+        }
     }
 
     override suspend fun enqueueTask(
         task: TaskRequest,
     ): Uuid {
         val request = task.oneTimeWorkRequest()
-        workManager.enqueue(request).await()
-        return request.id.toKotlinUuid()
+        val id = request.id.toKotlinUuid()
+        return withContext(NonCancellable) {
+            saveTask(id = id, task = task, uniqueName = "")
+            workManager.enqueue(request).await()
+            id
+        }
     }
 
     override suspend fun enqueueContinuation(continuation: TaskContinuation) {
-        workManager.beginWith(
-            continuation.tasks.map { it.oneTimeWorkRequest() }
-        ).append(continuation.next).enqueue().await()
+        withContext(NonCancellable) {
+            workManager.beginWith(
+                continuation.tasks.map { it.oneTimeWorkRequest() }
+            ).appendAndSave(continuation.next).enqueue().await()
+        }
     }
 
     override suspend fun enqueueUniqueContinuation(
@@ -89,16 +101,45 @@ internal class WorkManagerCoreTaskManager(
         workManager.beginUniqueWork(
             uniqueName,
             existingTaskPolicy.toWorkPolicy(),
-            continuation.tasks.map { it.oneTimeWorkRequest() }
-        ).append(continuation.next).enqueue().await()
+            continuation.tasks.map {
+                it.oneTimeWorkRequest()
+            }
+        ).appendAndSave(continuation.next).enqueue().await()
     }
 
-    private fun WorkContinuation.append(
+    @SuppressLint("EnqueueWork")
+    private suspend fun WorkContinuation.appendAndSave(
         taskContinuation: TaskContinuation?,
-    ): WorkContinuation = when {
-        taskContinuation == null -> this
-        taskContinuation.tasks.isEmpty() -> this
-        else -> then(taskContinuation.tasks.map { it.oneTimeWorkRequest() }).append(taskContinuation.next)
+    ): WorkContinuation {
+        if (taskContinuation == null || taskContinuation.tasks.isEmpty()) {
+            return this
+        }
+
+        // 1. Vygenerujeme navazující tasky
+        val nextRequests = taskContinuation.tasks.map { it to it.oneTimeWorkRequest() }
+
+        nextRequests.forEach { (task, request) ->
+            saveTask(
+                id = request.id.toKotlinUuid(),
+                task = task,
+                uniqueName = ""
+            )
+        }
+
+        return then(nextRequests.map { it.second }).appendAndSave(taskContinuation.next)
+    }
+
+    private suspend fun findExistingId(
+        uniqueName: String
+    ): Uuid? {
+        val existingInfos = workManager.getWorkInfosForUniqueWorkFlow(uniqueName).first()
+        val uncompletedExisting = existingInfos.firstOrNull {
+            it.state == WorkInfo.State.ENQUEUED ||
+                    it.state == WorkInfo.State.RUNNING ||
+                    it.state == WorkInfo.State.BLOCKED
+        }
+
+        return uncompletedExisting?.id?.toKotlinUuid()
     }
 
     override suspend fun enqueuePeriodicUniqueTask(
@@ -108,53 +149,49 @@ internal class WorkManagerCoreTaskManager(
         existingTaskPolicy: ExistingPeriodicTaskPolicy,
     ): Uuid {
 
-        val existingInfos = workManager.getWorkInfosForUniqueWorkFlow(uniqueName).first()
+        if (existingTaskPolicy == ExistingPeriodicTaskPolicy.Keep) {
+            val existingId = findExistingId(uniqueName)
+            if (existingId != null) {
+                return existingId
+            }
+        }
 
         val request = PeriodicWorkRequestBuilder<TaskWorker>(
             repeatInterval.coerceAtLeast(MINIMAL_REPEAT_INTERVAL).inWholeMilliseconds,
             TimeUnit.MILLISECONDS
         ).apply {
             set(
-                handler = task.handler,
+                identifier = task.identifier,
                 initialDelay = task.initialDelay,
                 data = task.data,
                 constraints = task.constraints,
-                tags = task.tags + uniqueName + task.handler.fullName,
+                tags = task.tags + uniqueName + task.identifier,
                 backoffCriteria = task.backoffCriteria,
                 keepResultsForAtLeast = task.keepResultsForAtLeast
             )
         }.build()
 
-        workManager.enqueueUniquePeriodicWork(
-            uniqueName,
-            when (existingTaskPolicy) {
-                ExistingPeriodicTaskPolicy.Keep -> ExistingPeriodicWorkPolicy.KEEP
-                ExistingPeriodicTaskPolicy.Replace -> ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE
-            },
-            request
-        ).await()
 
-        // 3. Rozhodneme, jaké ID vrátit
-        if (existingTaskPolicy == ExistingPeriodicTaskPolicy.Keep) {
-            // Pokud je policy Keep, podíváme se, jestli existoval nějaký nedokončený task
-            val uncompletedExisting = existingInfos.firstOrNull {
-                it.state == WorkInfo.State.ENQUEUED ||
-                        it.state == WorkInfo.State.RUNNING ||
-                        it.state == WorkInfo.State.BLOCKED
-            }
+        val id = request.id.toKotlinUuid()
 
-            // Pokud ano, WorkManager náš nový request zahodil a my vracíme ID toho starého
-            if (uncompletedExisting != null) {
-                return uncompletedExisting.id.toKotlinUuid()
-            }
+        return withContext(NonCancellable) {
+            saveTask(id = id, task = task, uniqueName = uniqueName)
+            workManager.enqueueUniquePeriodicWork(
+                uniqueName,
+                when (existingTaskPolicy) {
+                    ExistingPeriodicTaskPolicy.Keep -> ExistingPeriodicWorkPolicy.KEEP
+                    ExistingPeriodicTaskPolicy.Replace -> ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE
+                },
+                request
+            ).await()
+
+            // Pro Replace, Append, nebo když Keep nic neblokoval, vracíme ID nového requestu
+            id
         }
-
-        // Pro Replace, Append, nebo když Keep nic neblokoval, vracíme ID nového requestu
-        return request.id.toKotlinUuid()
     }
 
     private fun <B : WorkRequest.Builder<B, *>, W : WorkRequest> WorkRequest.Builder<B, W>.set(
-        handler: KClass<out TaskHandler>,
+        identifier: String,
         initialDelay: Duration,
         data: Data,
         constraints: Constraints,
@@ -163,7 +200,7 @@ internal class WorkManagerCoreTaskManager(
         keepResultsForAtLeast: Duration
     ) {
         val inputData =
-            androidx.work.Data.Builder().putString(TaskWorker.TASK_IDENTIFIER, handler.fullName)
+            androidx.work.Data.Builder().putString(TaskWorker.TASK_IDENTIFIER, identifier)
                 .putAll(data.map).build()
         setInputData(inputData)
         if (constraints.requiresNetwork || constraints.requiresDeviceIdle)
@@ -190,7 +227,7 @@ internal class WorkManagerCoreTaskManager(
 
         keepResultsForAtLeast(keepResultsForAtLeast.toJavaDuration())
 
-        addTag(handler.fullName)
+        addTag(identifier)
         tags.forEach {
             addTag(it)
         }
@@ -233,5 +270,33 @@ internal class WorkManagerCoreTaskManager(
             nextScheduledTime = Instant.fromEpochMilliseconds(nextScheduleTimeMillis),
             progress = progress.toData()
         )
+    }
+
+    private suspend fun saveTask(
+        id: Uuid,
+        task: TaskRequest,
+        uniqueName: String,
+    ) {
+        val t = Task(
+            id = id,
+            identifier = task.identifier,
+            uniqueName = uniqueName,
+            runAttemptCount = 0,
+            state = State.Succeeded,
+            processTime = Clock.System.now(),
+            inputData = task.data,
+            outputData = Data.EMPTY,
+            networkRequired = task.constraints.requiresNetwork,
+            createdAt = Clock.System.now(),
+            finishedAt = null,
+            repeatInterval = null,
+            initialDelay = task.initialDelay,
+            backoffCriteria = task.backoffCriteria ?: BackoffCriteria.DEFAULT,
+            progressData = Data.EMPTY,
+            retentionDelay = task.keepResultsForAtLeast,
+            requiresDeviceIdle = task.constraints.requiresDeviceIdle
+        )
+
+        repository.insert(task = t, tags = emptySet(), parentIds = emptySet())
     }
 }

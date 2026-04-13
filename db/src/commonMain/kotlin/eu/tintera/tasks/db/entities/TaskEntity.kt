@@ -49,8 +49,14 @@ internal data class TaskEntity(
 @Dao
 internal interface TaskDao {
 
-    @Query("UPDATE Task set state = :state, processTime = :processTime, progressData = :progress WHERE id = :id")
-    suspend fun updateRetry(id: Uuid, processTime: Instant, state: State, progress: SerializableTaskData)
+    @Query("UPDATE Task set state = :state, processTime = :processTime, progressData = :progress, runAttemptCount = (CASE WHEN :runAttemptCount IS NULL THEN runAttemptCount ELSE :runAttemptCount END) WHERE id = :id")
+    suspend fun updateRetry(
+        id: Uuid,
+        processTime: Instant,
+        state: State,
+        progress: SerializableTaskData,
+        runAttemptCount: Int?
+    )
 
     @Query("UPDATE Task set runAttemptCount = :runAttemptCount WHERE id = :id")
     suspend fun updateRunAttemptCount(id: Uuid, runAttemptCount: Int)

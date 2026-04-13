@@ -72,12 +72,13 @@ fun TaskRow(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Tagy
-                    Row(
+                    FlowRow(
                         modifier = Modifier
                             .weight(1f)
-                            .horizontalScroll(rememberScrollState())
+                            //.horizontalScroll(rememberScrollState())
                             .padding(end = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         info.tags.forEach { tag ->
                             // Pokud je tag plný název třídy, vezmeme jen konec

@@ -1,18 +1,9 @@
 package eu.tintera.tasks
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -24,8 +15,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import eu.tintera.tasks.handlers.TestHandler
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -40,7 +31,12 @@ fun App() {
         val scope = rememberCoroutineScope()
 
         val tasks by retain(taskManager) {
-            taskManager.taskInfosByTag("SuccessTask").map {
+            combine(
+                taskManager.taskInfosByTag("SuccessTask"),
+                taskManager.taskInfosByTag("sys:task_manager_cleanup")
+            ) {
+                it.flatMap { it }
+            }.map {
                 val finished = it.filter {
                     it.state == State.Succeeded || it.state == State.Failed || it.state == State.Cancelled
                 }

@@ -2,8 +2,7 @@ package eu.tintera.tasks.core
 
 import eu.tintera.tasks.State
 
-
-internal val terminalStates: Set<State>
+ val terminalStates: Set<State>
     get() = setOf(
         State.Cancelled, State.Succeeded, State.Failed
     )

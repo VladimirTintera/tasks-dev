@@ -5,7 +5,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 
 data class TaskRequest(
-    val handler: KClass<out TaskHandler>,
+    val identifier: String,
     val initialDelay: Duration = Duration.ZERO,
     val data: Data = Data.EMPTY,
     val constraints: Constraints = Constraints.EMPTY,
@@ -22,7 +22,7 @@ inline fun <reified T : TaskHandler> taskRequest(
     backoffCriteria: BackoffCriteria? = null,
     keepResultsForAtLeast: Duration = 24.hours
 ) = TaskRequest(
-    handler = T::class,
+    identifier = T::class.fullName,
     initialDelay = initialDelay,
     data = data,
     constraints = constraints,
