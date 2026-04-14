@@ -9,9 +9,14 @@ import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.WorkerParameters
+import eu.tintera.tasks.core.ExecutionResult
 import eu.tintera.tasks.core.TaskEvaluator
+import eu.tintera.tasks.core.TaskResultProcessor
+import eu.tintera.tasks.core.data.Repository
+import eu.tintera.tasks.core.nonTerminalStates
 import eu.tintera.tasks.koin.TasksKoinComponent
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.first
 import org.koin.core.component.inject
 import kotlin.uuid.Uuid
 import kotlin.uuid.toKotlinUuid
@@ -26,6 +31,8 @@ internal class TaskWorker(
     }
 
     private val taskEvaluator: TaskEvaluator by inject()
+    private val repository: Repository by inject()
+    private val taskResultProcessor: TaskResultProcessor by inject()
 
     override suspend fun doWork(): Result {
 
@@ -37,24 +44,36 @@ internal class TaskWorker(
 
         EventBus.send("TaskWorker", "Task started '$taskIdentifier', data = ${inputData.toData()}")
 
+        val taskId = id.toKotlinUuid()
+
+        repository.updateState(
+            id = taskId,
+            state = State.Running,
+            allowedSourceStates = nonTerminalStates.toSet(),
+            resetProcessTime = true
+        )
+
         val result = with(taskEvaluator) {
             with(taskScope()) {
                 handle(taskIdentifier = taskIdentifier)
             }
-        }
+        } ?: TaskResult.failure()
 
-        result?.also {
-            EventBus.send("TaskWorker", "Task finished '${taskIdentifier}', result = $result")
-        }
+        EventBus.send("TaskWorker", "Task finished '${taskIdentifier}', result = $result")
 
-        return when (result) {
-            null -> Result.failure()
+        val workResult = when (result) {
             TaskResult.Failure -> Result.failure()
             TaskResult.Retry -> Result.retry()
             is TaskResult.Success -> Result.success(
                 Data.Builder().putAll(result.outputData.map).build()
             )
         }
+        repository.task(taskId).first()?.also {
+            taskResultProcessor.handleResult(it, ExecutionResult.Finished(result))
+        }
+
+
+        return workResult
     }
 
     private suspend fun internalSetForegroundInfo(

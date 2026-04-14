@@ -12,5 +12,6 @@ data class TaskInfo(
     val runAttemptCount: Int,
     val outputData: Data,
     val nextScheduledTime: Instant?,
-    val progress: Data
+    val progress: Data,
+    val finishedAt: Instant?
 )

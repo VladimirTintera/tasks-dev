@@ -30,7 +30,8 @@ internal class TaskProcessorImpl(
     private val executionContextProvider: ExecutionContextProvider,
     private val taskScopeFactory: TaskScopeFactory,
     config: TaskProcessorConfig = TaskProcessorConfig(),
-    private val preconditionController: TaskPreconditionController
+    private val preconditionController: TaskPreconditionController,
+    private val taskResultProcessor: TaskResultProcessor
 ) : TaskProcessor {
 
     private val concurrencySemaphore = Semaphore(config.maxConcurrentTasks)
@@ -85,7 +86,7 @@ internal class TaskProcessorImpl(
             val result = ExecutionResult.Finished(TaskResult.failure())
             withContext(NonCancellable) {
                 EventBus.send(TAG, "task finished '${task.identifier}', result = $result")
-                handleTaskResult(task, result)
+                taskResultProcessor.handleResult(task, result)
             }
             return null // Konec, nepokračujeme
         }
@@ -153,7 +154,7 @@ internal class TaskProcessorImpl(
 
         withContext(NonCancellable) {
             EventBus.send(TAG, "Task finished '${task.identifier}', result = $taskResult")
-            handleTaskResult(task, taskResult)
+            taskResultProcessor.handleResult(task, taskResult)
         }
     }
 
@@ -168,78 +169,6 @@ internal class TaskProcessorImpl(
         allowedSourceStates = state.allowedSourceStatesForChangeTo().toSet(),
         resetProcessTime = resetProcessTime
     )
-
-    private suspend fun handleTaskResult(task: Task, result: ExecutionResult) {
-        val now = Clock.System.now()
-        when (result) {
-            is ExecutionResult.Finished -> {
-                when (val taskResult = result.result) {
-                    TaskResult.Failure -> {
-                        val duration = task.repeatInterval
-                        if (duration != null) {
-                            repository.updateNextRun(
-                                id = task.id,
-                                state = State.Enqueued,
-                                processTime = now + duration,
-                                progressData = Data.EMPTY,
-                                runAttemptCount = 0
-                            )
-                        } else {
-                            repository.updateTerminatingState(
-                                id = task.id,
-                                state = State.Failed,
-                                finishedAt = now,
-                                outputData = Data.EMPTY
-                            )
-                        }
-                    }
-
-                    is TaskResult.Success -> {
-                        val duration = task.repeatInterval
-
-                        if (duration != null) {
-                            repository.updateNextRun(
-                                id = task.id,
-                                state = State.Enqueued,
-                                processTime = now + duration,
-                                progressData = Data.EMPTY,
-                                runAttemptCount = 0
-                            )
-                        } else {
-                            repository.updateTerminatingState(
-                                id = task.id,
-                                state = State.Succeeded,
-                                finishedAt = now,
-                                outputData = taskResult.outputData
-                            )
-                        }
-                    }
-
-                    TaskResult.Retry -> {
-                        val backoff = task.backoffCriteriaOrDefault.calculate(task.runAttemptCount + 1)
-                        repository.updateNextRun(
-                            id = task.id,
-                            state = State.Enqueued,
-                            processTime = now + backoff,
-                            progressData = Data.EMPTY,
-                            runAttemptCount = null
-                        )
-                    }
-                }
-            }
-
-            ExecutionResult.Yielded -> {
-                repository.updateNextRun(
-                    id = task.id,
-                    state = State.Enqueued,
-                    processTime = now,
-                    progressData = Data.EMPTY,
-                    runAttemptCount = null
-                )
-            }
-        }
-
-    }
 
     private suspend fun waitForProcessTime(time: Instant) {
         val now = Clock.System.now()

@@ -19,7 +19,7 @@ internal fun iosModule(
     config: IosTasksManagerConfiguration
 ): Module = module {
 
-    includes(coreModule)
+    includes(engineModule)
 
     single {
         TaskProcessorConfig(

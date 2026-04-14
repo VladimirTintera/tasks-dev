@@ -31,6 +31,8 @@ interface Repository {
 
     fun taskById(id: Uuid): Flow<FullTask?>
 
+    fun tasksByIds(ids: Set<Uuid>) : Flow<List<Task>>
+
     fun tasksByState(states: List<State>): Flow<List<Task>>
 
     suspend fun childrenForTask(id: Uuid): List<Uuid>

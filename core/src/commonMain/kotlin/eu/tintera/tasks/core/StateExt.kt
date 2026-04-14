@@ -9,7 +9,7 @@ import eu.tintera.tasks.State
 
 internal val runningStates = listOf(State.Enqueued, State.Blocked, State.Running)
 
-internal val nonTerminalStates = State.entries.filterNot { it in terminalStates }
+val nonTerminalStates = State.entries.filterNot { it in terminalStates }
 
 fun State.terminal(): Boolean = when {
     terminalStates.contains(this) -> true

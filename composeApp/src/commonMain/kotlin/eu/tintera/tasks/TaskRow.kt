@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -18,10 +19,13 @@ import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.painterResource
 import taskmanager.composeapp.generated.resources.Res
 import taskmanager.composeapp.generated.resources.cancel_24dp_1f1f1f_fill0_wght400_grad0_opsz24
+import taskmanager.composeapp.generated.resources.check_24dp_1f1f1f_fill0_wght400_grad0_opsz24
 import taskmanager.composeapp.generated.resources.close_24dp_1f1f1f_fill0_wght400_grad0_opsz24
+import taskmanager.composeapp.generated.resources.schedule_24dp_1f1f1f_fill0_wght400_grad0_opsz24
 
 @Composable
 fun TaskRow(
+    modifier: Modifier = Modifier,
     info: TaskInfo,
     actions: @Composable () -> Unit = {}
 ) {
@@ -37,7 +41,7 @@ fun TaskRow(
     val shortId = info.id.toString().take(8)
 
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp),
         shape = RoundedCornerShape(12.dp),
@@ -116,11 +120,53 @@ fun TaskRow(
                 )
 
                 AnimatedVisibility(info.nextScheduledTime != null) {
-                    Text(
-                        text = info.nextScheduledTime.toString(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    )
+                    CompositionLocalProvider(
+                        LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    ) {
+                        Row(
+                            modifier = Modifier.background(
+                                MaterialTheme.colorScheme.surfaceVariant,
+                                shape = CircleShape
+                            ).padding(4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                modifier = Modifier.size(16.dp),
+                                painter = painterResource(Res.drawable.schedule_24dp_1f1f1f_fill0_wght400_grad0_opsz24),
+                                contentDescription = "Scheduled at"
+                            )
+                            Text(
+                                text = info.nextScheduledTime.toString(),
+                                style = MaterialTheme.typography.labelSmall,
+                            )
+                        }
+                    }
+                }
+
+                AnimatedVisibility(info.finishedAt != null) {
+                    CompositionLocalProvider(
+                        LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    ) {
+                        Row(
+                            modifier = Modifier.background(
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                shape = CircleShape
+                            ).padding(4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                modifier = Modifier.size(16.dp),
+                                painter = painterResource(Res.drawable.check_24dp_1f1f1f_fill0_wght400_grad0_opsz24),
+                                contentDescription = "Finished at"
+                            )
+                            Text(
+                                text = info.finishedAt.toString(),
+                                style = MaterialTheme.typography.labelSmall,
+                            )
+                        }
+                    }
                 }
             }
 

@@ -8,6 +8,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
+import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.db.BackoffCriteria
 import eu.tintera.tasks.db.SerializableTaskData
 import eu.tintera.tasks.db.State
@@ -67,7 +68,7 @@ internal interface TaskDao {
     @Query("UPDATE Task set state = :state, processTime = (CASE WHEN :resetProcessTime THEN NULL ELSE processTime END) WHERE id = :id AND state IN (:allowedSourceStates)")
     suspend fun updateState(id: Uuid, state: State, allowedSourceStates: List<State>, resetProcessTime: Boolean)
 
-    @Query("UPDATE Task set state = :state, finishedAt = :finishedAt, outputData = :outputData, processTime = NULL WHERE id = :id")
+    @Query("UPDATE Task set state = :state, finishedAt = :finishedAt, outputData = :outputData, processTime = NULL, progressData = null  WHERE id = :id")
     suspend fun updateTerminatingState(
         id: Uuid,
         state: State,
@@ -92,6 +93,9 @@ internal interface TaskDao {
 
     @Query("SELECT * FROM Task WHERE id = :id")
     fun task(id: Uuid): Flow<TaskEntity?>
+
+    @Query("SELECT * FROM Task WHERE id IN (:ids)")
+    fun tasks(ids: Set<Uuid>): Flow<List<TaskEntity>>
 
     @Query("SELECT state FROM Task WHERE id = :id")
     suspend fun taskState(id: Uuid): State?

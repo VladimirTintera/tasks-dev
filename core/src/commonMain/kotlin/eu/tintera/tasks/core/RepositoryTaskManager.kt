@@ -234,7 +234,8 @@ class RepositoryCoreTaskManager(
                 tags = it.tags,
                 outputData = it.task.outputData,
                 nextScheduledTime = it.task.processTime,
-                progress = it.task.progressData ?: Data.EMPTY
+                progress = it.task.progressData ?: Data.EMPTY,
+                finishedAt = it.task.finishedAt,
             )
         }
     }
@@ -250,7 +251,8 @@ class RepositoryCoreTaskManager(
                 tags = it.tags,
                 outputData = it.task.outputData,
                 nextScheduledTime = it.task.processTime,
-                progress = it.task.progressData ?: Data.EMPTY
+                progress = it.task.progressData ?: Data.EMPTY,
+                finishedAt = it.task.finishedAt,
             )
         }
     }

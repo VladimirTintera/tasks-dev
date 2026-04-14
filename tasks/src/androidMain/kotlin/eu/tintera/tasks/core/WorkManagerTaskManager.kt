@@ -8,12 +8,19 @@ import eu.tintera.tasks.Constraints
 import eu.tintera.tasks.Data
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
-import kotlin.reflect.KClass
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Instant
@@ -105,7 +112,7 @@ internal class WorkManagerCoreTaskManager(
         uniqueName: String,
         existingTaskPolicy: ExistingTaskPolicy,
     ) {
-        val roots = continuation.tasks.map { it to it.oneTimeWorkRequest()  }
+        val roots = continuation.tasks.map { it to it.oneTimeWorkRequest() }
         withContext(NonCancellable) {
 
             roots.forEach { (task, work) ->
@@ -245,15 +252,48 @@ internal class WorkManagerCoreTaskManager(
         }
     }
 
-    override fun taskInfosByTag(
-        tag: String
-    ) = workManager.getWorkInfosByTagFlow(tag).map { list ->
-        list.map { it.toTaskInfo() }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override fun taskInfosByTag(tag: String) = channelFlow {
+        val sharedWorkInfosFlow = workManager.getWorkInfosByTagFlow(tag)
+            .stateIn(
+                scope = this,
+                started = SharingStarted.Eagerly, // Můžeme Eagerly, protože hned pod tím to konzumujeme
+                initialValue = emptyList()
+            )
+
+        // 2. Pomalý stream (reaguje jen na změnu ID)
+        val dbTasksFlow = sharedWorkInfosFlow
+            .map { list -> list.map { it.id.toKotlinUuid() }.toSet() }
+            .distinctUntilChanged()
+            .flatMapLatest { ids ->
+                if (ids.isEmpty()) {
+                    flowOf(emptyList())
+                } else {
+                    repository.tasksByIds(ids)
+                }
+            }
+
+        // 3. Spojíme je a pošleme ven z channelFlow
+        combine(sharedWorkInfosFlow, dbTasksFlow) { workInfos, dbTasks ->
+            val taskMap = dbTasks.associateBy { it.id }
+
+            workInfos.map { workInfo ->
+                workInfo.toTaskInfo(taskMap[workInfo.id.toKotlinUuid()])
+            }
+        }.collect {
+            // Všechno, co vyjde z combine, přepošleme do výstupu našeho channelFlow
+            send(it)
+        }
     }
 
     override fun taskInfoById(
         id: Uuid
-    ) = workManager.getWorkInfoByIdFlow(id.toJavaUuid()).map { it?.toTaskInfo() }
+    ) = combine(
+        repository.taskById(id),
+        workManager.getWorkInfoByIdFlow(id.toJavaUuid())
+    ) { task, workInfo ->
+        workInfo?.toTaskInfo(task?.task)
+    }
 
     override suspend fun cancelTaskById(id: Uuid) {
         workManager.cancelWorkById(id.toJavaUuid()).await()
@@ -263,7 +303,7 @@ internal class WorkManagerCoreTaskManager(
         workManager.cancelAllWorkByTag(tag).await()
     }
 
-    private fun WorkInfo.toTaskInfo(): TaskInfo {
+    private fun WorkInfo.toTaskInfo(task: Task?): TaskInfo {
         return TaskInfo(
             id = id.toKotlinUuid(),
             state = when (state) {
@@ -282,7 +322,8 @@ internal class WorkManagerCoreTaskManager(
             nextScheduledTime = Instant.fromEpochMilliseconds(nextScheduleTimeMillis).takeIf {
                 it < Instant.DISTANT_FUTURE
             },
-            progress = progress.toData()
+            progress = progress.toData(),
+            finishedAt = task?.finishedAt
         )
     }
 

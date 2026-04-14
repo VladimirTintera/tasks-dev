@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 class MainViewModel(
@@ -25,8 +26,8 @@ class MainViewModel(
         }
 
         TaskState(
-            finished = finished.sortedBy { it.nextScheduledTime },
-            ongoing = (it - finished.toSet()).sortedBy { it.nextScheduledTime }
+            finished = finished.sortedByDescending { it.finishedAt },
+            ongoing = (it - finished.toSet()).sortedBy { it.nextScheduledTime ?: Instant.DISTANT_PAST }
         )
     }.stateIn(
         scope = viewModelScope,

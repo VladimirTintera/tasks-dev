@@ -10,14 +10,11 @@ import eu.tintera.tasks.core.data.Task
 import kotlinx.cinterop.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.datetime.toKotlinInstant
 import kotlinx.datetime.toNSDate
 import platform.BackgroundTasks.BGTask
 import platform.BackgroundTasks.BGTaskRequest
 import platform.BackgroundTasks.BGTaskScheduler
 import platform.Foundation.NSError
-import kotlin.coroutines.resume
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
@@ -65,12 +62,13 @@ internal abstract class BgTaskManager(
         }
     }
 
-    abstract fun List<Task>.filter() : List<Task>
+    abstract fun List<Task>.filter(): List<Task>
 
     private suspend fun nextPlanedTime() = repository.tasksByState(
         listOf(State.Enqueued, State.Blocked, State.Running)
     ).map { tasks ->
-        tasks.filter().minOfOrNull { it.processTime }
+        val now = Clock.System.now()
+        tasks.filter().minOfOrNull { it.processTime ?: now }
     }.firstOrNull()?.coerceAtLeast(Clock.System.now() + 30.minutes)
 
     suspend fun evaluateAndScheduleNext() {

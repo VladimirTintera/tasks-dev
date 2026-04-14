@@ -19,7 +19,7 @@ internal fun jvmModule(
     config: JvmTasksManagerConfiguration
 ): Module = module {
 
-    includes(coreModule)
+    includes(engineModule)
 
     factoryOf(::RepositoryTaskScopeFactory) bind TaskScopeFactory::class
 

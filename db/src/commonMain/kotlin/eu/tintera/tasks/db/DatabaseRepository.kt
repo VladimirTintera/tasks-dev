@@ -128,6 +128,10 @@ internal class DatabaseRepository(
         }.firstOrNull()
     }
 
+    override fun tasksByIds(ids: Set<Uuid>)= taskDao.tasks(ids).distinctUntilChanged().map { tasks ->
+        tasks.map { it.toTask() }
+    }
+
     override fun tasksByState(states: List<State>): Flow<List<Task>> = taskDao.tasksByState(
         states = states.map { it.toEntityState() }
     ).map { tasks ->
