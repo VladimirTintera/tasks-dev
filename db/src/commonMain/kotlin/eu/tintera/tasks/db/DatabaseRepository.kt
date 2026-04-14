@@ -31,13 +31,13 @@ internal class DatabaseRepository(
         processTime: Instant,
         state: State,
         progressData: Data,
-        runAttemptsCount: Int?
+        runAttemptCount: Int?
     ) = taskDao.updateRetry(
         id = id,
         processTime = processTime,
         state = state.toEntityState(),
         progress = progressData.toSerializableTaskData(),
-        runAttemptCount = runAttemptsCount
+        runAttemptCount = runAttemptCount
     )
 
     override suspend fun updateRunAttemptCount(

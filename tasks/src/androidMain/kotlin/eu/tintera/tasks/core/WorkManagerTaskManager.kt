@@ -294,7 +294,7 @@ internal class WorkManagerCoreTaskManager(
             identifier = task.identifier,
             uniqueName = uniqueName,
             runAttemptCount = 0,
-            state = State.Succeeded,
+            state = State.Enqueued,
             processTime = Clock.System.now(),
             inputData = task.data,
             outputData = Data.EMPTY,

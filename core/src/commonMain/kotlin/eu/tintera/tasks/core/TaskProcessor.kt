@@ -183,7 +183,7 @@ internal class TaskProcessorImpl(
                                 state = State.Enqueued,
                                 processTime = now + duration,
                                 progressData = Data.EMPTY,
-                                runAttemptsCount = 0
+                                runAttemptCount = 0
                             )
                         } else {
                             repository.updateTerminatingState(
@@ -204,7 +204,7 @@ internal class TaskProcessorImpl(
                                 state = State.Enqueued,
                                 processTime = now + duration,
                                 progressData = Data.EMPTY,
-                                runAttemptsCount = 0
+                                runAttemptCount = 0
                             )
                         } else {
                             repository.updateTerminatingState(
@@ -223,7 +223,7 @@ internal class TaskProcessorImpl(
                             state = State.Enqueued,
                             processTime = now + backoff,
                             progressData = Data.EMPTY,
-                            runAttemptsCount = null
+                            runAttemptCount = null
                         )
                     }
                 }
@@ -235,7 +235,7 @@ internal class TaskProcessorImpl(
                     state = State.Enqueued,
                     processTime = now,
                     progressData = Data.EMPTY,
-                    runAttemptsCount = null
+                    runAttemptCount = null
                 )
             }
         }

@@ -46,7 +46,7 @@ class FakeRepository : Repository {
         processTime: Instant,
         state: State,
         progressData: Data,
-        runAttemptsCount: Int?
+        runAttemptCount: Int?
     ) {
         tasks.update { currentTasks ->
             currentTasks.map {
@@ -55,7 +55,7 @@ class FakeRepository : Repository {
                         state = state,
                         processTime = processTime,
                         progressData = progressData,
-                        runAttemptCount = runAttemptsCount ?: it.runAttemptCount
+                        runAttemptCount = runAttemptCount ?: it.runAttemptCount
                     )
                 } else {
                     it

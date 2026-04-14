@@ -1,5 +1,6 @@
 package eu.tintera.tasks.core
 
+import eu.tintera.tasks.Data
 import eu.tintera.tasks.State
 import eu.tintera.tasks.core.fakes.FakeRepository
 import eu.tintera.tasks.core.fakes.FakeTaskProcessor
@@ -18,6 +19,7 @@ class TaskDispatcherTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `when execution key changes, old job is cancelled and new job starts`() = runTest {
+
         // 1. Setup
         val fakeRepo = FakeRepository()
         val fakeProcessor = FakeTaskProcessor()
@@ -64,7 +66,9 @@ class TaskDispatcherTest {
         fakeRepo.updateNextRun(
             id = taskId,
             processTime = keyV2.processTime,
-            state = State.Enqueued
+            state = State.Enqueued,
+            runAttemptCount = null,
+            progressData = Data.EMPTY
         )
 
         runCurrent()
