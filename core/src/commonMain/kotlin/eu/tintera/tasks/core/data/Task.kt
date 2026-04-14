@@ -14,7 +14,7 @@ data class Task(
     val uniqueName: String,
     val runAttemptCount: Int,
     val initialDelay: Duration,
-    val processTime: Instant,
+    val processTime: Instant?,
     val state: State,
     val inputData: Data,
     val outputData: Data,

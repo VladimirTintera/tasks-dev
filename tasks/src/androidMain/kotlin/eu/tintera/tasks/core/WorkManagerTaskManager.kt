@@ -279,7 +279,9 @@ internal class WorkManagerCoreTaskManager(
             }.toSet(),
             runAttemptCount = runAttemptCount,
             outputData = outputData.toData(),
-            nextScheduledTime = Instant.fromEpochMilliseconds(nextScheduleTimeMillis),
+            nextScheduledTime = Instant.fromEpochMilliseconds(nextScheduleTimeMillis).takeIf {
+                it < Instant.DISTANT_FUTURE
+            },
             progress = progress.toData()
         )
     }

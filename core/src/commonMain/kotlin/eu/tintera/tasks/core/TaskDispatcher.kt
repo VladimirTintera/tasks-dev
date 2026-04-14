@@ -100,5 +100,5 @@ internal class TaskDispatcher(
 
 internal data class ExecutionKey(
     val id: Uuid,
-    val processTime: Instant
+    val processTime: Instant?
 )

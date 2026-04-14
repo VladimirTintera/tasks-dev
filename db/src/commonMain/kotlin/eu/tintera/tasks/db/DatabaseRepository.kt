@@ -169,9 +169,15 @@ internal class DatabaseRepository(
     override suspend fun updateState(
         id: Uuid,
         state: State,
-        allowedSourceStates: Set<State>
+        allowedSourceStates: Set<State>,
+        resetProcessTime: Boolean
     ) {
-        taskDao.updateState(id, state.toEntityState(), allowedSourceStates.map { it.toEntityState() })
+        taskDao.updateState(
+            id = id,
+            state = state.toEntityState(),
+            allowedSourceStates = allowedSourceStates.map { it.toEntityState() },
+            resetProcessTime = resetProcessTime
+        )
     }
 
     override suspend fun updateStateWithDescendants(

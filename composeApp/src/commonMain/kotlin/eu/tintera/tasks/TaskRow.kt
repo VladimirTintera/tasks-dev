@@ -115,11 +115,13 @@ fun TaskRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                Text(
-                    text = info.nextScheduledTime.toString(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
+                AnimatedVisibility(info.nextScheduledTime != null) {
+                    Text(
+                        text = info.nextScheduledTime.toString(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
             }
 
             actions()

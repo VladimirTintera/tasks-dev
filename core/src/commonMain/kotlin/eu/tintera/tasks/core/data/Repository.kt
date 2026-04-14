@@ -41,7 +41,7 @@ interface Repository {
 
     suspend fun updateProgressData(id: Uuid, progressData: Data)
 
-    suspend fun updateState(id: Uuid, state: State, allowedSourceStates: Set<State>)
+    suspend fun updateState(id: Uuid, state: State, allowedSourceStates: Set<State>, resetProcessTime: Boolean)
 
     suspend fun updateStateWithDescendants(id: Uuid, state: State, allowedSourceStates: Set<State>)
 

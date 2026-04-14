@@ -30,7 +30,7 @@ internal data class TaskEntity(
     val uniqueName: String,
     val runAttemptCount: Int,
     val initialDelay: Duration,
-    val processTime: Instant,
+    val processTime: Instant?,
     val state: State,
     val inputData: SerializableTaskData,
     val outputData: SerializableTaskData,
@@ -64,10 +64,10 @@ internal interface TaskDao {
     @Query("UPDATE Task set progressData = :progressData WHERE id = :id")
     suspend fun updateProgressData(id: Uuid, progressData: SerializableTaskData)
 
-    @Query("UPDATE Task set state = :state WHERE id = :id AND state IN (:allowedSourceStates)")
-    suspend fun updateState(id: Uuid, state: State, allowedSourceStates: List<State>)
+    @Query("UPDATE Task set state = :state, processTime = (CASE WHEN :resetProcessTime THEN NULL ELSE processTime END) WHERE id = :id AND state IN (:allowedSourceStates)")
+    suspend fun updateState(id: Uuid, state: State, allowedSourceStates: List<State>, resetProcessTime: Boolean)
 
-    @Query("UPDATE Task set state = :state, finishedAt = :finishedAt, outputData = :outputData WHERE id = :id")
+    @Query("UPDATE Task set state = :state, finishedAt = :finishedAt, outputData = :outputData, processTime = NULL WHERE id = :id")
     suspend fun updateTerminatingState(
         id: Uuid,
         state: State,

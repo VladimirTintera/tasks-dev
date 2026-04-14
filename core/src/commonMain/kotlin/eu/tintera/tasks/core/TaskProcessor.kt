@@ -67,24 +67,21 @@ internal class TaskProcessorImpl(
         task: Task,
         actualTask: StateFlow<Task?>
     ): List<Task>? {
-        val timeFlow = flow {
-            waitForProcessTime(task.processTime)
-            emit(Unit)
+        task.processTime?.also {
+            waitForProcessTime(it)
         }
 
-        val parentsFlow = repository.parentsFor(task.id).onEach { parents ->
+        val parents = repository.parentsFor(task.id).onEach { parents ->
             actualTask.value?.also { t ->
                 if (t.state != State.Blocked && parents.any { !it.state.terminal() }) {
-                    updateState(task.id, State.Blocked)
+                    updateState(id = task.id, state = State.Blocked, resetProcessTime = true)
                 }
             }
-        }.filter { parents ->
+        }.first { parents ->
             parents.isEmpty() || parents.all { it.state.terminal() }
         }
 
-        val taskParents = combine(timeFlow, parentsFlow) { _, parentList -> parentList }.first()
-
-        if (taskParents.any { it.state == State.Failed }) {
+        if (parents.any { it.state == State.Failed }) {
             val result = ExecutionResult.Finished(TaskResult.failure())
             withContext(NonCancellable) {
                 EventBus.send(TAG, "task finished '${task.identifier}', result = $result")
@@ -93,7 +90,7 @@ internal class TaskProcessorImpl(
             return null // Konec, nepokračujeme
         }
 
-        updateState(task.id, State.Enqueued)
+        updateState(id = task.id, State.Enqueued, resetProcessTime = true)
 
         preconditionController.waitForAll(task)
 
@@ -101,7 +98,7 @@ internal class TaskProcessorImpl(
             return null // Konec, nepokračujeme
         }
 
-        return taskParents // Vše připraveno, vracíme data pro další fázi
+        return parents // Vše připraveno, vracíme data pro další fázi
     }
 
     private suspend fun executeTask(
@@ -109,7 +106,7 @@ internal class TaskProcessorImpl(
         taskParents: List<Task>
     ) = executionContextProvider {
 
-        updateState(task.id, State.Running)
+        updateState(id = task.id, state = State.Running, resetProcessTime = true)
 
         val taskResult = try {
             coroutineScope {
@@ -164,10 +161,12 @@ internal class TaskProcessorImpl(
     private suspend fun updateState(
         id: Uuid,
         state: State,
+        resetProcessTime: Boolean
     ) = repository.updateState(
         id = id,
         state = state,
-        allowedSourceStates = state.allowedSourceStatesForChangeTo().toSet()
+        allowedSourceStates = state.allowedSourceStatesForChangeTo().toSet(),
+        resetProcessTime = resetProcessTime
     )
 
     private suspend fun handleTaskResult(task: Task, result: ExecutionResult) {
