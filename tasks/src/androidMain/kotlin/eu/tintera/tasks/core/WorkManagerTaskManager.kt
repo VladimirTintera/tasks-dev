@@ -86,9 +86,16 @@ internal class WorkManagerCoreTaskManager(
     }
 
     override suspend fun enqueueContinuation(continuation: TaskContinuation) {
+        val roots = continuation.tasks.map { it to it.oneTimeWorkRequest() }
+
         withContext(NonCancellable) {
+
+            roots.forEach { (task, work) ->
+                saveTask(id = work.id.toKotlinUuid(), task = task, uniqueName = "")
+            }
+
             workManager.beginWith(
-                continuation.tasks.map { it.oneTimeWorkRequest() }
+                roots.map { (_, work) -> work }
             ).appendAndSave(continuation.next).enqueue().await()
         }
     }
@@ -98,13 +105,19 @@ internal class WorkManagerCoreTaskManager(
         uniqueName: String,
         existingTaskPolicy: ExistingTaskPolicy,
     ) {
-        workManager.beginUniqueWork(
-            uniqueName,
-            existingTaskPolicy.toWorkPolicy(),
-            continuation.tasks.map {
-                it.oneTimeWorkRequest()
+        val roots = continuation.tasks.map { it to it.oneTimeWorkRequest()  }
+        withContext(NonCancellable) {
+
+            roots.forEach { (task, work) ->
+                saveTask(id = work.id.toKotlinUuid(), task = task, uniqueName = uniqueName)
             }
-        ).appendAndSave(continuation.next).enqueue().await()
+
+            workManager.beginUniqueWork(
+                uniqueName,
+                existingTaskPolicy.toWorkPolicy(),
+                roots.map { (_, work) -> work }
+            ).appendAndSave(continuation.next).enqueue().await()
+        }
     }
 
     @SuppressLint("EnqueueWork")
@@ -115,7 +128,6 @@ internal class WorkManagerCoreTaskManager(
             return this
         }
 
-        // 1. Vygenerujeme navazující tasky
         val nextRequests = taskContinuation.tasks.map { it to it.oneTimeWorkRequest() }
 
         nextRequests.forEach { (task, request) ->
