@@ -54,7 +54,7 @@ internal class TaskProcessorImpl(
         val observeJob = launch {
             repository.task(task.id).onEach { actualTask.update { it } }
                 .first { t ->
-                    t == null || t.processTime != task.processTime || t.state.terminal()
+                    t == null || t.state.terminal()
                 }
             workflowJob.cancelAndJoin()
         }

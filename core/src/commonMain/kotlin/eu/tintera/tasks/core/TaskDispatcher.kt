@@ -1,16 +1,14 @@
 package eu.tintera.tasks.core
 
-import eu.tintera.tasks.EventBus
-import eu.tintera.tasks.State
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 internal class TaskDispatcher(
@@ -20,12 +18,14 @@ internal class TaskDispatcher(
     private val dispatchers: AppDispatchers,
     private val activeTaskTracker: ActiveTaskTracker,
 ) {
-
-    // 1. Přesunuto na úroveň třídy jako thread-safe StateFlow
     private val runningJobs = MutableStateFlow<Map<ExecutionKey, Job>>(emptyMap())
 
-    private fun tasks() = repository.tasksByState(runningStates).distinctUntilChanged()
-    private fun Task.executionKey() = ExecutionKey(id, processTime)
+    private fun tasks() = combine(
+        repository.tasksByState(runningStates).distinctUntilChanged(),
+        runningJobs
+    ) { tasks, jobs -> Pair(tasks, jobs) }
+
+    private fun Task.executionKey() = ExecutionKey(id)
 
     init {
 
@@ -36,10 +36,9 @@ internal class TaskDispatcher(
     }
 
     private suspend fun collectAndDispatchTasks() {
-        tasks().collect { tasks ->
+        tasks().collect { (tasks, currentJobsMap) ->
 
             val currentExecutionKeys = tasks.map { it.executionKey() }.toSet()
-            val currentJobsMap = runningJobs.value
 
             // 2. Projdeme aktuální joby a zrušíme ty, co už nejsou validní
             currentJobsMap.forEach { (key, job) ->
@@ -79,20 +78,6 @@ internal class TaskDispatcher(
         }
     }
 
-    private suspend fun recoverStuckTasks() {
-        // 6. TADY VYUŽIJEME NÁŠ SMART SWEEP
-        // Vytáhneme si všechny IDs tasků, které reálně běží.
-        val activelyRunningIds = runningJobs.value.keys.map { it.id }.toSet()
-
-        EventBus.send(TAG, "Running Smart Sweep. Excluding ${activelyRunningIds.size} active tasks.")
-
-        repository.resetState(
-            from = State.Running,
-            to = State.Enqueued,
-            excludedIds = activelyRunningIds
-        )
-    }
-
     companion object {
         private const val TAG = "TaskDispatcher"
     }
@@ -100,5 +85,4 @@ internal class TaskDispatcher(
 
 internal data class ExecutionKey(
     val id: Uuid,
-    val processTime: Instant?
 )
