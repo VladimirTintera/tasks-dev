@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.serialization)
 }
 kotlin {
     jvmToolchain(11)
@@ -32,6 +33,8 @@ kotlin {
             implementation(libs.koin.core)
             implementation(projects.db)
             implementation(projects.core)
+
+            implementation(libs.kotlinx.serialization.json)
 
             api(projects.api)
             api(libs.androidx.sqlite)

@@ -1,25 +1,30 @@
 package eu.tintera.tasks
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.serializer
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.uuid.Uuid
 
 interface TaskManager {
-    fun register(
+    fun <Input, Output, Progress> register(
         identifier: String,
-        factory: () -> TaskHandler
+        factory: () -> TaskHandler<Input, Output, Progress>,
+        inputSerializer: KSerializer<Input>,
+        outputSerializer: KSerializer<Output>,
+        progressSerializer: KSerializer<Progress>
     )
 
     suspend fun enqueueUniqueTask(
         task: TaskRequest,
         uniqueName: String = task.identifier,
         existingTaskPolicy: ExistingTaskPolicy = ExistingTaskPolicy.Keep
-    ) : Uuid
+    ): Uuid
 
     suspend fun enqueueTask(
         task: TaskRequest
-    ) : Uuid
+    ): Uuid
 
     suspend fun enqueueContinuation(
         continuation: TaskContinuation
@@ -36,7 +41,7 @@ interface TaskManager {
         repeatInterval: Duration,
         uniqueName: String = task.identifier,
         existingTaskPolicy: ExistingPeriodicTaskPolicy = ExistingPeriodicTaskPolicy.Keep
-    ) : Uuid
+    ): Uuid
 
     fun taskInfoById(id: Uuid): Flow<TaskInfo?>
     fun taskInfosByTag(tag: String): Flow<List<TaskInfo>>
@@ -49,17 +54,23 @@ interface TaskManager {
     companion object
 }
 
-fun TaskManager.register(
-    type: KClass<out TaskHandler>,
-    factory: () -> TaskHandler
-) = register(type.fullName, factory)
+inline fun <reified I, reified O, reified P> TaskManager.register(
+    identifier: String,
+    noinline factory: () -> TaskHandler<I, O, P>
+) {
+    register(
+        identifier = identifier,
+        factory = factory,
+        inputSerializer = serializer<I>(),
+        outputSerializer = serializer<O>(),
+        progressSerializer = serializer<P>()
+    )
+}
 
-inline fun <reified T : TaskHandler> TaskManager.register(
+inline fun <reified T : TaskHandler<I, O, P>, reified I, reified O, reified P> TaskManager.register(
     noinline factory: () -> T
-) = register(
-    type = T::class,
-    factory = factory
-)
+) = register(T::class.fullName, factory)
 
-suspend inline fun <reified T : TaskHandler> TaskManager.cancelTask() = cancelTask(T::class)
+
+suspend inline fun <reified T : TaskHandler<*, *, *>> TaskManager.cancelTask() = cancelTask(T::class)
 

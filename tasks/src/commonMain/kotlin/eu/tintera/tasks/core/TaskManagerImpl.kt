@@ -2,6 +2,7 @@ package eu.tintera.tasks.core
 
 import eu.tintera.tasks.*
 import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.KSerializer
 import kotlin.time.Duration
 import kotlin.uuid.Uuid
 
@@ -9,9 +10,13 @@ class TaskManagerImpl(
     private val taskRegistry: TaskRegistry,
     private val coreTaskManager: CoreTaskManager,
 ) : TaskManager {
-    override fun register(
+
+    override fun <Input, Output, Progress> register(
         identifier: String,
-        factory: () -> TaskHandler,
+        factory: () -> TaskHandler<Input, Output, Progress>,
+        inputSerializer: KSerializer<Input>,
+        outputSerializer: KSerializer<Output>,
+        progressSerializer: KSerializer<Progress>
     ) = taskRegistry.register(identifier, factory)
 
 

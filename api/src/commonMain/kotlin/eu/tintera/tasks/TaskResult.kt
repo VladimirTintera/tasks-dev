@@ -1,12 +1,12 @@
 package eu.tintera.tasks
 
-sealed class TaskResult {
-    data class Success(val outputData: Data) : TaskResult()
-    data object Failure : TaskResult()
-    data object Retry : TaskResult()
+sealed class TaskResult<out Output> {
+    data class Success<Output>(val outputData: Output) : TaskResult<Output>()
+    data object Failure : TaskResult<Nothing>()
+    data object Retry : TaskResult<Nothing>()
 
     companion object {
-        fun success(outputData: Data = Data.EMPTY) = Success(outputData)
+        fun <T> success(outputData: T) = Success(outputData)
         fun retry() = Retry
         fun failure() = Failure
     }

@@ -2,11 +2,11 @@ package eu.tintera.tasks
 
 import kotlin.uuid.Uuid
 
-interface TaskScope {
+interface TaskScope<Input, Progress> {
     val taskId: Uuid
-    val data: Data
+    val data: Input
     val retryCount: Int
 
     suspend fun setForegroundInfo(foregroundInfo: ForegroundInfo): Boolean
-    suspend fun setProgress(data: Data)
+    suspend fun setProgress(data: Progress)
 }
