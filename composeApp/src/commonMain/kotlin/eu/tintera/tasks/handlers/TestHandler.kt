@@ -1,5 +1,7 @@
 package eu.tintera.tasks.handlers
 
+import eu.tintera.tasks.Data
+import eu.tintera.tasks.LegacyTaskHandler
 import eu.tintera.tasks.TaskHandler
 import eu.tintera.tasks.TaskResult
 import eu.tintera.tasks.TaskScope
@@ -10,9 +12,9 @@ import kotlinx.coroutines.flow.*
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
 
-class TestHandler : TaskHandler {
+class TestHandler : LegacyTaskHandler {
 
-    override suspend fun TaskScope.run(): TaskResult {
+    override suspend fun TaskScope<Data, Data>.run(): TaskResult<Data> {
         return merge(
             _interruptionEventBus.filter { it == taskId }.map {
                 TaskResult.retry()
@@ -21,7 +23,7 @@ class TestHandler : TaskHandler {
         ).first()
     }
 
-    private fun TaskScope.normalRun() = flow {
+    private fun TaskScope<Data, Data>.normalRun() = flow {
         repeat(20) {
             setProgress(
                 taskDataOf("total" to 20, "current" to it)

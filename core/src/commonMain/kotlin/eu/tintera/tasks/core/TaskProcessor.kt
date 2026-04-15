@@ -113,7 +113,7 @@ internal class TaskProcessorImpl(
             coroutineScope {
 
                 val capabilityWatcher = launch {
-                    val failedPreconditions =preconditionController.waitForFail(task)
+                    val failedPreconditions = preconditionController.waitForFail(task)
                     this@coroutineScope.cancel(PreconditionLostException(failedPreconditions))
                 }
 
@@ -122,20 +122,12 @@ internal class TaskProcessorImpl(
                     .map { it.outputData }
                     .sum() + task.inputData
 
-
-                val result = with(taskEvaluator) {
-                    EventBus.send(TAG, "Task started '${task.identifier}, data = $taskData'")
-                    with(
-                        taskScopeFactory.createScope(
-                            taskId = task.id,
-                            data = taskData,
-                            runAttemptsCount = task.runAttemptCount
-                        )
-                    ) {
-                        repository.updateRunAttemptCount(task.id, task.runAttemptCount + 1)
-                        handle(taskIdentifier = task.identifier) ?: TaskResult.failure()
-                    }
-                }
+                val result = taskEvaluator.handle(
+                    taskIdentifier = task.identifier,
+                    taskId = task.id,
+                    runAttemptCount = task.runAttemptCount,
+                    onForegroundInfo = { true }
+                )
 
                 capabilityWatcher.cancel()
                 ExecutionResult.Finished(result)

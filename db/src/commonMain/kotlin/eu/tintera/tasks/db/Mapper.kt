@@ -1,9 +1,7 @@
 package eu.tintera.tasks.db
 
-import eu.tintera.tasks.Data
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.db.entities.TaskEntity
-import eu.tintera.tasks.taskDataOf
 
 internal fun TaskEntity.toTask() = Task(
     id = id,
@@ -13,14 +11,14 @@ internal fun TaskEntity.toTask() = Task(
     initialDelay = initialDelay,
     processTime = processTime,
     state = state.toTaskState(),
-    inputData = inputData.toData(),
-    outputData = outputData.toData(),
+    inputData = inputData,
+    outputData = outputData,
     networkRequired = networkRequired,
     createdAt = createdAt,
     finishedAt = finishedAt,
     repeatInterval = repeatInterval,
     backoffCriteria = backoffCriteria?.toTaskBackoffCriteria(),
-    progressData = progressData?.toData(),
+    progressData = progressData,
     retentionDelay = retentionDelay,
     requiresDeviceIdle = requiresDeviceIdle,
 )
@@ -33,14 +31,14 @@ internal fun Task.toTaskEntity() = TaskEntity(
     initialDelay = initialDelay,
     processTime = processTime,
     state = state.toEntityState(),
-    inputData = inputData.toSerializableTaskData(),
-    outputData = outputData.toSerializableTaskData(),
+    inputData = inputData,
+    outputData = outputData,
     networkRequired = networkRequired,
     createdAt = createdAt,
     finishedAt = finishedAt,
     repeatInterval = repeatInterval,
     backoffCriteria = backoffCriteria?.toEntityBackoffCriteria(),
-    progressData = progressData?.toSerializableTaskData(),
+    progressData = progressData,
     retentionDelay = retentionDelay,
     requiresDeviceIdle = requiresDeviceIdle,
 )
@@ -82,27 +80,4 @@ internal fun eu.tintera.tasks.BackoffPolicy.toEntityBackoffPolicy() = when (this
 internal fun eu.tintera.tasks.BackoffCriteria.toEntityBackoffCriteria() = BackoffCriteria(
     backoffPolicy = backoffPolicy.toEntityBackoffPolicy(),
     delay = delay
-)
-
-internal fun SerializableTaskData.toData() = taskDataOf(
-    *values.flatMap { value ->
-        listOfNotNull(
-            value.intValue?.let { value.key to it },
-            value.stringValue?.let { value.key to it },
-            value.booleanValue?.let { value.key to it },
-            value.longValue?.let { value.key to it }
-        )
-    }.toTypedArray()
-)
-
-internal fun Data.toSerializableTaskData() = SerializableTaskData(
-    values = map.map { (key, _) ->
-        SerializableValue(
-            key = key,
-            intValue = getInt(key),
-            stringValue = getString(key),
-            longValue = getLong(key),
-            booleanValue = getBoolean(key)
-        )
-    }
 )

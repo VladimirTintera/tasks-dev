@@ -1,7 +1,6 @@
 package eu.tintera.tasks.db
 
 import androidx.room.TypeConverter
-import kotlin.time.Instant
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
@@ -9,6 +8,7 @@ import kotlinx.serialization.protobuf.ProtoBuf
 import kotlin.jvm.JvmStatic
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalSerializationApi::class)
@@ -62,23 +62,6 @@ internal object TasksTypeConverters {
     @JvmStatic
     fun fromState(value: State?): String? {
         return value?.name
-    }
-
-
-    @TypeConverter
-    @JvmStatic
-    fun toSerializableTaskData(value: ByteArray?): SerializableTaskData? {
-        return value?.let {
-            ProtoBuf.decodeFromByteArray<SerializableTaskData>(it)
-        }
-    }
-
-    @TypeConverter
-    @JvmStatic
-    fun fromSerializableTaskData(value: SerializableTaskData?): ByteArray? {
-        return value?.let {
-             ProtoBuf.encodeToByteArray<SerializableTaskData>(it)
-        }
     }
 
     @TypeConverter

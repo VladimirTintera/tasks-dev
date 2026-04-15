@@ -36,7 +36,7 @@ class TaskResultProcessorImpl(
                                 id = task.id,
                                 state = State.Failed,
                                 finishedAt = now,
-                                outputData = Data.EMPTY
+                                outputData = null
                             )
                         }
                     }

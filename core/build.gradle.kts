@@ -16,7 +16,8 @@ kotlin {
 
         optIn.addAll(
             "kotlin.uuid.ExperimentalUuidApi",
-            "kotlin.concurrent.atomics.ExperimentalAtomicApi"
+            "kotlin.concurrent.atomics.ExperimentalAtomicApi",
+            "kotlinx.serialization.ExperimentalSerializationApi"
         )
     }
 
@@ -34,6 +35,8 @@ kotlin {
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
             api(libs.guard)
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.serialization.protobuf)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

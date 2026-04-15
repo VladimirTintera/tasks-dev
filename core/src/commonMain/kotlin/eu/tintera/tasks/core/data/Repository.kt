@@ -15,7 +15,7 @@ interface Repository {
         id: Uuid,
         state: State,
         finishedAt: Instant,
-        outputData: Data,
+        outputData: ByteArray?,
     )
 
     suspend fun taskState(id: Uuid): State?
@@ -41,7 +41,7 @@ interface Repository {
 
     suspend fun resetState(from: State, to: State, excludedIds: Set<Uuid>)
 
-    suspend fun updateProgressData(id: Uuid, progressData: Data)
+    suspend fun updateProgressData(id: Uuid, progressData: ByteArray)
 
     suspend fun updateState(id: Uuid, state: State, allowedSourceStates: Set<State>, resetProcessTime: Boolean)
 

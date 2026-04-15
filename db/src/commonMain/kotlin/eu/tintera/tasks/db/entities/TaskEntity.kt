@@ -1,20 +1,11 @@
 package eu.tintera.tasks.db.entities
 
-import androidx.room.ColumnInfo
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.Index
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.PrimaryKey
-import androidx.room.Query
-import eu.tintera.tasks.core.data.Task
+import androidx.room.*
 import eu.tintera.tasks.db.BackoffCriteria
-import eu.tintera.tasks.db.SerializableTaskData
 import eu.tintera.tasks.db.State
 import kotlinx.coroutines.flow.Flow
-import kotlin.time.Instant
 import kotlin.time.Duration
+import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 @Entity(
@@ -33,19 +24,67 @@ internal data class TaskEntity(
     val initialDelay: Duration,
     val processTime: Instant?,
     val state: State,
-    val inputData: SerializableTaskData,
-    val outputData: SerializableTaskData,
+    val inputData: ByteArray?,
+    val outputData: ByteArray?,
     val networkRequired: Boolean,
     val createdAt: Instant,
     val finishedAt: Instant?,
     val repeatInterval: Duration?,
     val backoffCriteria: BackoffCriteria?,
-    val progressData: SerializableTaskData?,
+    val progressData: ByteArray?,
     @ColumnInfo(defaultValue = "86400000")
     val retentionDelay: Duration,
     @ColumnInfo(defaultValue = "0")
     val requiresDeviceIdle: Boolean
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || this::class != other::class) return false
+
+        other as TaskEntity
+
+        if (runAttemptCount != other.runAttemptCount) return false
+        if (networkRequired != other.networkRequired) return false
+        if (requiresDeviceIdle != other.requiresDeviceIdle) return false
+        if (id != other.id) return false
+        if (identifier != other.identifier) return false
+        if (uniqueName != other.uniqueName) return false
+        if (initialDelay != other.initialDelay) return false
+        if (processTime != other.processTime) return false
+        if (state != other.state) return false
+        if (!inputData.contentEquals(other.inputData)) return false
+        if (!outputData.contentEquals(other.outputData)) return false
+        if (createdAt != other.createdAt) return false
+        if (finishedAt != other.finishedAt) return false
+        if (repeatInterval != other.repeatInterval) return false
+        if (backoffCriteria != other.backoffCriteria) return false
+        if (!progressData.contentEquals(other.progressData)) return false
+        if (retentionDelay != other.retentionDelay) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = runAttemptCount
+        result = 31 * result + networkRequired.hashCode()
+        result = 31 * result + requiresDeviceIdle.hashCode()
+        result = 31 * result + id.hashCode()
+        result = 31 * result + identifier.hashCode()
+        result = 31 * result + uniqueName.hashCode()
+        result = 31 * result + initialDelay.hashCode()
+        result = 31 * result + (processTime?.hashCode() ?: 0)
+        result = 31 * result + state.hashCode()
+        result = 31 * result + (inputData?.contentHashCode() ?: 0)
+        result = 31 * result + (outputData?.contentHashCode() ?: 0)
+        result = 31 * result + createdAt.hashCode()
+        result = 31 * result + (finishedAt?.hashCode() ?: 0)
+        result = 31 * result + (repeatInterval?.hashCode() ?: 0)
+        result = 31 * result + (backoffCriteria?.hashCode() ?: 0)
+        result = 31 * result + (progressData?.contentHashCode() ?: 0)
+        result = 31 * result + retentionDelay.hashCode()
+        return result
+    }
+}
 
 @Dao
 internal interface TaskDao {
@@ -55,7 +94,7 @@ internal interface TaskDao {
         id: Uuid,
         processTime: Instant,
         state: State,
-        progress: SerializableTaskData,
+        progress: ByteArray?,
         runAttemptCount: Int?
     )
 
@@ -63,7 +102,7 @@ internal interface TaskDao {
     suspend fun updateRunAttemptCount(id: Uuid, runAttemptCount: Int)
 
     @Query("UPDATE Task set progressData = :progressData WHERE id = :id")
-    suspend fun updateProgressData(id: Uuid, progressData: SerializableTaskData)
+    suspend fun updateProgressData(id: Uuid, progressData: ByteArray?)
 
     @Query("UPDATE Task set state = :state, processTime = (CASE WHEN :resetProcessTime THEN NULL ELSE processTime END) WHERE id = :id AND state IN (:allowedSourceStates)")
     suspend fun updateState(id: Uuid, state: State, allowedSourceStates: List<State>, resetProcessTime: Boolean)
@@ -73,7 +112,7 @@ internal interface TaskDao {
         id: Uuid,
         state: State,
         finishedAt: Instant,
-        outputData: SerializableTaskData,
+        outputData: ByteArray?,
     )
 
     @Query("SELECT * FROM Task WHERE state IN (:states)")

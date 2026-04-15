@@ -4,6 +4,7 @@ import eu.tintera.guard.ExecutionContextObserver
 import eu.tintera.tasks.core.preconditions.InitialDelayTaskPrecondition
 import eu.tintera.tasks.core.preconditions.NetworkStateTaskPrecondition
 import eu.tintera.tasks.core.preconditions.TaskPreconditionController
+import eu.tintera.tasks.core.seriaization.SerializationEngine
 import kotlinx.coroutines.SupervisorJob
 import org.koin.core.module.dsl.createdAtStart
 import org.koin.core.module.dsl.factoryOf
@@ -34,4 +35,8 @@ val engineModule = module {
     singleOf(::OrphanTaskSweeper) {
         createdAtStart()
     } bind ExecutionContextObserver::class
+
+    single {
+        SerializationEngine()
+    }
 }
