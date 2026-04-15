@@ -1,10 +1,8 @@
 package eu.tintera.tasks
 
 import kotlin.time.Instant
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-@OptIn(ExperimentalUuidApi::class)
 data class TaskInfo(
     val id: Uuid,
     val state: State,
@@ -13,5 +11,6 @@ data class TaskInfo(
     val outputData: Data,
     val nextScheduledTime: Instant?,
     val progress: Data,
-    val finishedAt: Instant?
+    val finishedAt: Instant?,
+    val createdAt: Instant
 )

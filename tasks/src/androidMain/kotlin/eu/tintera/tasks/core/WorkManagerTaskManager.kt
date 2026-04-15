@@ -323,7 +323,8 @@ internal class WorkManagerCoreTaskManager(
                 it < Instant.DISTANT_FUTURE
             },
             progress = progress.toData(),
-            finishedAt = task?.finishedAt
+            finishedAt = task?.finishedAt,
+            createdAt = task?.createdAt ?: Instant.DISTANT_PAST
         )
     }
 

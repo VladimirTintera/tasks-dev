@@ -1,6 +1,7 @@
 package eu.tintera.tasks.core
 
 import eu.tintera.tasks.*
+import eu.tintera.tasks.core.data.FullTask
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import kotlinx.coroutines.flow.Flow
@@ -226,36 +227,26 @@ class RepositoryCoreTaskManager(
     override fun taskInfosByTag(
         tag: String,
     ): Flow<List<TaskInfo>> = repository.tasksByTag(tag).distinctUntilChanged().map { map ->
-        map.map {
-            TaskInfo(
-                id = it.task.id,
-                runAttemptCount = it.task.runAttemptCount,
-                state = it.task.state,
-                tags = it.tags,
-                outputData = it.task.outputData,
-                nextScheduledTime = it.task.processTime,
-                progress = it.task.progressData ?: Data.EMPTY,
-                finishedAt = it.task.finishedAt,
-            )
-        }
+        map.map { it.toTaskInfo() }
     }
 
     override fun taskInfoById(
         id: Uuid,
     ): Flow<TaskInfo?> = repository.taskById(id).distinctUntilChanged().map { task ->
-        task?.let {
-            TaskInfo(
-                id = it.task.id,
-                runAttemptCount = it.task.runAttemptCount,
-                state = it.task.state,
-                tags = it.tags,
-                outputData = it.task.outputData,
-                nextScheduledTime = it.task.processTime,
-                progress = it.task.progressData ?: Data.EMPTY,
-                finishedAt = it.task.finishedAt,
-            )
-        }
+        task?.toTaskInfo()
     }
+
+    private fun FullTask.toTaskInfo() = TaskInfo(
+        id = task.id,
+        runAttemptCount = task.runAttemptCount,
+        state = task.state,
+        tags = tags,
+        outputData = task.outputData,
+        nextScheduledTime = task.processTime,
+        progress = task.progressData ?: Data.EMPTY,
+        finishedAt = task.finishedAt,
+        createdAt = task.createdAt
+    )
 
     override suspend fun cancelTaskById(id: Uuid) = repository.withTransaction {
         cancelTask(id)
