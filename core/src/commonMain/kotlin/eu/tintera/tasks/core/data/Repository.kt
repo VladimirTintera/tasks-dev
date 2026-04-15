@@ -8,7 +8,7 @@ import kotlin.uuid.Uuid
 
 interface Repository {
     fun parentsFor(id: Uuid): Flow<List<Task>>
-    suspend fun updateNextRun(id: Uuid, processTime: Instant, state: State, progressData: Data, runAttemptCount: Int?)
+    suspend fun updateNextRun(id: Uuid, processTime: Instant, state: State, progressData: ByteArray?, runAttemptCount: Int?)
 
     suspend fun updateRunAttemptCount(id: Uuid, runAttemptsCount: Int)
     suspend fun updateTerminatingState(
@@ -41,11 +41,13 @@ interface Repository {
 
     suspend fun resetState(from: State, to: State, excludedIds: Set<Uuid>)
 
-    suspend fun updateProgressData(id: Uuid, progressData: ByteArray)
+    suspend fun updateProgressData(id: Uuid, progressData: ByteArray?)
 
     suspend fun updateState(id: Uuid, state: State, allowedSourceStates: Set<State>, resetProcessTime: Boolean)
 
     suspend fun updateStateWithDescendants(id: Uuid, state: State, allowedSourceStates: Set<State>)
+
+    suspend fun upgradeData(id: Uuid, input: ByteArray?, output: ByteArray?, progress: ByteArray?, version: Int)
 
     suspend fun <T> withTransaction(
         action: suspend Repository.() -> T

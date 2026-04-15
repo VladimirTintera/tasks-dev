@@ -1,7 +1,6 @@
 package eu.tintera.tasks.core.data
 
 import eu.tintera.tasks.BackoffCriteria
-import eu.tintera.tasks.Data
 import eu.tintera.tasks.State
 import eu.tintera.tasks.core.DEFAULT
 import kotlin.time.Duration
@@ -25,7 +24,8 @@ data class Task(
     val backoffCriteria: BackoffCriteria?,
     val progressData: ByteArray?,
     val retentionDelay: Duration,
-    val requiresDeviceIdle: Boolean
+    val requiresDeviceIdle: Boolean,
+    val version: Int
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -36,6 +36,7 @@ data class Task(
         if (runAttemptCount != other.runAttemptCount) return false
         if (networkRequired != other.networkRequired) return false
         if (requiresDeviceIdle != other.requiresDeviceIdle) return false
+        if (version != other.version) return false
         if (id != other.id) return false
         if (identifier != other.identifier) return false
         if (uniqueName != other.uniqueName) return false
@@ -58,6 +59,7 @@ data class Task(
         var result = runAttemptCount
         result = 31 * result + networkRequired.hashCode()
         result = 31 * result + requiresDeviceIdle.hashCode()
+        result = 31 * result + version
         result = 31 * result + id.hashCode()
         result = 31 * result + identifier.hashCode()
         result = 31 * result + uniqueName.hashCode()

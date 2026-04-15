@@ -13,11 +13,22 @@ class TaskManagerImpl(
 
     override fun <Input, Output, Progress> register(
         identifier: String,
+        currentVersion: Int,
         factory: () -> TaskHandler<Input, Output, Progress>,
         inputSerializer: KSerializer<Input>,
         outputSerializer: KSerializer<Output>,
         progressSerializer: KSerializer<Progress>
-    ) = taskRegistry.register(identifier, factory)
+    ) = taskRegistry.register(
+        identifier = identifier,
+        registration = TaskRegistry.TaskRegistration<Input, Output, Progress>(
+            currentVersion = currentVersion,
+            factory = factory,
+            inputSerializer = inputSerializer,
+            outputSerializer = outputSerializer,
+            progressSerializer = progressSerializer,
+            migrations = emptyList()
+        )
+    )
 
 
     override suspend fun enqueueUniqueTask(

@@ -36,7 +36,5 @@ val engineModule = module {
         createdAtStart()
     } bind ExecutionContextObserver::class
 
-    single {
-        SerializationEngine()
-    }
+
 }

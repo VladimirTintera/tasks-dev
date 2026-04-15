@@ -16,7 +16,7 @@ class RepositoryCoreTaskManager(
 ) : CoreTaskManager {
 
     override suspend fun enqueueUniqueTask(
-        task: TaskRequest,
+        task: TaskRequest<*>,
         uniqueName: String,
         existingTaskPolicy: ExistingTaskPolicy,
     ): Uuid = repository.withTransaction {

@@ -3,22 +3,20 @@ package eu.tintera.tasks.core.seriaization
 import eu.tintera.tasks.Data
 import eu.tintera.tasks.taskDataOf
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-internal object DataSerializer : KSerializer<Data> {
 
-    override val descriptor: SerialDescriptor = SerializableTaskData.serializer().descriptor
+object DataSerializer : KSerializer<Data> {
+    override val descriptor = buildClassSerialDescriptor(DataSerializer::class.qualifiedName ?: "DataSerializer")
 
     override fun serialize(encoder: Encoder, value: Data) {
-        val surrogate = value.toSerializableTaskData()
-        encoder.encodeSerializableValue(SerializableTaskData.serializer(), surrogate)
+        error("Toto by se nemělo nikdy zavolat. SerializationEngine to má odchytit!")
     }
 
     override fun deserialize(decoder: Decoder): Data {
-        val surrogate = decoder.decodeSerializableValue(SerializableTaskData.serializer())
-        return surrogate.toData()
+        error("Toto by se nemělo nikdy zavolat. SerializationEngine to má odchytit!")
     }
 }
 

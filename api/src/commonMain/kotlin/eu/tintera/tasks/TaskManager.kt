@@ -10,6 +10,7 @@ import kotlin.uuid.Uuid
 interface TaskManager {
     fun <Input, Output, Progress> register(
         identifier: String,
+        currentVersion: Int,
         factory: () -> TaskHandler<Input, Output, Progress>,
         inputSerializer: KSerializer<Input>,
         outputSerializer: KSerializer<Output>,
@@ -17,13 +18,13 @@ interface TaskManager {
     )
 
     suspend fun enqueueUniqueTask(
-        task: TaskRequest,
+        task: TaskRequest<*>,
         uniqueName: String = task.identifier,
         existingTaskPolicy: ExistingTaskPolicy = ExistingTaskPolicy.Keep
     ): Uuid
 
     suspend fun enqueueTask(
-        task: TaskRequest
+        task: TaskRequest<*>
     ): Uuid
 
     suspend fun enqueueContinuation(
@@ -37,7 +38,7 @@ interface TaskManager {
     )
 
     suspend fun enqueuePeriodicUniqueTask(
-        task: TaskRequest,
+        task: TaskRequest<*>,
         repeatInterval: Duration,
         uniqueName: String = task.identifier,
         existingTaskPolicy: ExistingPeriodicTaskPolicy = ExistingPeriodicTaskPolicy.Keep
@@ -49,17 +50,19 @@ interface TaskManager {
     suspend fun cancelTaskById(id: Uuid)
     suspend fun cancelTasksByTag(tag: String)
 
-    suspend fun cancelTask(type: KClass<out TaskHandler>) = cancelTasksByTag(type.fullName)
+    suspend fun cancelTask(type: KClass<out TaskHandler<*, *, *>>) = cancelTasksByTag(type.fullName)
 
     companion object
 }
 
 inline fun <reified I, reified O, reified P> TaskManager.register(
     identifier: String,
+    currentVersion: Int = 1,
     noinline factory: () -> TaskHandler<I, O, P>
 ) {
     register(
         identifier = identifier,
+        currentVersion = currentVersion,
         factory = factory,
         inputSerializer = serializer<I>(),
         outputSerializer = serializer<O>(),
@@ -68,8 +71,13 @@ inline fun <reified I, reified O, reified P> TaskManager.register(
 }
 
 inline fun <reified T : TaskHandler<I, O, P>, reified I, reified O, reified P> TaskManager.register(
+    currentVersion: Int = 1,
     noinline factory: () -> T
-) = register(T::class.fullName, factory)
+) = register(
+    identifier = T::class.fullName,
+    currentVersion = currentVersion,
+    factory = factory
+)
 
 
 suspend inline fun <reified T : TaskHandler<*, *, *>> TaskManager.cancelTask() = cancelTask(T::class)

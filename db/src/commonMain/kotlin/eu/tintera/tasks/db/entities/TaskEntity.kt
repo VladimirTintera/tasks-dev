@@ -35,7 +35,9 @@ internal data class TaskEntity(
     @ColumnInfo(defaultValue = "86400000")
     val retentionDelay: Duration,
     @ColumnInfo(defaultValue = "0")
-    val requiresDeviceIdle: Boolean
+    val requiresDeviceIdle: Boolean,
+    @ColumnInfo(defaultValue = "1")
+    val version: Int
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -201,5 +203,14 @@ internal interface TaskDao {
         taskId: Uuid,
         state: State,
         allowedSourceStates: List<State>
+    )
+
+    @Query("UPDATE Task set version = :version, inputData = :input, outputData = :output, progressData = :progress WHERE id = :taskId")
+    suspend fun upgradeData(
+        taskId: Uuid,
+        input: ByteArray?,
+        output: ByteArray?,
+        progress: ByteArray?,
+        version: Int
     )
 }

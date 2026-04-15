@@ -30,13 +30,13 @@ internal class DatabaseRepository(
         id: Uuid,
         processTime: Instant,
         state: State,
-        progressData: Data,
+        progressData: ByteArray?,
         runAttemptCount: Int?
     ) = taskDao.updateRetry(
         id = id,
         processTime = processTime,
         state = state.toEntityState(),
-        progress = progressData.toSerializableTaskData(),
+        progress = progressData,
         runAttemptCount = runAttemptCount
     )
 
@@ -52,12 +52,12 @@ internal class DatabaseRepository(
         id: Uuid,
         state: State,
         finishedAt: Instant,
-        outputData: Data
+        outputData: ByteArray?
     ) = taskDao.updateTerminatingState(
         id = id,
         state = state.toEntityState(),
         finishedAt = finishedAt,
-        outputData = outputData.toSerializableTaskData()
+        outputData = outputData
     )
 
     override suspend fun taskState(
@@ -167,8 +167,8 @@ internal class DatabaseRepository(
 
     override suspend fun updateProgressData(
         id: Uuid,
-        progressData: Data
-    ) = taskDao.updateProgressData(id, progressData.toSerializableTaskData())
+        progressData: ByteArray?
+    ) = taskDao.updateProgressData(id, progressData)
 
     override suspend fun updateState(
         id: Uuid,
@@ -192,6 +192,20 @@ internal class DatabaseRepository(
         taskId = id,
         state = state.toEntityState(),
         allowedSourceStates = allowedSourceStates.map { it.toEntityState() }
+    )
+
+    override suspend fun upgradeData(
+        id: Uuid,
+        input: ByteArray?,
+        output: ByteArray?,
+        progress: ByteArray?,
+        version: Int
+    ) = taskDao.upgradeData(
+        taskId = id,
+        input = input,
+        output = output,
+        progress = progress,
+        version = version
     )
 
     override suspend fun <T> withTransaction(

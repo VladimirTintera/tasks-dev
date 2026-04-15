@@ -1,4 +1,4 @@
-package eu.tintera.tasks.cleanup
+package eu.tintera.tasks.core.cleanup
 
 import eu.tintera.tasks.TaskHandler
 import eu.tintera.tasks.TaskResult
