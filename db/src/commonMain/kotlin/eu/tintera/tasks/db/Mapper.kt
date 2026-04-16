@@ -21,6 +21,7 @@ internal fun TaskEntity.toTask() = Task(
     progressData = progressData,
     retentionDelay = retentionDelay,
     requiresDeviceIdle = requiresDeviceIdle,
+    version = version
 )
 
 internal fun Task.toTaskEntity() = TaskEntity(
@@ -41,6 +42,7 @@ internal fun Task.toTaskEntity() = TaskEntity(
     progressData = progressData,
     retentionDelay = retentionDelay,
     requiresDeviceIdle = requiresDeviceIdle,
+    version = version
 )
 
 internal fun State.toTaskState() = when (this) {

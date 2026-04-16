@@ -28,7 +28,7 @@ class TaskResultProcessorImpl(
                                 id = task.id,
                                 state = State.Enqueued,
                                 processTime = now + duration,
-                                progressData = Data.EMPTY,
+                                progressData = null,
                                 runAttemptCount = 0
                             )
                         } else {
@@ -49,7 +49,7 @@ class TaskResultProcessorImpl(
                                 id = task.id,
                                 state = State.Enqueued,
                                 processTime = now + duration,
-                                progressData = Data.EMPTY,
+                                progressData = null,
                                 runAttemptCount = 0
                             )
                         } else {
@@ -68,7 +68,7 @@ class TaskResultProcessorImpl(
                             id = task.id,
                             state = State.Enqueued,
                             processTime = now + backoff,
-                            progressData = Data.EMPTY,
+                            progressData = null,
                             runAttemptCount = null
                         )
                     }
@@ -80,7 +80,7 @@ class TaskResultProcessorImpl(
                     id = task.id,
                     state = State.Enqueued,
                     processTime = now,
-                    progressData = Data.EMPTY,
+                    progressData = null,
                     runAttemptCount = null
                 )
             }

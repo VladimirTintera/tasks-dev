@@ -1,5 +1,6 @@
 package eu.tintera.tasks.core
 
+import eu.tintera.tasks.EventBus
 import eu.tintera.tasks.ForegroundInfo
 import eu.tintera.tasks.TaskHandler
 import eu.tintera.tasks.TaskResult
@@ -20,6 +21,7 @@ interface TaskEvaluator {
     ): TaskResult<ByteArray>
 }
 
+@Suppress("UNCHECKED_CAST")
 internal class TaskEvaluatorImpl(
     private val taskRegistry: TaskRegistry,
     private val repository: Repository,
@@ -73,13 +75,10 @@ internal class TaskEvaluatorImpl(
             version = taskData.version
         )
 
-        val typedInput = taskData.parsedInput ?: taskData.inputBytes?.let {
-            serializationEngine.decodeFromBytes(taskData.inputBytes, registration.inputSerializer)
-        } ?: when {
-            registration.inputSerializer.descriptor.serialName == "kotlin.Unit" -> Unit
-            registration.inputSerializer.descriptor.isNullable -> null
-            else -> error("Task ${task.id} is missing required input data!")
-        }
+        val typedInput = taskData.parsedInput ?: taskData.inputBytes?.toTypedData(
+            serializationEngine = serializationEngine,
+            serializer = registration.inputSerializer
+        )
 
         val scope = object : TaskScope<Any?, Any?> {
             override val taskId: Uuid = task.id
@@ -100,7 +99,7 @@ internal class TaskEvaluatorImpl(
             }
         }
 
-        @Suppress("UNCHECKED_CAST")
+
         val handler = registration.factory() as TaskHandler<Any?, Any?, Any?>
 
         val typedResult = try {
@@ -112,6 +111,7 @@ internal class TaskEvaluatorImpl(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            EventBus.send(TAG, "Task execution failed with error '${e.message}'")
             return TaskResult.Failure
         }
 
@@ -138,7 +138,6 @@ internal class TaskEvaluatorImpl(
     }
 
 
-
     private class TaskData(
         val inputBytes: ByteArray?,
         val outputBytes: ByteArray?,
@@ -146,5 +145,9 @@ internal class TaskEvaluatorImpl(
         val parsedInput: Any? = null, // TADY SI ULOŽÍME HOTOVÝ OBJEKT!
         val version: Int
     )
+
+    companion object {
+        private const val TAG = "TaskEvaluator"
+    }
 }
 

@@ -10,3 +10,5 @@ interface TaskScope<Input, Progress> {
     suspend fun setForegroundInfo(foregroundInfo: ForegroundInfo): Boolean
     suspend fun setProgress(data: Progress)
 }
+
+typealias LegacyTaskScope = TaskScope<Data, Data>

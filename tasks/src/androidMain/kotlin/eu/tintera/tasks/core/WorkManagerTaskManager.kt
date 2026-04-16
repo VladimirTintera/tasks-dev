@@ -5,21 +5,14 @@ import androidx.work.*
 import eu.tintera.tasks.*
 import eu.tintera.tasks.BackoffPolicy
 import eu.tintera.tasks.Constraints
-import eu.tintera.tasks.Data
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
+import eu.tintera.tasks.core.seriaization.SerializationEngine
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.KSerializer
 import java.util.concurrent.TimeUnit
 import kotlin.time.Clock
 import kotlin.time.Duration
@@ -32,14 +25,15 @@ import kotlin.uuid.toKotlinUuid
 internal class WorkManagerCoreTaskManager(
     private val workManager: WorkManager,
     private val repository: Repository,
+    private val serializationEngine: SerializationEngine,
+    private val taskRegistry: TaskRegistry
 ) : CoreTaskManager {
 
-    private fun TaskRequest.oneTimeWorkRequest() =
+    private fun TaskRequest<*>.oneTimeWorkRequest() =
         OneTimeWorkRequestBuilder<TaskWorker>().apply {
             set(
                 identifier = identifier,
                 initialDelay = initialDelay,
-                data = data,
                 constraints = constraints,
                 tags = tags + identifier,
                 backoffCriteria = backoffCriteria,
@@ -49,7 +43,7 @@ internal class WorkManagerCoreTaskManager(
 
 
     override suspend fun enqueueUniqueTask(
-        task: TaskRequest,
+        task: TaskRequest<*>,
         uniqueName: String,
         existingTaskPolicy: ExistingTaskPolicy,
     ): Uuid {
@@ -68,7 +62,8 @@ internal class WorkManagerCoreTaskManager(
             saveTask(
                 id = id,
                 task = task,
-                uniqueName = uniqueName
+                uniqueName = uniqueName,
+                repeatInterval = null
             )
             workManager.enqueueUniqueWork(
                 uniqueName,
@@ -81,12 +76,17 @@ internal class WorkManagerCoreTaskManager(
     }
 
     override suspend fun enqueueTask(
-        task: TaskRequest,
+        task: TaskRequest<*>,
     ): Uuid {
         val request = task.oneTimeWorkRequest()
         val id = request.id.toKotlinUuid()
         return withContext(NonCancellable) {
-            saveTask(id = id, task = task, uniqueName = "")
+            saveTask(
+                id = id,
+                task = task,
+                uniqueName = "",
+                repeatInterval = null
+            )
             workManager.enqueue(request).await()
             id
         }
@@ -98,7 +98,12 @@ internal class WorkManagerCoreTaskManager(
         withContext(NonCancellable) {
 
             roots.forEach { (task, work) ->
-                saveTask(id = work.id.toKotlinUuid(), task = task, uniqueName = "")
+                saveTask(
+                    id = work.id.toKotlinUuid(),
+                    task = task,
+                    uniqueName = "",
+                    repeatInterval = null
+                )
             }
 
             workManager.beginWith(
@@ -116,7 +121,12 @@ internal class WorkManagerCoreTaskManager(
         withContext(NonCancellable) {
 
             roots.forEach { (task, work) ->
-                saveTask(id = work.id.toKotlinUuid(), task = task, uniqueName = uniqueName)
+                saveTask(
+                    id = work.id.toKotlinUuid(),
+                    task = task,
+                    uniqueName = uniqueName,
+                    repeatInterval = null
+                )
             }
 
             workManager.beginUniqueWork(
@@ -141,7 +151,8 @@ internal class WorkManagerCoreTaskManager(
             saveTask(
                 id = request.id.toKotlinUuid(),
                 task = task,
-                uniqueName = ""
+                uniqueName = "",
+                repeatInterval = null
             )
         }
 
@@ -162,7 +173,7 @@ internal class WorkManagerCoreTaskManager(
     }
 
     override suspend fun enqueuePeriodicUniqueTask(
-        task: TaskRequest,
+        task: TaskRequest<*>,
         repeatInterval: Duration,
         uniqueName: String,
         existingTaskPolicy: ExistingPeriodicTaskPolicy,
@@ -182,7 +193,6 @@ internal class WorkManagerCoreTaskManager(
             set(
                 identifier = task.identifier,
                 initialDelay = task.initialDelay,
-                data = task.data,
                 constraints = task.constraints,
                 tags = task.tags + uniqueName + task.identifier,
                 backoffCriteria = task.backoffCriteria,
@@ -194,7 +204,14 @@ internal class WorkManagerCoreTaskManager(
         val id = request.id.toKotlinUuid()
 
         return withContext(NonCancellable) {
-            saveTask(id = id, task = task, uniqueName = uniqueName)
+
+            saveTask(
+                id = id,
+                task = task,
+                uniqueName = uniqueName,
+                repeatInterval = repeatInterval
+            )
+
             workManager.enqueueUniquePeriodicWork(
                 uniqueName,
                 when (existingTaskPolicy) {
@@ -212,15 +229,13 @@ internal class WorkManagerCoreTaskManager(
     private fun <B : WorkRequest.Builder<B, *>, W : WorkRequest> WorkRequest.Builder<B, W>.set(
         identifier: String,
         initialDelay: Duration,
-        data: Data,
+
         constraints: Constraints,
         tags: Set<String>,
         backoffCriteria: BackoffCriteria?,
         keepResultsForAtLeast: Duration
     ) {
-        val inputData =
-            androidx.work.Data.Builder().putString(TaskWorker.TASK_IDENTIFIER, identifier)
-                .putAll(data.map).build()
+        val inputData = androidx.work.Data.Builder().putString(TaskWorker.TASK_IDENTIFIER, identifier).build()
         setInputData(inputData)
         if (constraints.requiresNetwork || constraints.requiresDeviceIdle)
             setConstraints(
@@ -330,9 +345,12 @@ internal class WorkManagerCoreTaskManager(
 
     private suspend fun saveTask(
         id: Uuid,
-        task: TaskRequest,
+        task: TaskRequest<*>,
         uniqueName: String,
+        repeatInterval: Duration?
     ) {
+        val registration = taskRegistry.resolve(task.identifier) ?: return
+
         val t = Task(
             id = id,
             identifier = task.identifier,
@@ -340,17 +358,20 @@ internal class WorkManagerCoreTaskManager(
             runAttemptCount = 0,
             state = State.Enqueued,
             processTime = Clock.System.now(),
-            inputData = task.data,
-            outputData = Data.EMPTY,
+            inputData = task.data?.let { data ->
+                serializationEngine.encodeToBytes(data, registration.inputSerializer as KSerializer<Any>)
+            },
+            outputData = null,
             networkRequired = task.constraints.requiresNetwork,
             createdAt = Clock.System.now(),
             finishedAt = null,
-            repeatInterval = null,
+            repeatInterval = repeatInterval,
             initialDelay = task.initialDelay,
             backoffCriteria = task.backoffCriteria ?: BackoffCriteria.DEFAULT,
-            progressData = Data.EMPTY,
+            progressData = null,
             retentionDelay = task.keepResultsForAtLeast,
-            requiresDeviceIdle = task.constraints.requiresDeviceIdle
+            requiresDeviceIdle = task.constraints.requiresDeviceIdle,
+            version = registration.currentVersion
         )
 
         repository.insert(task = t, tags = emptySet(), parentIds = emptySet())

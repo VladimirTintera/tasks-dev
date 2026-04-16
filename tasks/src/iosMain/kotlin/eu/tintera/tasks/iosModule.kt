@@ -40,8 +40,6 @@ internal fun iosModule(
         }
     }
 
-    factoryOf(::RepositoryTaskScopeFactory) bind TaskScopeFactory::class
-
     factoryOf(::RepositoryCoreTaskManager) bind CoreTaskManager::class
 
 

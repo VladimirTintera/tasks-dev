@@ -1,10 +1,6 @@
 package eu.tintera.tasks
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Card
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,7 +24,12 @@ fun TaskInfoItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = info.id.toString(), modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                text = info.id.toString(),
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
             Text(text = info.state.toString(), modifier = Modifier.padding(start = 8.dp))
         }
 
@@ -46,18 +47,17 @@ fun TaskInfoItem(
 
         Text(info.nextScheduledTime.toString())
 
-        DataItems(info.progress)
-        DataItems(info.outputData)
+        DataItems(info.progress?.toString())
+        DataItems(info.outputData?.toString())
     }
 }
 
 @Composable
-private fun DataItems(data: Data)  {
-    data.map.takeIf {
+private fun DataItems(data: String?) {
+    data?.takeIf {
         it.isNotEmpty()
     }?.also {
-        it.forEach {
-            Text(text = "${it.key}: ${it.value}")
-        }
+        Text(text = it)
+
     }
 }

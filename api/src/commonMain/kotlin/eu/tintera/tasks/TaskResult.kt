@@ -12,3 +12,5 @@ sealed class TaskResult<out Output> {
         fun failure() = Failure
     }
 }
+
+typealias LegacyTaskResult = TaskResult<Data>

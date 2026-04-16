@@ -1,6 +1,7 @@
 package eu.tintera.tasks.core
 
 import eu.tintera.tasks.*
+import eu.tintera.tasks.core.seriaization.DataSerializer
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.KSerializer
 import kotlin.time.Duration
@@ -20,7 +21,7 @@ class TaskManagerImpl(
         progressSerializer: KSerializer<Progress>
     ) = taskRegistry.register(
         identifier = identifier,
-        registration = TaskRegistry.TaskRegistration<Input, Output, Progress>(
+        registration = TaskRegistry.TaskRegistration(
             currentVersion = currentVersion,
             factory = factory,
             inputSerializer = inputSerializer,
@@ -30,9 +31,26 @@ class TaskManagerImpl(
         )
     )
 
+    @Deprecated("Use typed registration instead")
+    fun register(
+        identifier: String,
+        currentVersion: Int,
+        factory: () -> LegacyTaskHandler,
+    ) = taskRegistry.register(
+        identifier = identifier,
+        registration = TaskRegistry.TaskRegistration(
+            currentVersion = currentVersion,
+            factory = factory,
+            inputSerializer = DataSerializer,
+            outputSerializer = DataSerializer,
+            progressSerializer = DataSerializer,
+            migrations = emptyList()
+        )
+    )
+
 
     override suspend fun enqueueUniqueTask(
-        task: TaskRequest,
+        task: TaskRequest<*>,
         uniqueName: String,
         existingTaskPolicy: ExistingTaskPolicy,
     ) = coreTaskManager.enqueueUniqueTask(
@@ -41,7 +59,7 @@ class TaskManagerImpl(
         existingTaskPolicy = existingTaskPolicy
     )
 
-    override suspend fun enqueueTask(task: TaskRequest) = coreTaskManager.enqueueTask(task)
+    override suspend fun enqueueTask(task: TaskRequest<*>) = coreTaskManager.enqueueTask(task)
 
     override suspend fun enqueueContinuation(
         continuation: TaskContinuation,
@@ -58,7 +76,7 @@ class TaskManagerImpl(
     )
 
     override suspend fun enqueuePeriodicUniqueTask(
-        task: TaskRequest,
+        task: TaskRequest<*>,
         repeatInterval: Duration,
         uniqueName: String,
         existingTaskPolicy: ExistingPeriodicTaskPolicy,

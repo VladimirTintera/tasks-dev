@@ -2,13 +2,11 @@ package eu.tintera.tasks.core
 
 import eu.tintera.guard.ExecutionContextProvider
 import eu.tintera.guard.invoke
-import eu.tintera.tasks.Data
 import eu.tintera.tasks.EventBus
 import eu.tintera.tasks.State
 import eu.tintera.tasks.TaskResult
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
-import eu.tintera.tasks.core.data.backoffCriteriaOrDefault
 import eu.tintera.tasks.core.preconditions.PreconditionLostException
 import eu.tintera.tasks.core.preconditions.TaskPreconditionController
 import kotlinx.coroutines.*
@@ -28,7 +26,6 @@ internal class TaskProcessorImpl(
     private val repository: Repository,
     private val taskEvaluator: TaskEvaluator,
     private val executionContextProvider: ExecutionContextProvider,
-    private val taskScopeFactory: TaskScopeFactory,
     config: TaskProcessorConfig = TaskProcessorConfig(),
     private val preconditionController: TaskPreconditionController,
     private val taskResultProcessor: TaskResultProcessor
@@ -117,15 +114,13 @@ internal class TaskProcessorImpl(
                     this@coroutineScope.cancel(PreconditionLostException(failedPreconditions))
                 }
 
-                val taskData = taskParents
+                /*val taskData = taskParents
                     .sortedBy { it.finishedAt }
                     .map { it.outputData }
-                    .sum() + task.inputData
+                    .sum() + task.inputData*/
 
                 val result = taskEvaluator.handle(
-                    taskIdentifier = task.identifier,
-                    taskId = task.id,
-                    runAttemptCount = task.runAttemptCount,
+                    task = task,
                     onForegroundInfo = { true }
                 )
 
@@ -133,7 +128,10 @@ internal class TaskProcessorImpl(
                 ExecutionResult.Finished(result)
             }
         } catch (e: PreconditionLostException) {
-            EventBus.send(TAG, "Task interrupted '${task.identifier}' due to lost capability (${e.failedPreconditions}). Enqueueing back.")
+            EventBus.send(
+                TAG,
+                "Task interrupted '${task.identifier}' due to lost capability (${e.failedPreconditions}). Enqueueing back."
+            )
             ExecutionResult.Yielded
         } catch (e: CancellationException) {
             // when canceled, do nothing. Invalid Running states are handled by sweep mechanism

@@ -173,6 +173,6 @@ fun TaskRow(
             actions()
         }
 
-        ProgressSection(info.progress.map)
+        //ProgressSection(info.progress.map)
     }
 }

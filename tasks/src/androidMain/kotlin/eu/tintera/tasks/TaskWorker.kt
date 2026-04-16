@@ -7,18 +7,22 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
-import androidx.work.Data
 import androidx.work.WorkerParameters
 import eu.tintera.tasks.core.ExecutionResult
 import eu.tintera.tasks.core.TaskEvaluator
 import eu.tintera.tasks.core.TaskResultProcessor
 import eu.tintera.tasks.core.data.Repository
+import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.core.nonTerminalStates
+import eu.tintera.tasks.core.seriaization.DataSerializer
+import eu.tintera.tasks.core.seriaization.SerializationEngine
 import eu.tintera.tasks.koin.TasksKoinComponent
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import org.koin.core.component.inject
-import kotlin.uuid.Uuid
+import kotlin.time.Clock
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.hours
 import kotlin.uuid.toKotlinUuid
 
 internal class TaskWorker(
@@ -33,6 +37,7 @@ internal class TaskWorker(
     private val taskEvaluator: TaskEvaluator by inject()
     private val repository: Repository by inject()
     private val taskResultProcessor: TaskResultProcessor by inject()
+    private val serializerEngine: SerializationEngine by inject()
 
     override suspend fun doWork(): Result {
 
@@ -46,34 +51,65 @@ internal class TaskWorker(
 
         val taskId = id.toKotlinUuid()
 
-        repository.updateState(
-            id = taskId,
-            state = State.Running,
-            allowedSourceStates = nonTerminalStates.toSet(),
-            resetProcessTime = true
+        var task = repository.task(taskId).first()
+
+        if (task == null) {
+            // ADOPCE STARÉHO ÚKOLU:
+            // Vytáhneme všechna data z WorkManageru a zabalíme je do starého formátu (Verze 1)
+
+            task = Task(
+                id = taskId,
+                identifier = taskIdentifier,
+                inputData = serializerEngine.encodeToBytes(value = inputData.toData(), serializer = DataSerializer),
+                outputData = null,
+                progressData = null,
+                version = 1, // DŮLEŽITÉ: Je to starý task, jde do verze 1
+                state = State.Running,
+                runAttemptCount = runAttemptCount + 1,
+                uniqueName = "",
+                initialDelay = Duration.ZERO,
+                processTime = null,
+                networkRequired = false,
+                createdAt = Clock.System.now(),
+                finishedAt = null,
+                repeatInterval = null,
+                backoffCriteria = null,
+                retentionDelay = 24.hours,
+                requiresDeviceIdle = false
+            )
+
+            // Založíme ho u nás, aby o něm systém odteď věděl
+            repository.insert(task, emptySet(), emptySet())
+        } else {
+            // Úkol už je náš, jen updatneme stav (pokud se např. jedná o Retry)
+            repository.updateState(
+                id = taskId,
+                state = State.Running,
+                allowedSourceStates = nonTerminalStates.toSet(),
+                resetProcessTime = true,
+
+                )
+            task = task.copy(
+                state = State.Running,
+                runAttemptCount = runAttemptCount + 1
+            )
+        }
+
+
+        val result = taskEvaluator.handle(
+            task = task,
+            onForegroundInfo = ::internalSetForegroundInfo
         )
 
-        val result = with(taskEvaluator) {
-            with(taskScope()) {
-                handle(taskIdentifier = taskIdentifier)
-            }
-        } ?: TaskResult.failure()
+        taskResultProcessor.handleResult(task, ExecutionResult.Finished(result))
 
         EventBus.send("TaskWorker", "Task finished '${taskIdentifier}', result = $result")
 
-        val workResult = when (result) {
+        return when (result) {
             TaskResult.Failure -> Result.failure()
             TaskResult.Retry -> Result.retry()
-            is TaskResult.Success -> Result.success(
-                Data.Builder().putAll(result.outputData.map).build()
-            )
+            is TaskResult.Success -> Result.success()
         }
-        repository.task(taskId).first()?.also {
-            taskResultProcessor.handleResult(it, ExecutionResult.Finished(result))
-        }
-
-
-        return workResult
     }
 
     private suspend fun internalSetForegroundInfo(
@@ -119,22 +155,6 @@ internal class TaskWorker(
                 NotificationManager.IMPORTANCE_LOW
             )
         )
-    }
-
-    // Implementace TaskScope jako vnitřní objekt
-    private fun taskScope() = object : TaskScope {
-        override val taskId: Uuid = id.toKotlinUuid()
-        override val data: eu.tintera.tasks.Data = inputData.toData()
-        override val retryCount: Int
-            get() = this@TaskWorker.runAttemptCount
-
-        override suspend fun setForegroundInfo(
-            foregroundInfo: ForegroundInfo
-        ): Boolean = this@TaskWorker.internalSetForegroundInfo(foregroundInfo)
-
-        override suspend fun setProgress(data: eu.tintera.tasks.Data) {
-            this@TaskWorker.setProgress(Data.Builder().putAll(data.map).build())
-        }
     }
 
     companion object {

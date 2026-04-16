@@ -1,6 +1,7 @@
 package eu.tintera.tasks.core
 
 import eu.tintera.tasks.core.cleanup.DatabaseCleaner
+import eu.tintera.tasks.core.cleanup.DatabaseCleanupTaskHandler
 import eu.tintera.tasks.core.seriaization.SerializationEngine
 import org.koin.core.module.dsl.createdAtStart
 import org.koin.core.module.dsl.factoryOf
@@ -18,4 +19,6 @@ val coreModule = module {
     singleOf(::DatabaseCleaner) {
         createdAtStart()
     }
+
+    factoryOf(::DatabaseCleanupTaskHandler)
 }

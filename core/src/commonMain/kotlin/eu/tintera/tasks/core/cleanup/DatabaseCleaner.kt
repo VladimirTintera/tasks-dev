@@ -1,9 +1,6 @@
 package eu.tintera.tasks.core.cleanup
 
-import eu.tintera.tasks.Constraints
-import eu.tintera.tasks.ExistingPeriodicTaskPolicy
-import eu.tintera.tasks.TaskManager
-import eu.tintera.tasks.TaskRequest
+import eu.tintera.tasks.*
 import kotlinx.coroutines.*
 import kotlin.time.Duration.Companion.hours
 
@@ -14,13 +11,17 @@ internal class DatabaseCleaner(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     init {
-        taskManager.register(IDENTIFIER) { handler }
+        taskManager.register(
+            identifier = IDENTIFIER,
+            currentVersion = 1
+        ) { handler }
 
         scope.launch {
             taskManager.enqueuePeriodicUniqueTask(
-                task = TaskRequest(
+                task = taskRequest(
                     identifier = IDENTIFIER,
-                    constraints = Constraints(requiresDeviceIdle = false)
+                    constraints = Constraints(requiresDeviceIdle = false),
+                    data = Unit
                 ),
                 existingTaskPolicy = ExistingPeriodicTaskPolicy.Keep,
                 repeatInterval = 24.hours,

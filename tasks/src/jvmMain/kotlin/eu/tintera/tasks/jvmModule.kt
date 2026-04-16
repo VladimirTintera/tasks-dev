@@ -21,8 +21,6 @@ internal fun jvmModule(
 
     includes(engineModule)
 
-    factoryOf(::RepositoryTaskScopeFactory) bind TaskScopeFactory::class
-
     factoryOf(::RepositoryCoreTaskManager) bind CoreTaskManager::class
 
     singleOf<NetworkState>(::JvmNetworkState)

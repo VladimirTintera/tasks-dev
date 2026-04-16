@@ -8,9 +8,9 @@ import eu.tintera.tasks.core.terminalStates
 
 internal class DatabaseCleanupTaskHandler(
     private val repository: Repository
-) : TaskHandler {
-    override suspend fun TaskScope.run(): TaskResult {
+) : TaskHandler<Unit, Unit, Unit> {
+    override suspend fun TaskScope<Unit, Unit>.run(): TaskResult<Unit> {
         repository.cleanOld(terminalStates)
-        return TaskResult.success()
+        return TaskResult.success(Unit)
     }
 }

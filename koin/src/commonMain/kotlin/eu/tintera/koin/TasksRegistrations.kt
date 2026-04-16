@@ -1,5 +1,7 @@
 package eu.tintera.koin
 
+import eu.tintera.koin.taskHandlerRegistration
+import eu.tintera.tasks.LegacyTaskHandler
 import eu.tintera.tasks.TaskHandler
 import eu.tintera.tasks.TaskManager
 import eu.tintera.tasks.fullName
@@ -20,93 +22,145 @@ internal class TasksRegistrations(
 ) {
     init {
         registrations.forEach { registration ->
-            taskManager.register(
-                identifier = registration.type.fullName,
-                currentVersion = registration.currentVersion,
-            ) {
-                koin.get<TaskHandler<*, *, *>>(registration.type)
+            when (registration) {
+                is TaskHandlerRegistration.Legacy -> {
+                    taskManager.register(
+                        identifier = registration.type.fullName,
+                        factory = { koin.get(registration.type) }
+                    )
+                }
+
+                is TaskHandlerRegistration.Typed -> {
+                    taskManager.register(
+                        identifier = registration.identifier,
+                        currentVersion = registration.currentVersion,
+                        inputSerializer = registration.inputSerializer,
+                        outputSerializer = registration.outputSerializer,
+                        progressSerializer = registration.progressSerializer,
+                        factory = { koin.get(registration.type) }
+                    )
+                }
             }
+
         }
     }
 }
 
-inline fun <reified R : TaskHandler<*, *, *>> Module.taskHandlerOf(
-    currentVersion: Int = 1,
-    crossinline constructor: () -> R
-) = taskHandlerRegistration(currentVersion = currentVersion) {
+inline fun <reified R : LegacyTaskHandler> Module.taskHandlerOf(
+    crossinline constructor: () -> R,
+) = legacyTaskHandlerRegistration {
     factoryOf(constructor)
 }
 
-inline fun <reified R : TaskHandler<*, *, *>, reified T1> Module.taskHandlerOf(
+inline fun <reified Input, reified Output, reified Progress, reified R : TaskHandler<Input, Output, Progress>> Module.taskHandlerOf(
+    crossinline constructor: () -> R,
+    identifier: String = "",
     currentVersion: Int = 1,
-    crossinline constructor: (T1) -> R
 ) = taskHandlerRegistration(
+    identifier = identifier,
     currentVersion = currentVersion
 ) {
     factoryOf(constructor)
 }
 
-inline fun <reified R : TaskHandler<*, *, *>, reified T1, reified T2> Module.taskHandlerOf(
+inline fun <reified Input, reified Output, reified Progress, reified R : TaskHandler<Input, Output, Progress>, reified T1> Module.taskHandlerOf(
+    crossinline constructor: (T1) -> R,
+    identifier: String = "",
     currentVersion: Int = 1,
-    crossinline constructor: (T1, T2) -> R
 ) = taskHandlerRegistration(
+    identifier = identifier,
     currentVersion = currentVersion
 ) {
     factoryOf(constructor)
 }
 
-inline fun <reified R : TaskHandler<*, *, *>, reified T1, reified T2, reified T3> Module.taskHandlerOf(
+inline fun <reified Input, reified Output, reified Progress, reified R : TaskHandler<Input, Output, Progress>, reified T1, reified T2> Module.taskHandlerOf(
+    crossinline constructor: (T1, T2) -> R,
+    identifier: String = "",
     currentVersion: Int = 1,
-    crossinline constructor: (T1, T2, T3) -> R
 ) = taskHandlerRegistration(
+    identifier = identifier,
     currentVersion = currentVersion
 ) {
     factoryOf(constructor)
 }
 
-inline fun <reified R : TaskHandler<*, *, *>, reified T1, reified T2, reified T3, reified T4> Module.taskHandlerOf(
+inline fun <reified Input, reified Output, reified Progress, reified R : TaskHandler<Input, Output, Progress>, reified T1, reified T2, reified T3> Module.taskHandlerOf(
+    crossinline constructor: (T1, T2, T3) -> R,
+    identifier: String = "",
     currentVersion: Int = 1,
-    crossinline constructor: (T1, T2, T3, T4) -> R
 ) = taskHandlerRegistration(
+    identifier = identifier,
     currentVersion = currentVersion
 ) {
     factoryOf(constructor)
 }
 
-inline fun <reified R : TaskHandler<*, *, *>, reified T1, reified T2, reified T3, reified T4, reified T5> Module.taskHandlerOf(
+inline fun <reified Input, reified Output, reified Progress, reified R : TaskHandler<Input, Output, Progress>, reified T1, reified T2, reified T3, reified T4> Module.taskHandlerOf(
+    crossinline constructor: (T1, T2, T3, T4) -> R,
+    identifier: String = "",
     currentVersion: Int = 1,
-    crossinline constructor: (T1, T2, T3, T4, T5) -> R
 ) = taskHandlerRegistration(
+    identifier = identifier,
     currentVersion = currentVersion
 ) {
     factoryOf(constructor)
 }
 
-inline fun <reified R : TaskHandler<*, *, *>, reified T1, reified T2, reified T3, reified T4, reified T5, reified T6> Module.taskHandlerOf(
+inline fun <reified Input, reified Output, reified Progress, reified R : TaskHandler<Input, Output, Progress>, reified T1, reified T2, reified T3, reified T4, reified T5> Module.taskHandlerOf(
+    crossinline constructor: (T1, T2, T3, T4, T5) -> R,
+    identifier: String = "",
     currentVersion: Int = 1,
-    crossinline constructor: (T1, T2, T3, T4, T5, T6) -> R
 ) = taskHandlerRegistration(
+    identifier = identifier,
     currentVersion = currentVersion
 ) {
     factoryOf(constructor)
 }
 
-inline fun <reified R : TaskHandler<*, *, *>> Module.taskHandler(
+inline fun <reified Input, reified Output, reified Progress, reified R : TaskHandler<Input, Output, Progress>, reified T1, reified T2, reified T3, reified T4, reified T5, reified T6> Module.taskHandlerOf(
+    crossinline constructor: (T1, T2, T3, T4, T5, T6) -> R,
+    identifier: String = "",
+    currentVersion: Int = 1,
+) = taskHandlerRegistration(
+    identifier = identifier,
+    currentVersion = currentVersion
+) {
+    factoryOf(constructor)
+}
+
+inline fun <reified Input, reified Output, reified Progress, reified R : TaskHandler<Input, Output, Progress>> Module.taskHandler(
+    identifier: String = "",
     currentVersion: Int = 1,
     qualifier: Qualifier? = null,
     noinline definition: Definition<R>,
 ) = taskHandlerRegistration(
+    identifier = identifier,
     currentVersion = currentVersion
 ) {
     factory(qualifier, definition)
 }
 
-inline fun <reified R : TaskHandler<*, *, *>> Module.taskHandlerRegistration(
-    currentVersion: Int,
+@Deprecated("Use typed registration instead")
+inline fun <reified R : LegacyTaskHandler> Module.legacyTaskHandlerRegistration(
     noinline definition: Module.() -> KoinDefinition<R>
 ) {
     definition()
     single(named<R>()) {
-        taskHandlerRegistration<R>(currentVersion = currentVersion)
+        legacyTaskHandlerRegistration<R>()
+    } bind TaskHandlerRegistration::class
+}
+
+inline fun <reified Input, reified Output, reified Progress, reified R : TaskHandler<Input, Output, Progress>> Module.taskHandlerRegistration(
+    currentVersion: Int,
+    identifier: String,
+    noinline definition: Module.() -> KoinDefinition<R>
+) {
+    definition()
+    single(named<R>()) {
+        taskHandlerRegistration<Input, Output, Progress, R>(
+            currentVersion = currentVersion,
+            identifier = identifier
+        )
     } bind TaskHandlerRegistration::class
 }
