@@ -1,8 +1,8 @@
 package eu.tintera.tasks
 
+import eu.tintera.tasks.migrations.Migration
+import eu.tintera.tasks.serialization.TaskDataSerializer
 import kotlinx.coroutines.flow.Flow
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.serializer
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.uuid.Uuid
@@ -12,9 +12,10 @@ interface TaskManager {
         identifier: String,
         currentVersion: Int,
         factory: () -> TaskHandler<Input, Output, Progress>,
-        inputSerializer: KSerializer<Input>,
-        outputSerializer: KSerializer<Output>,
-        progressSerializer: KSerializer<Progress>
+        inputSerializer: TaskDataSerializer<Input>,
+        outputSerializer: TaskDataSerializer<Output>,
+        progressSerializer: TaskDataSerializer<Progress>,
+        migrations: List<Migration> = emptyList()
     )
 
     suspend fun enqueueUniqueTask(
@@ -55,31 +56,22 @@ interface TaskManager {
     companion object
 }
 
-inline fun <reified I, reified O, reified P> TaskManager.register(
-    identifier: String,
-    currentVersion: Int = 1,
-    noinline factory: () -> TaskHandler<I, O, P>
-) {
-    register(
-        identifier = identifier,
-        currentVersion = currentVersion,
-        factory = factory,
-        inputSerializer = serializer<I>(),
-        outputSerializer = serializer<O>(),
-        progressSerializer = serializer<P>()
-    )
-}
-
 inline fun <reified T : TaskHandler<I, O, P>, reified I, reified O, reified P> TaskManager.register(
     currentVersion: Int = 1,
+    inputSerializer: TaskDataSerializer<I>,
+    outputSerializer: TaskDataSerializer<O>,
+    progressSerializer: TaskDataSerializer<P>,
+    migrations: List<Migration> = emptyList(),
     noinline factory: () -> T
 ) = register(
     identifier = T::class.fullName,
     currentVersion = currentVersion,
-    factory = factory
+    factory = factory,
+    inputSerializer = inputSerializer,
+    outputSerializer = outputSerializer,
+    progressSerializer = progressSerializer,
+    migrations = migrations,
 )
-
-
 
 
 suspend inline fun <reified T : TaskHandler<*, *, *>> TaskManager.cancelTask() = cancelTask(T::class)

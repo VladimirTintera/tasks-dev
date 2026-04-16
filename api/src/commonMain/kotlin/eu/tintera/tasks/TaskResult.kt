@@ -7,7 +7,7 @@ sealed class TaskResult<out Output> {
 
     companion object {
         fun <T> success(outputData: T) = Success(outputData)
-        fun success(outputData: Data = Data.EMPTY) = success<Data>(outputData)
+
         fun retry() = Retry
         fun failure() = Failure
     }

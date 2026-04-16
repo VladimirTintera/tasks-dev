@@ -35,8 +35,7 @@ kotlin {
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
             api(libs.guard)
-            implementation(libs.kotlinx.serialization.json)
-            implementation(libs.kotlinx.serialization.protobuf)
+            implementation(libs.kotlinx.serialization.core)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

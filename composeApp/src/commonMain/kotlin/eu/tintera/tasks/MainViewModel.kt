@@ -3,6 +3,7 @@ package eu.tintera.tasks
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import eu.tintera.tasks.handlers.TestHandler
+import eu.tintera.tasks.handlers.scheduleTestHandler
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -36,15 +37,7 @@ class MainViewModel(
     )
 
     fun enqueueTask() = viewModelScope.launch {
-        taskManager.enqueueTask(
-            taskRequest<TestHandler>(
-                tags = setOf(DEFAULT_TAG),
-                constraints = Constraints(
-                    requiresDeviceIdle = false,
-                    requiresNetwork = true
-                )
-            )
-        )
+        taskManager.scheduleTestHandler(20)
     }
 
     fun cancelTaskGyId(id: Uuid) = viewModelScope.launch {
@@ -56,6 +49,6 @@ class MainViewModel(
     }
 
     companion object {
-        private const val DEFAULT_TAG = "TestTask"
+        const val DEFAULT_TAG = "TestTask"
     }
 }

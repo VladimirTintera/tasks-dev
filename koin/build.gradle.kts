@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
-    alias(libs.plugins.serialization)
 }
 kotlin {
 
@@ -30,7 +29,6 @@ kotlin {
             api(libs.koin.core)
             implementation(projects.tasks)
             api(projects.api)
-            implementation(libs.kotlinx.serialization.core)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

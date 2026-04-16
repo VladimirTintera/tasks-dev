@@ -7,7 +7,6 @@ import eu.tintera.tasks.BackoffPolicy
 import eu.tintera.tasks.Constraints
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
-import eu.tintera.tasks.core.seriaization.SerializationEngine
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.*
@@ -42,8 +41,8 @@ internal class WorkManagerCoreTaskManager(
         }.build()
 
 
-    override suspend fun enqueueUniqueTask(
-        task: TaskRequest<*>,
+    override suspend fun <T> enqueueUniqueTask(
+        task: TaskRequest<T>,
         uniqueName: String,
         existingTaskPolicy: ExistingTaskPolicy,
     ): Uuid {
@@ -75,8 +74,8 @@ internal class WorkManagerCoreTaskManager(
         }
     }
 
-    override suspend fun enqueueTask(
-        task: TaskRequest<*>,
+    override suspend fun <T> enqueueTask(
+        task: TaskRequest<T>,
     ): Uuid {
         val request = task.oneTimeWorkRequest()
         val id = request.id.toKotlinUuid()
@@ -172,8 +171,8 @@ internal class WorkManagerCoreTaskManager(
         return uncompletedExisting?.id?.toKotlinUuid()
     }
 
-    override suspend fun enqueuePeriodicUniqueTask(
-        task: TaskRequest<*>,
+    override suspend fun <T> enqueuePeriodicUniqueTask(
+        task: TaskRequest<T>,
         repeatInterval: Duration,
         uniqueName: String,
         existingTaskPolicy: ExistingPeriodicTaskPolicy,

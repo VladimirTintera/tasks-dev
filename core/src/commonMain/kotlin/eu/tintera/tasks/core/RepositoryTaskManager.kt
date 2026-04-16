@@ -4,11 +4,9 @@ import eu.tintera.tasks.*
 import eu.tintera.tasks.core.data.FullTask
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
-import eu.tintera.tasks.core.seriaization.SerializationEngine
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.KSerializer
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.uuid.Uuid
@@ -16,11 +14,10 @@ import kotlin.uuid.Uuid
 class RepositoryCoreTaskManager(
     private val repository: Repository,
     private val taskRegistry: TaskRegistry,
-    private val serializationEngine: SerializationEngine
 ) : CoreTaskManager {
 
-    override suspend fun enqueueUniqueTask(
-        task: TaskRequest<*>,
+    override suspend fun <T> enqueueUniqueTask(
+        task: TaskRequest<T>,
         uniqueName: String,
         existingTaskPolicy: ExistingTaskPolicy,
     ): Uuid = repository.withTransaction {
@@ -47,7 +44,7 @@ class RepositoryCoreTaskManager(
         val t = task.toTask(
             uniqueName = uniqueName,
             state = if (parentIds.isEmpty()) State.Enqueued else State.Blocked,
-            registration = findRegistration(task.identifier),
+            registration = findRegistration<T, Any, Any>(task.identifier),
             repeatInterval = null
         )
 
@@ -56,13 +53,13 @@ class RepositoryCoreTaskManager(
         t.id
     }
 
-    private suspend fun findRegistrationOrNull(
+    private suspend fun <I, O, P> findRegistrationOrNull(
         identifier: String
-    ) = taskRegistry.resolve(identifier)
+    ) = taskRegistry.resolve<I, O, P>(identifier) as? TaskRegistry.TaskRegistration<I, O, P>
 
-    private suspend fun findRegistration(
+    private suspend fun <I, O, P> findRegistration(
         identifier: String
-    ) = findRegistrationOrNull(identifier) ?: error("Task '$identifier' is not registered!")
+    ) = findRegistrationOrNull<I, O, P>(identifier) ?: error("Task '$identifier' is not registered!")
 
 
     override suspend fun enqueueContinuation(
@@ -110,10 +107,10 @@ class RepositoryCoreTaskManager(
         insertContinuation(continuation, uniqueName, parentIds.toSet())
     }
 
-    private fun TaskRequest<*>.toTask(
+    private fun <T> TaskRequest<T>.toTask(
         uniqueName: String,
         state: State,
-        registration: TaskRegistry.TaskRegistration<*, *, *>,
+        registration: TaskRegistry.TaskRegistration<T, *, *>,
         repeatInterval: Duration?
     ) = Task(
         id = Uuid.random(),
@@ -123,10 +120,7 @@ class RepositoryCoreTaskManager(
         state = state,
         processTime = Clock.System.now(),
         inputData = data?.let {
-            serializationEngine.encodeToBytes(
-                value = data,
-                serializer = registration.inputSerializer as KSerializer<Any?>
-            )
+            registration.inputSerializer.encodeToBytes(it)
         },
         outputData = null,
         networkRequired = constraints.requiresNetwork,
@@ -141,8 +135,8 @@ class RepositoryCoreTaskManager(
         version = registration.currentVersion
     )
 
-    override suspend fun enqueueTask(
-        task: TaskRequest<*>,
+    override suspend fun <T> enqueueTask(
+        task: TaskRequest<T>,
     ): Uuid = repository.withTransaction {
         insertTask(task, Uuid.random().toString(), setOf())
     }
@@ -161,23 +155,23 @@ class RepositoryCoreTaskManager(
         }
     }
 
-    private suspend fun Repository.insertTask(
-        taskRequest: TaskRequest<*>,
+    private suspend fun <T> Repository.insertTask(
+        taskRequest: TaskRequest<T>,
         uniqueName: String,
         parentIds: Set<Uuid>,
     ): Uuid {
         val task = taskRequest.toTask(
             uniqueName = uniqueName,
             state = if (parentIds.isEmpty()) State.Enqueued else State.Blocked,
-            registration = findRegistration(taskRequest.identifier),
+            registration = findRegistration<T, Any, Any>(taskRequest.identifier),
             repeatInterval = null
         )
         insert(task, taskRequest.tags + taskRequest.identifier, parentIds)
         return task.id
     }
 
-    override suspend fun enqueuePeriodicUniqueTask(
-        task: TaskRequest<*>,
+    override suspend fun <T> enqueuePeriodicUniqueTask(
+        task: TaskRequest<T>,
         repeatInterval: Duration,
         uniqueName: String,
         existingTaskPolicy: ExistingPeriodicTaskPolicy,
@@ -202,7 +196,7 @@ class RepositoryCoreTaskManager(
         val t = task.toTask(
             uniqueName = uniqueName,
             state = State.Enqueued,
-            registration = findRegistration(task.identifier),
+            registration = findRegistration<T, Any, Any>(task.identifier),
             repeatInterval = repeatInterval.coerceAtLeast(MINIMAL_REPEAT_INTERVAL)
         )
 
@@ -213,38 +207,28 @@ class RepositoryCoreTaskManager(
     override fun taskInfosByTag(
         tag: String,
     ): Flow<List<TaskInfo>> = repository.tasksByTag(tag).distinctUntilChanged().map { map ->
-        map.map { it.toTaskInfo() }
+        map.map { it.toTaskInfo<Any, Any>() }
     }
 
     override fun taskInfoById(
         id: Uuid,
     ): Flow<TaskInfo?> = repository.taskById(id).distinctUntilChanged().map { task ->
-        task?.toTaskInfo()
+        task?.toTaskInfo<Any, Any>()
     }
 
-    private suspend fun FullTask.toTaskInfo(): TaskInfo {
-        val registration = findRegistrationOrNull(task.identifier)
+    private suspend fun <O, P> FullTask.toTaskInfo(): TaskInfo {
+        val registration = findRegistrationOrNull<Any, O, P>(task.identifier)
         return TaskInfo(
             id = task.id,
             runAttemptCount = task.runAttemptCount,
             state = task.state,
             tags = tags,
-            outputData = task.outputData?.let { byteArray ->
-                registration?.outputSerializer?.let {
-                    byteArray.toTypedData(
-                        serializationEngine = serializationEngine,
-                        serializer = it
-                    )
-                }
+            outputData = task.outputData?.let {
+                registration?.outputSerializer?.decodeFromBytes(it)
             },
             nextScheduledTime = task.processTime,
-            progress = task.progressData?.let { byteArray ->
-                registration?.progressSerializer?.let {
-                    byteArray.toTypedData(
-                        serializationEngine = serializationEngine,
-                        serializer = it
-                    )
-                }
+            progress = task.progressData?.let {
+                registration?.progressSerializer?.decodeFromBytes(it)
             },
             finishedAt = task.finishedAt,
             createdAt = task.createdAt

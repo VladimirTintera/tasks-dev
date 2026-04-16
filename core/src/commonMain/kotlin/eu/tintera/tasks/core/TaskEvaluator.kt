@@ -8,9 +8,7 @@ import eu.tintera.tasks.TaskScope
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.core.migrations.findMigrationPath
-import eu.tintera.tasks.core.seriaization.SerializationEngine
 import eu.tintera.tasks.migrations.FieldMigrator
-import kotlinx.serialization.KSerializer
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.uuid.Uuid
 
@@ -25,14 +23,13 @@ interface TaskEvaluator {
 internal class TaskEvaluatorImpl(
     private val taskRegistry: TaskRegistry,
     private val repository: Repository,
-    private val serializationEngine: SerializationEngine
 ) : TaskEvaluator {
     override suspend fun handle(
         task: Task,
         onForegroundInfo: suspend (ForegroundInfo) -> Boolean
     ): TaskResult<ByteArray> {
 
-        val registration = taskRegistry.resolve(task.identifier) ?: return TaskResult.failure()
+        val registration = taskRegistry.resolve<Any?, Any?, Any?>(task.identifier) ?: return TaskResult.failure()
 
         val migrationsToRun = registration.migrations.findMigrationPath(
             startVersion = task.version,
@@ -75,10 +72,9 @@ internal class TaskEvaluatorImpl(
             version = taskData.version
         )
 
-        val typedInput = taskData.parsedInput ?: taskData.inputBytes?.toTypedData(
-            serializationEngine = serializationEngine,
-            serializer = registration.inputSerializer
-        )
+        val typedInput = taskData.parsedInput ?: taskData.inputBytes?.let {
+            registration.inputSerializer.decodeFromBytes(it)
+        }
 
         val scope = object : TaskScope<Any?, Any?> {
             override val taskId: Uuid = task.id
@@ -92,7 +88,7 @@ internal class TaskEvaluatorImpl(
             override suspend fun setProgress(data: Any?) {
                 // Serializujeme typový progress na raw Data a uložíme do DB
                 val rawProgress = data?.let {
-                    serializationEngine.encodeToBytes(data, registration.progressSerializer as KSerializer<Any>)
+                    registration.progressSerializer.encodeToBytes(it)
                 }
 
                 repository.updateProgressData(taskId, rawProgress)
@@ -117,10 +113,7 @@ internal class TaskEvaluatorImpl(
 
         return when (typedResult) {
             is TaskResult.Success -> {
-                val rawOutput = serializationEngine.encodeToBytes(
-                    value = typedResult.outputData,
-                    serializer = registration.outputSerializer as KSerializer<Any?>
-                )
+                val rawOutput = registration.outputSerializer.encodeToBytes(typedResult.outputData)
                 TaskResult.Success(rawOutput)
             }
 
@@ -131,8 +124,9 @@ internal class TaskEvaluatorImpl(
 
 
     private fun <From, To> FieldMigrator<From, To>.apply(bytes: ByteArray): Pair<ByteArray, To> {
-        val newObj = migrationBlock(serializationEngine.decodeFromBytes(bytes, fromSerializer))
-        val newBytes = serializationEngine.encodeToBytes(newObj, toSerializer)
+        val oldObj = fromSerializer.decodeFromBytes(bytes)
+        val newObj = migrationBlock(oldObj)
+        val newBytes = toSerializer.encodeToBytes(newObj)
 
         return Pair(newBytes, newObj)
     }

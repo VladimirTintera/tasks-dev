@@ -15,7 +15,6 @@ import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.core.nonTerminalStates
 import eu.tintera.tasks.core.seriaization.DataSerializer
-import eu.tintera.tasks.core.seriaization.SerializationEngine
 import eu.tintera.tasks.koin.TasksKoinComponent
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first

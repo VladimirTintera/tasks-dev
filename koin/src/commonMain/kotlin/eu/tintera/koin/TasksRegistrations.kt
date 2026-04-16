@@ -1,11 +1,6 @@
 package eu.tintera.koin
 
-import eu.tintera.koin.taskHandlerRegistration
-import eu.tintera.tasks.LegacyTaskHandler
-import eu.tintera.tasks.TaskHandler
-import eu.tintera.tasks.TaskManager
-import eu.tintera.tasks.fullName
-import eu.tintera.tasks.register
+import eu.tintera.tasks.*
 import org.koin.core.Koin
 import org.koin.core.definition.Definition
 import org.koin.core.definition.KoinDefinition
@@ -37,6 +32,7 @@ internal class TasksRegistrations(
                         inputSerializer = registration.inputSerializer,
                         outputSerializer = registration.outputSerializer,
                         progressSerializer = registration.progressSerializer,
+                        migrations = registration.migrations,
                         factory = { koin.get(registration.type) }
                     )
                 }

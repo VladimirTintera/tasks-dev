@@ -1,27 +1,23 @@
-package eu.tintera.tasks
+package eu.tintera.tasks.legacy
 
+import eu.tintera.tasks.BackoffCriteria
+import eu.tintera.tasks.Constraints
+import eu.tintera.tasks.Data
+import eu.tintera.tasks.TaskHandler
+import eu.tintera.tasks.TaskRequest
+import eu.tintera.tasks.fullName
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 
-data class TaskRequest<I>(
-    val identifier: String,
-    val initialDelay: Duration = Duration.ZERO,
-    val data: I,
-    val constraints: Constraints = Constraints.EMPTY,
-    val tags: Set<String> = emptySet(),
-    val backoffCriteria: BackoffCriteria? = null,
-    val keepResultsForAtLeast: Duration = 24.hours
-)
-
-inline fun <reified T : TaskHandler<I, *, *>, reified I> taskRequest(
-    data: I,
+inline fun <reified T : TaskHandler<Data, *, *>> taskRequest(
     identifier: String = T::class.fullName,
+    data: Data = Data.EMPTY,
     initialDelay: Duration = Duration.ZERO,
     constraints: Constraints = Constraints.EMPTY,
     tags: Set<String> = emptySet(),
     backoffCriteria: BackoffCriteria? = null,
     keepResultsForAtLeast: Duration = 24.hours
-): TaskRequest<I> = TaskRequest(
+): TaskRequest<Data> = TaskRequest(
     identifier = identifier,
     initialDelay = initialDelay,
     data = data,
@@ -30,4 +26,3 @@ inline fun <reified T : TaskHandler<I, *, *>, reified I> taskRequest(
     backoffCriteria = backoffCriteria,
     keepResultsForAtLeast = keepResultsForAtLeast
 )
-

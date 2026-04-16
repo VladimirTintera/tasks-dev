@@ -1,6 +1,5 @@
 package eu.tintera.tasks.core.migrations
 
-import eu.tintera.tasks.core.seriaization.SerializationEngine
 import kotlinx.serialization.KSerializer
 
 class FieldMigrator<From, To>(

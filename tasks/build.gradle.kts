@@ -15,7 +15,8 @@ kotlin {
         )
         optIn.addAll(
             "kotlin.uuid.ExperimentalUuidApi",
-            "kotlin.concurrent.atomics.ExperimentalAtomicApi"
+            "kotlin.concurrent.atomics.ExperimentalAtomicApi",
+            "kotlinx.serialization.ExperimentalSerializationApi"
         )
     }
 
@@ -34,6 +35,7 @@ kotlin {
             implementation(projects.db)
             implementation(projects.core)
 
+            implementation(libs.kotlinx.serialization.protobuf)
             implementation(libs.kotlinx.serialization.json)
 
             api(projects.api)

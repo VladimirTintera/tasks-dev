@@ -1,6 +1,5 @@
 package eu.tintera.tasks
 
-import kotlinx.serialization.Serializable
 
 class Data internal constructor(
     val map: Map<String, Any>

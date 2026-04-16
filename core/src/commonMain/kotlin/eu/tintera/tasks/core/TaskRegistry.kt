@@ -1,5 +1,7 @@
 package eu.tintera.tasks.core
 
+import eu.tintera.tasks.Data
+import eu.tintera.tasks.serialization.TaskDataSerializer
 import eu.tintera.tasks.TaskHandler
 import eu.tintera.tasks.core.migrations.findMigrationPath
 import eu.tintera.tasks.migrations.Migration
@@ -7,17 +9,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlinx.serialization.KSerializer
 import kotlin.time.Duration.Companion.seconds
 
 class TaskRegistry {
 
     class TaskRegistration<Input, Output, Progress>(
         val currentVersion: Int,
-        val factory: () -> TaskHandler<*, *, *>,
-        val inputSerializer: KSerializer<Input>,
-        val outputSerializer: KSerializer<Output>,
-        val progressSerializer: KSerializer<Progress>,
+        val factory: () -> TaskHandler<Input, Output, Data>,
+        val inputSerializer: TaskDataSerializer<Input>,
+        val outputSerializer: TaskDataSerializer<Output>,
+        val progressSerializer: TaskDataSerializer<Progress>,
         val migrations: List<Migration>
     ) {
         init {
@@ -60,11 +61,12 @@ class TaskRegistry {
         }
     }
 
-    suspend fun resolve(
+    @Suppress("UNCHECKED_CAST")
+    suspend fun <I, O, P> resolve(
         identifier: String
-    ): TaskRegistration<*, *, *>? = withTimeoutOrNull(5.seconds) {
+    ): TaskRegistration<I, O, P>? = withTimeoutOrNull(5.seconds) {
         registry.first {
             it.containsKey(identifier)
-        }[identifier]!!
+        }[identifier]!! as TaskRegistration<I, O, P>
     }
 }
