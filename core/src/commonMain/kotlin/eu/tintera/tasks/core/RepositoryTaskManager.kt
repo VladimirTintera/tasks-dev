@@ -1,12 +1,13 @@
 package eu.tintera.tasks.core
 
 import eu.tintera.tasks.*
-import eu.tintera.tasks.core.data.FullTask
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
+import eu.tintera.tasks.core.data.toTaskInfo
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlin.Any
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.uuid.Uuid
@@ -206,32 +207,19 @@ class RepositoryCoreTaskManager(
 
     override fun taskInfosByTag(
         tag: String,
-    ): Flow<List<TaskInfo>> = repository.tasksByTag(tag).distinctUntilChanged().map { map ->
-        map.map { it.toTaskInfo<Any, Any>() }
+    ): Flow<List<TaskInfo>> = repository.taskInfosByTag(tag).distinctUntilChanged().map { map ->
+        map.map {
+            it.toTaskInfo<Any, Any>(
+                findRegistrationOrNull(it.task.identifier)
+            )
+        }
     }
 
     override fun taskInfoById(
         id: Uuid,
     ): Flow<TaskInfo?> = repository.taskById(id).distinctUntilChanged().map { task ->
-        task?.toTaskInfo<Any, Any>()
-    }
-
-    private suspend fun <O, P> FullTask.toTaskInfo(): TaskInfo {
-        val registration = findRegistrationOrNull<Any, O, P>(task.identifier)
-        return TaskInfo(
-            id = task.id,
-            runAttemptCount = task.runAttemptCount,
-            state = task.state,
-            tags = tags,
-            outputData = task.outputData?.let {
-                registration?.outputSerializer?.decodeFromBytes(it)
-            },
-            nextScheduledTime = task.processTime,
-            progress = task.progressData?.let {
-                registration?.progressSerializer?.decodeFromBytes(it)
-            },
-            finishedAt = task.finishedAt,
-            createdAt = task.createdAt
+        task?.toTaskInfo<Any, Any>(
+            registration = findRegistrationOrNull(task.task.identifier)
         )
     }
 

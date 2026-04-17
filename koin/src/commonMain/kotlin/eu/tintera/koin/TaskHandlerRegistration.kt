@@ -7,19 +7,23 @@ import eu.tintera.tasks.fullName
 import eu.tintera.tasks.migrations.Migration
 import eu.tintera.tasks.serialization.TaskDataSerializer
 import eu.tintera.tasks.serialization.jsonSerializer
+import org.koin.core.Koin
 import kotlin.reflect.KClass
 
 
 @PublishedApi
 internal sealed interface TaskHandlerRegistration<Input, Output, Progress, T : TaskHandler<Input, Output, Progress>> {
     val type: KClass<T>
+    val koinFactory: (Koin) -> TaskHandler<Input, Output, Progress>
 
     class Legacy<T : LegacyTaskHandler>(
-        override val type: KClass<T>
+        override val type: KClass<T>,
+        override val koinFactory: (Koin) -> T
     ) : TaskHandlerRegistration<Data, Data, Data, T>
 
     class Typed<Input, Output, Progress, T : TaskHandler<Input, Output, Progress>>(
         override val type: KClass<T>,
+        override val koinFactory: (Koin) -> TaskHandler<Input, Output, Progress>,
         val identifier: String,
         val currentVersion: Int,
         val inputSerializer: TaskDataSerializer<Input>,
@@ -44,11 +48,13 @@ internal inline fun <reified Input, reified Output, reified Progress, reified T 
     inputSerializer = inputSerializer,
     outputSerializer = outputSerializer,
     progressSerializer = progressSerializer,
-    migrations = migrations
+    migrations = migrations,
+    koinFactory = { koinInstance -> koinInstance.get<T>() },
 
 )
 
 @PublishedApi
 internal inline fun <reified T : LegacyTaskHandler> legacyTaskHandlerRegistration() = TaskHandlerRegistration.Legacy(
     type = T::class,
+    koinFactory = { koinInstance -> koinInstance.get<T>() },
 )

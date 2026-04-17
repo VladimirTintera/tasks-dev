@@ -27,8 +27,7 @@ interface Repository {
     suspend fun insert(task: Task, tags: Set<String>, parentIds: Set<Uuid>)
     suspend fun cleanOld(states: Set<State>)
 
-    fun tasksByTag(name: String): Flow<List<FullTask>>
-
+    fun taskInfosByTag(name: String): Flow<List<FullTask>>
     fun taskById(id: Uuid): Flow<FullTask?>
 
     fun tasksByIds(ids: Set<Uuid>) : Flow<List<Task>>

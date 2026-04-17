@@ -2,7 +2,6 @@ package eu.tintera.tasks.db
 
 import androidx.room.immediateTransaction
 import androidx.room.useWriterConnection
-import eu.tintera.tasks.Data
 import eu.tintera.tasks.State
 import eu.tintera.tasks.core.data.FullTask
 import eu.tintera.tasks.core.data.Repository
@@ -108,7 +107,7 @@ internal class DatabaseRepository(
         states: Set<State>
     ) = taskDao.cleanOld(Clock.System.now().toEpochMilliseconds(), states.map { it.toEntityState() })
 
-    override fun tasksByTag(
+    override fun taskInfosByTag(
         name: String
     ): Flow<List<FullTask>> = taskDao.taskInfoByTag(name).distinctUntilChanged().map { map ->
         map.map { (value, tags) ->

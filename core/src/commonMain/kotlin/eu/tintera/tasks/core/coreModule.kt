@@ -19,4 +19,5 @@ val coreModule = module {
         createdAtStart()
     }
     factoryOf(::DatabaseCleanupTaskHandler)
+    factoryOf(::TasksMigrator)
 }

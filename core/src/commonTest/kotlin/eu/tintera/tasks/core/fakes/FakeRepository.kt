@@ -122,7 +122,7 @@ class FakeRepository : Repository {
         TODO("Not yet implemented")
     }
 
-    override fun tasksByTag(name: String): Flow<List<FullTask>> {
+    override fun taskInfosByTag(name: String): Flow<List<FullTask>> {
         TODO("Not yet implemented")
     }
 

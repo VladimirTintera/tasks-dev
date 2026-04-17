@@ -1,5 +1,6 @@
 package eu.tintera.tasks.core
 
+import android.R.attr.identifier
 import android.annotation.SuppressLint
 import androidx.work.*
 import eu.tintera.tasks.*
@@ -336,7 +337,8 @@ internal class WorkManagerCoreTaskManager(
             },
             progress = progress.toData(),
             finishedAt = task?.finishedAt,
-            createdAt = task?.createdAt ?: Instant.DISTANT_PAST
+            createdAt = task?.createdAt ?: Instant.DISTANT_PAST,
+            identifier = task?.identifier ?: ""
         )
     }
 

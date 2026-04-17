@@ -22,25 +22,33 @@ internal class TasksRegistrations(
                 is TaskHandlerRegistration.Legacy -> {
                     taskManager.register(
                         identifier = registration.type.fullName,
-                        factory = { koin.get(registration.type) }
+                        factory = {
+                            registration.koinFactory(koin)
+                        }
                     )
                 }
 
                 is TaskHandlerRegistration.Typed -> {
-                    taskManager.register(
-                        identifier = registration.identifier,
-                        currentVersion = registration.currentVersion,
-                        inputSerializer = registration.inputSerializer,
-                        outputSerializer = registration.outputSerializer,
-                        progressSerializer = registration.progressSerializer,
-                        migrations = registration.migrations,
-                        factory = {
-                            koin.get(registration.type)
-                        }
-                    )
+                    registerTyped(taskManager, koin, registration)
                 }
             }
         }
+    }
+
+    private fun <I, O, P, T : TaskHandler<I, O, P>> registerTyped(
+        taskManager: TaskManager,
+        koin: Koin,
+        registration: TaskHandlerRegistration.Typed<I, O, P, T>
+    ) {
+        taskManager.register(
+            identifier = registration.identifier,
+            currentVersion = registration.currentVersion,
+            inputSerializer = registration.inputSerializer,   // Kompilátor vidí: TaskDataSerializer<I>
+            outputSerializer = registration.outputSerializer, // Kompilátor vidí: TaskDataSerializer<O>
+            progressSerializer = registration.progressSerializer,
+            migrations = registration.migrations,
+            factory = { registration.koinFactory(koin) }      // Kompilátor vidí: () -> TaskHandler<I, O, P>
+        ) // VŠECHNO DOKONALE SEDÍ!
     }
 }
 

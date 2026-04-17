@@ -5,6 +5,7 @@ import kotlin.uuid.Uuid
 
 data class TaskInfo(
     val id: Uuid,
+    val identifier: String,
     val state: State,
     val tags: Set<String>,
     val runAttemptCount: Int,

@@ -126,7 +126,6 @@ internal interface TaskDao {
     @Query("SELECT * FROM Task LEFT JOIN TaskTag ON TaskTag.taskId = Task.id WHERE EXISTS(SELECT 1 FROM TaskTag tag WHERE tag.name = :name AND tag.taskId = Task.id)")
     fun taskInfoByTag(name: String): Flow<Map<TaskEntity, List<TaskTag>>>
 
-
     @Query(
         "SELECT * FROM Task WHERE state IN (:states) AND EXISTS(SELECT * FROM TaskTag WHERE TaskTag.taskId = Task.id AND TaskTag.name = :tag)"
     )

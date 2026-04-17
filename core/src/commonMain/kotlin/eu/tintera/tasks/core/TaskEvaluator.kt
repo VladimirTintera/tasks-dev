@@ -2,13 +2,14 @@ package eu.tintera.tasks.core
 
 import eu.tintera.tasks.EventBus
 import eu.tintera.tasks.ForegroundInfo
-import eu.tintera.tasks.TaskHandler
+import eu.tintera.tasks.ParentData
+import eu.tintera.tasks.TaskInfo
 import eu.tintera.tasks.TaskResult
 import eu.tintera.tasks.TaskScope
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
-import eu.tintera.tasks.core.migrations.findMigrationPath
-import eu.tintera.tasks.migrations.FieldMigrator
+import eu.tintera.tasks.core.data.toTaskInfo
+import kotlinx.coroutines.flow.first
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.uuid.Uuid
 
@@ -23,7 +24,9 @@ interface TaskEvaluator {
 internal class TaskEvaluatorImpl(
     private val taskRegistry: TaskRegistry,
     private val repository: Repository,
+    private val tasksMigrator: TasksMigrator
 ) : TaskEvaluator {
+
     override suspend fun handle(
         task: Task,
         onForegroundInfo: suspend (ForegroundInfo) -> Boolean
@@ -31,62 +34,36 @@ internal class TaskEvaluatorImpl(
 
         val registration = taskRegistry.resolve<Any?, Any?, Any?>(task.identifier) ?: return TaskResult.failure()
 
-        val migrationsToRun = registration.migrations.findMigrationPath(
-            startVersion = task.version,
-            targetVersion = registration.currentVersion,
+        val typedInput = tasksMigrator.migrate(
+            task = task,
+            registration = registration
         )
 
-        val taskData = migrationsToRun.fold(
-            TaskData(
-                inputBytes = task.inputData,
-                outputBytes = task.outputData,
-                progressBytes = task.progressData,
-                parsedInput = null,
-                version = task.version
+        val parents = repository.parentsFor(task.id).first().map { parentEntity ->
+
+            val parentRegistration = taskRegistry.resolve<Any, Any?, Any?>(parentEntity.identifier)
+                ?: error("Registration for parent '${parentEntity.identifier}' is missing!")
+
+            ParentData(
+                id = parentEntity.id.toString(),
+                identifier = parentEntity.identifier,
+                data = parentEntity.outputData?.let {
+                    parentRegistration.outputSerializer.decodeFromBytes(it)
+                }
             )
-        ) { data, migration ->
-
-            val nextInput = data.inputBytes?.let { bytes ->
-                migration.inputMigrator?.apply(bytes) ?: (bytes to data.parsedInput)
-            }
-
-            TaskData(
-                inputBytes = nextInput?.first,
-                parsedInput = nextInput?.second,
-
-                outputBytes = data.outputBytes?.let {
-                    migration.outputMigrator?.apply(it)?.first ?: it
-                },
-                progressBytes = data.progressBytes?.let {
-                    migration.progressMigrator?.apply(it)?.first ?: it
-                },
-                version = migration.endVersion
-            )
-        }
-
-        if (migrationsToRun.isNotEmpty()) repository.upgradeData(
-            id = task.id,
-            input = taskData.inputBytes,
-            output = taskData.outputBytes,
-            progress = taskData.progressBytes,
-            version = taskData.version
-        )
-
-        val typedInput = taskData.parsedInput ?: taskData.inputBytes?.let {
-            registration.inputSerializer.decodeFromBytes(it)
         }
 
         val scope = object : TaskScope<Any?, Any?> {
             override val taskId: Uuid = task.id
             override val data: Any? = typedInput
             override val retryCount: Int = task.runAttemptCount - 1
+            override val parents: List<ParentData> = parents
 
             override suspend fun setForegroundInfo(foregroundInfo: ForegroundInfo): Boolean {
                 return onForegroundInfo(foregroundInfo)
             }
 
             override suspend fun setProgress(data: Any?) {
-                // Serializujeme typový progress na raw Data a uložíme do DB
                 val rawProgress = data?.let {
                     registration.progressSerializer.encodeToBytes(it)
                 }
@@ -94,7 +71,6 @@ internal class TaskEvaluatorImpl(
                 repository.updateProgressData(taskId, rawProgress)
             }
         }
-
 
         val typedResult = try {
             val handler = registration.factory()
@@ -109,6 +85,8 @@ internal class TaskEvaluatorImpl(
             return TaskResult.Failure
         }
 
+
+
         return when (typedResult) {
             is TaskResult.Success -> {
                 val rawOutput = registration.outputSerializer.encodeToBytes(typedResult.outputData)
@@ -120,23 +98,6 @@ internal class TaskEvaluatorImpl(
         }
     }
 
-
-    private fun <From, To> FieldMigrator<From, To>.apply(bytes: ByteArray): Pair<ByteArray, To> {
-        val oldObj = fromSerializer.decodeFromBytes(bytes)
-        val newObj = migrationBlock(oldObj)
-        val newBytes = toSerializer.encodeToBytes(newObj)
-
-        return Pair(newBytes, newObj)
-    }
-
-
-    private class TaskData(
-        val inputBytes: ByteArray?,
-        val outputBytes: ByteArray?,
-        val progressBytes: ByteArray?,
-        val parsedInput: Any? = null, // TADY SI ULOŽÍME HOTOVÝ OBJEKT!
-        val version: Int
-    )
 
     companion object {
         private const val TAG = "TaskEvaluator"
