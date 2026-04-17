@@ -7,9 +7,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoBuf
 import kotlinx.serialization.protobuf.ProtoNumber
 
-// --- MODUL: compat / tasks ---
-
-object LegacyWorkManagerDataSerializer : TaskDataSerializer<Data> {
+private object LegacyTaskDataSerializer : TaskDataSerializer<Data> {
 
     private val protoBuf: ProtoBuf = ProtoBuf { encodeDefaults = true }
 
@@ -24,6 +22,7 @@ object LegacyWorkManagerDataSerializer : TaskDataSerializer<Data> {
     }
 }
 
+fun legacySerializer(): TaskDataSerializer<Data> = LegacyTaskDataSerializer
 
 private fun SerializableTaskData.toData() = taskDataOf(
     *values.flatMap { value ->

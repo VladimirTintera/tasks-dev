@@ -10,7 +10,7 @@ import kotlin.uuid.Uuid
 interface TaskManager {
     fun <Input, Output, Progress> register(
         identifier: String,
-        currentVersion: Int,
+        currentVersion: Int = 1,
         factory: () -> TaskHandler<Input, Output, Progress>,
         inputSerializer: TaskDataSerializer<Input>,
         outputSerializer: TaskDataSerializer<Output>,

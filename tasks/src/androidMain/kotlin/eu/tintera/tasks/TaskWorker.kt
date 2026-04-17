@@ -10,11 +10,11 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import eu.tintera.tasks.core.ExecutionResult
 import eu.tintera.tasks.core.TaskEvaluator
+import eu.tintera.tasks.core.TaskRegistry
 import eu.tintera.tasks.core.TaskResultProcessor
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.core.nonTerminalStates
-import eu.tintera.tasks.core.seriaization.DataSerializer
 import eu.tintera.tasks.koin.TasksKoinComponent
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
@@ -36,7 +36,7 @@ internal class TaskWorker(
     private val taskEvaluator: TaskEvaluator by inject()
     private val repository: Repository by inject()
     private val taskResultProcessor: TaskResultProcessor by inject()
-    private val serializerEngine: SerializationEngine by inject()
+    private val taskRegistry: TaskRegistry by inject()
 
     override suspend fun doWork(): Result {
 
@@ -47,6 +47,8 @@ internal class TaskWorker(
         } ?: return Result.failure()
 
         EventBus.send("TaskWorker", "Task started '$taskIdentifier', data = ${inputData.toData()}")
+
+        val registration = taskRegistry.resolve<Any?, Any?, Any?>(taskIdentifier) ?: return Result.failure()
 
         val taskId = id.toKotlinUuid()
 
@@ -59,7 +61,7 @@ internal class TaskWorker(
             task = Task(
                 id = taskId,
                 identifier = taskIdentifier,
-                inputData = serializerEngine.encodeToBytes(value = inputData.toData(), serializer = DataSerializer),
+                inputData = registration.inputSerializer.encodeToBytes(inputData.toData()),
                 outputData = null,
                 progressData = null,
                 version = 1, // DŮLEŽITÉ: Je to starý task, jde do verze 1

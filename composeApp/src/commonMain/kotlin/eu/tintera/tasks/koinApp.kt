@@ -4,6 +4,9 @@ import co.touchlab.kermit.Logger
 import eu.tintera.koin.taskHandlerOf
 import eu.tintera.koin.tasksKoinModule
 import eu.tintera.tasks.handlers.TestHandler
+import eu.tintera.tasks.legacy.legacySerializer
+import eu.tintera.tasks.migrations.migration
+import eu.tintera.tasks.serialization.jsonSerializer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -20,7 +23,16 @@ fun koinApp(
     modules(
         tasksKoinModule(),
         module {
-            taskHandlerOf(::TestHandler)
+            taskHandlerOf(::TestHandler,
+                currentVersion = 2,
+                migrations = listOf(
+                    migration(1, 2) {
+                        migrateInput(legacySerializer(), jsonSerializer()) {
+                            it.getInt("count") ?: 20
+                        }
+                    }
+                )
+            )
             viewModelOf(::MainViewModel)
 
             single(createdAtStart = true) {

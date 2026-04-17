@@ -24,7 +24,6 @@ import kotlin.uuid.toKotlinUuid
 internal class WorkManagerCoreTaskManager(
     private val workManager: WorkManager,
     private val repository: Repository,
-    private val serializationEngine: SerializationEngine,
     private val taskRegistry: TaskRegistry
 ) : CoreTaskManager {
 
@@ -39,7 +38,6 @@ internal class WorkManagerCoreTaskManager(
                 keepResultsForAtLeast = keepResultsForAtLeast
             )
         }.build()
-
 
     override suspend fun <T> enqueueUniqueTask(
         task: TaskRequest<T>,
@@ -208,7 +206,7 @@ internal class WorkManagerCoreTaskManager(
                 id = id,
                 task = task,
                 uniqueName = uniqueName,
-                repeatInterval = repeatInterval
+                repeatInterval = repeatInterval,
             )
 
             workManager.enqueueUniquePeriodicWork(
@@ -342,14 +340,13 @@ internal class WorkManagerCoreTaskManager(
         )
     }
 
-    private suspend fun saveTask(
+    private suspend fun <T> saveTask(
         id: Uuid,
-        task: TaskRequest<*>,
+        task: TaskRequest<T>,
         uniqueName: String,
-        repeatInterval: Duration?
+        repeatInterval: Duration?,
     ) {
-        val registration = taskRegistry.resolve(task.identifier) ?: return
-
+        val registration = taskRegistry.resolve<T, Any?, Any?>(task.identifier) ?: error("Task registry not found")
         val t = Task(
             id = id,
             identifier = task.identifier,
@@ -358,7 +355,7 @@ internal class WorkManagerCoreTaskManager(
             state = State.Enqueued,
             processTime = Clock.System.now(),
             inputData = task.data?.let { data ->
-                serializationEngine.encodeToBytes(data, registration.inputSerializer as KSerializer<Any>)
+                registration.inputSerializer.encodeToBytes(data)
             },
             outputData = null,
             networkRequired = task.constraints.requiresNetwork,

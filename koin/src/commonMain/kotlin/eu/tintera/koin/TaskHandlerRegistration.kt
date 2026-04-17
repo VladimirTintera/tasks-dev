@@ -3,6 +3,7 @@ package eu.tintera.koin
 import eu.tintera.tasks.Data
 import eu.tintera.tasks.LegacyTaskHandler
 import eu.tintera.tasks.TaskHandler
+import eu.tintera.tasks.fullName
 import eu.tintera.tasks.migrations.Migration
 import eu.tintera.tasks.serialization.TaskDataSerializer
 import eu.tintera.tasks.serialization.jsonSerializer
@@ -38,7 +39,7 @@ internal inline fun <reified Input, reified Output, reified Progress, reified T 
     progressSerializer: TaskDataSerializer<Progress> = jsonSerializer<Progress>(),
 ) = TaskHandlerRegistration.Typed(
     type = T::class,
-    identifier = identifier,
+    identifier = identifier.ifBlank { T::class.fullName },
     currentVersion = currentVersion,
     inputSerializer = inputSerializer,
     outputSerializer = outputSerializer,

@@ -16,6 +16,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import eu.tintera.tasks.handlers.TestHandlerProgress
 import org.jetbrains.compose.resources.painterResource
 import taskmanager.composeapp.generated.resources.Res
 import taskmanager.composeapp.generated.resources.cancel_24dp_1f1f1f_fill0_wght400_grad0_opsz24
@@ -173,6 +174,9 @@ fun TaskRow(
             actions()
         }
 
-        //ProgressSection(info.progress.map)
+        (info.progress as? TestHandlerProgress)?.also {
+            Text("${it.progress}/${it.totalCount}")
+        }
+        //ProgressSection()
     }
 }

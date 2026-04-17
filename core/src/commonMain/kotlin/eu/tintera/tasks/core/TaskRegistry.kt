@@ -15,7 +15,7 @@ class TaskRegistry {
 
     class TaskRegistration<Input, Output, Progress>(
         val currentVersion: Int,
-        val factory: () -> TaskHandler<Input, Output, Data>,
+        val factory: () -> TaskHandler<Input, Output, Progress>,
         val inputSerializer: TaskDataSerializer<Input>,
         val outputSerializer: TaskDataSerializer<Output>,
         val progressSerializer: TaskDataSerializer<Progress>,

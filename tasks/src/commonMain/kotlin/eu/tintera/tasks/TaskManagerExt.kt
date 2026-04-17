@@ -1,7 +1,7 @@
 package eu.tintera.tasks
 
-import eu.tintera.tasks.core.seriaization.DataSerializer
 import eu.tintera.tasks.koin.Resolver
+import eu.tintera.tasks.legacy.legacySerializer
 import org.koin.core.component.get
 
 fun TaskManager.Companion.getInstance(): TaskManager = with(Resolver) {
@@ -17,8 +17,8 @@ fun TaskManager.register(
         identifier = identifier,
         currentVersion = 1,
         factory = factory,
-        inputSerializer = DataSerializer,
-        outputSerializer = DataSerializer,
-        progressSerializer = DataSerializer
+        inputSerializer = legacySerializer(),
+        outputSerializer = legacySerializer(),
+        progressSerializer = legacySerializer()
     )
 }

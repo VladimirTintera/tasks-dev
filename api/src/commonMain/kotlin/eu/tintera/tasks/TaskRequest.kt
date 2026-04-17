@@ -13,7 +13,7 @@ data class TaskRequest<I>(
     val keepResultsForAtLeast: Duration = 24.hours
 )
 
-inline fun <reified T : TaskHandler<I, *, *>, reified I> taskRequest(
+inline fun <reified T : TaskHandler<I, *, *>, I> taskRequest(
     data: I,
     identifier: String = T::class.fullName,
     initialDelay: Duration = Duration.ZERO,

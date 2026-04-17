@@ -96,17 +96,15 @@ internal class TaskEvaluatorImpl(
         }
 
 
-        val handler = registration.factory() as TaskHandler<Any?, Any?, Any?>
-
         val typedResult = try {
+            val handler = registration.factory()
             with(handler) {
-                with(scope) {
-                    run()
-                }
+                scope.run()
             }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            e.printStackTrace()
             EventBus.send(TAG, "Task execution failed with error '${e.message}'")
             return TaskResult.Failure
         }
