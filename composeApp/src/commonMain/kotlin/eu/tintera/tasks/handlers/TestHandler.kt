@@ -12,12 +12,19 @@ import kotlin.uuid.Uuid
 @Serializable
 data class TestHandlerProgress(
     val totalCount: Int,
-    val progress: Int
+    val progress: Int,
+    val parents: List<String> = emptyList()
 )
 
-class TestHandler : TaskHandler<Int, Unit, TestHandlerProgress> {
+@Serializable
+data class TestHandlerData(
+    val count: Int = 0,
+    val name: String = ""
+)
 
-    override suspend fun TaskScope<Int, TestHandlerProgress>.run(): TaskResult<Unit> {
+class TestHandler : TaskHandler<TestHandlerData, TestHandlerData, TestHandlerProgress> {
+
+    override suspend fun TaskScope<TestHandlerData, TestHandlerProgress>.run(): TaskResult<TestHandlerData> {
         return merge(
             _interruptionEventBus.filter { it == taskId }.map {
                 TaskResult.retry()
@@ -26,17 +33,18 @@ class TestHandler : TaskHandler<Int, Unit, TestHandlerProgress> {
         ).first()
     }
 
-    private fun TaskScope<Int, TestHandlerProgress>.normalRun() = flow {
-        repeat(data) {
+    private fun TaskScope<TestHandlerData, TestHandlerProgress>.normalRun() = flow {
+        repeat(data.count) {
             setProgress(
                 TestHandlerProgress(
-                    totalCount = data,
-                    progress = it
+                    totalCount = data.count,
+                    progress = it + 1,
+                    parents = parentOutputsOfType<TestHandlerData>().map { it.name }
                 )
             )
             delay(1.seconds)
         }
-        emit(TaskResult.success(Unit))
+        emit(TaskResult.success(data))
     }
 
     companion object {
@@ -51,15 +59,23 @@ class TestHandler : TaskHandler<Int, Unit, TestHandlerProgress> {
     }
 }
 
+fun testTaskRequest(
+    count: Int,
+    name: String
+) = taskRequest<TestHandler, TestHandlerData>(
+    data = TestHandlerData(
+        count = count,
+        name = name
+    ),
+    tags = setOf(DEFAULT_TAG),
+    constraints = Constraints(
+        requiresDeviceIdle = false,
+        requiresNetwork = true
+    ),
+)
+
 suspend fun TaskManager.scheduleTestHandler(
     count: Int
 ) = enqueueTask(
-    taskRequest<TestHandler, Int>(
-        data = count,
-        tags = setOf(DEFAULT_TAG),
-        constraints = Constraints(
-            requiresDeviceIdle = false,
-            requiresNetwork = true
-        ),
-    )
+    testTaskRequest(count, "test")
 )

@@ -53,13 +53,17 @@ fun App() {
                 modifier = Modifier.fillMaxSize().padding(paddingValues).consumeWindowInsets(paddingValues),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Row(
+                FlowRow(
                     modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Button(
                         onClick = viewModel::enqueueTask
                     ) { Text("Enqueue task") }
+
+                    Button(
+                        onClick = viewModel::enqueueContinuation
+                    ) { Text("Enqueue continuation") }
                 }
 
                 val listState = rememberLazyListState()

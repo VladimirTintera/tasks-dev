@@ -50,4 +50,17 @@ inline fun <reified T, reified R : TaskHandler<out Any, out Any, out Any>> TaskS
 inline fun <reified T, reified R : TaskHandler<out Any, out Any, out Any>> TaskScope<*, *>.parentOutputOrNull(): T? =
     parentOutputOrNull(R::class.fullName)
 
+// 1. Získá VŠECHNY výstupy daného typu od všech rodičů
+inline fun <reified T : Any> TaskScope<*, *>.parentOutputsOfType(): List<T> =
+    parents.mapNotNull { it.data as? T }
+
+// 2. Striktní získání (Fail-Fast), pokud nutně potřebuješ právě jeden výstup tohoto typu
+inline fun <reified T : Any> TaskScope<*, *>.parentOutputOfType(): T =
+    parentOutputsOfType<T>().firstOrNull()
+        ?: error("🚨 V grafu nebyl nalezen žádný rodičovský úkol vracející typ '${T::class.simpleName}'!")
+
+// 3. Benevolentní získání
+inline fun <reified T : Any> TaskScope<*, *>.parentOutputOfTypeOrNull(): T? =
+    parentOutputsOfType<T>().firstOrNull()
+
 typealias LegacyTaskScope = TaskScope<Data, Data>

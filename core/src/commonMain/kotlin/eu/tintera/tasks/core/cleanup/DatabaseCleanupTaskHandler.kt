@@ -10,6 +10,7 @@ internal class DatabaseCleanupTaskHandler(
     private val repository: Repository
 ) : TaskHandler<Unit, Unit, Unit> {
     override suspend fun TaskScope<Unit, Unit>.run(): TaskResult<Unit> {
+        // todo odstranit nevalidne zaplanovane requesty z workmanagera state == Enqueued AND runAttemptCount == 0 AND (now > createdAt + initialDelay + 30.days)
         repository.cleanOld(terminalStates)
         return TaskResult.success(Unit)
     }
