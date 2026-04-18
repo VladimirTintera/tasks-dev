@@ -13,7 +13,7 @@ class TaskManagerImpl(
     private val coreTaskManager: CoreTaskManager,
 ) : TaskManager {
 
-    override fun <Input, Output, Progress> register(
+    override fun <Input: Any, Output: Any, Progress: Any> register(
         identifier: String,
         currentVersion: Int,
         factory: () -> TaskHandler<Input, Output, Progress>,
@@ -51,8 +51,8 @@ class TaskManagerImpl(
     )
 
 
-    override suspend fun enqueueUniqueTask(
-        task: TaskRequest<*>,
+    override suspend fun <T: Any> enqueueUniqueTask(
+        task: TaskRequest<T>,
         uniqueName: String,
         existingTaskPolicy: ExistingTaskPolicy,
     ) = coreTaskManager.enqueueUniqueTask(
@@ -61,7 +61,7 @@ class TaskManagerImpl(
         existingTaskPolicy = existingTaskPolicy
     )
 
-    override suspend fun enqueueTask(task: TaskRequest<*>) = coreTaskManager.enqueueTask(task)
+    override suspend fun <T: Any> enqueueTask(task: TaskRequest<T>) = coreTaskManager.enqueueTask(task)
 
     override suspend fun enqueueContinuation(
         continuation: TaskContinuation,
@@ -77,8 +77,8 @@ class TaskManagerImpl(
         existingTaskPolicy = existingTaskPolicy
     )
 
-    override suspend fun enqueuePeriodicUniqueTask(
-        task: TaskRequest<*>,
+    override suspend fun <T: Any> enqueuePeriodicUniqueTask(
+        task: TaskRequest<T>,
         repeatInterval: Duration,
         uniqueName: String,
         existingTaskPolicy: ExistingPeriodicTaskPolicy,

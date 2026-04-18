@@ -12,7 +12,7 @@ import kotlin.reflect.KClass
 
 
 @PublishedApi
-internal sealed interface TaskHandlerRegistration<Input, Output, Progress, T : TaskHandler<Input, Output, Progress>> {
+internal sealed interface TaskHandlerRegistration<Input: Any, Output: Any, Progress: Any, T : TaskHandler<Input, Output, Progress>> {
     val type: KClass<T>
     val koinFactory: (Koin) -> TaskHandler<Input, Output, Progress>
 
@@ -21,7 +21,7 @@ internal sealed interface TaskHandlerRegistration<Input, Output, Progress, T : T
         override val koinFactory: (Koin) -> T
     ) : TaskHandlerRegistration<Data, Data, Data, T>
 
-    class Typed<Input, Output, Progress, T : TaskHandler<Input, Output, Progress>>(
+    class Typed<Input: Any, Output: Any, Progress: Any, T : TaskHandler<Input, Output, Progress>>(
         override val type: KClass<T>,
         override val koinFactory: (Koin) -> TaskHandler<Input, Output, Progress>,
         val identifier: String,
@@ -34,7 +34,7 @@ internal sealed interface TaskHandlerRegistration<Input, Output, Progress, T : T
 }
 
 @PublishedApi
-internal inline fun <reified Input, reified Output, reified Progress, reified T : TaskHandler<Input, Output, Progress>> taskHandlerRegistration(
+internal inline fun <reified Input: Any, reified Output: Any, reified Progress: Any, reified T : TaskHandler<Input, Output, Progress>> taskHandlerRegistration(
     identifier: String,
     currentVersion: Int,
     migrations: List<Migration> = emptyList(),

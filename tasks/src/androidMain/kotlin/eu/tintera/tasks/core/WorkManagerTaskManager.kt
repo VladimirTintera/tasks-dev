@@ -38,7 +38,7 @@ internal class WorkManagerCoreTaskManager(
             )
         }.build()
 
-    override suspend fun <T> enqueueUniqueTask(
+    override suspend fun <T: Any> enqueueUniqueTask(
         task: TaskRequest<T>,
         uniqueName: String,
         existingTaskPolicy: ExistingTaskPolicy,
@@ -72,7 +72,7 @@ internal class WorkManagerCoreTaskManager(
         }
     }
 
-    override suspend fun <T> enqueueTask(
+    override suspend fun <T: Any> enqueueTask(
         task: TaskRequest<T>,
     ): Uuid {
         val request = task.oneTimeWorkRequest()
@@ -200,7 +200,7 @@ internal class WorkManagerCoreTaskManager(
         return uncompletedExisting?.id?.toKotlinUuid()
     }
 
-    override suspend fun <T> enqueuePeriodicUniqueTask(
+    override suspend fun <T: Any> enqueuePeriodicUniqueTask(
         task: TaskRequest<T>,
         repeatInterval: Duration,
         uniqueName: String,
@@ -319,7 +319,7 @@ internal class WorkManagerCoreTaskManager(
 
         combine(sharedWorkInfosFlow, dbTasksFlow) { workInfos, dbTasks ->
             val taskMap = dbTasks.associateBy { it.id }.mapValues { (_, task) ->
-                task to taskRegistry.resolve<Any?, Any?, Any?>(task.identifier)
+                task to taskRegistry.resolve<Any, Any, Any>(task.identifier)
             }
 
             workInfos.map { workInfo ->
@@ -340,7 +340,7 @@ internal class WorkManagerCoreTaskManager(
         repository.taskById(id),
         workManager.getWorkInfoByIdFlow(id.toJavaUuid())
     ) { task, workInfo ->
-        workInfo?.toTaskInfo(task?.task, task?.task?.identifier?.let { taskRegistry.resolve<Any?, Any?, Any?>(it) })
+        workInfo?.toTaskInfo(task?.task, task?.task?.identifier?.let { taskRegistry.resolve<Any, Any, Any>(it) })
     }
 
     override suspend fun cancelTaskById(id: Uuid) {
@@ -381,14 +381,14 @@ internal class WorkManagerCoreTaskManager(
         )
     }
 
-    private suspend fun <T> saveTask(
+    private suspend fun <T: Any> saveTask(
         id: Uuid,
         task: TaskRequest<T>,
         uniqueName: String,
         repeatInterval: Duration?,
         parentIds: Set<Uuid>
     ) {
-        val registration = taskRegistry.resolve<T, Any?, Any?>(task.identifier) ?: error("Task registry not found")
+        val registration = taskRegistry.resolve<T, Any, Any>(task.identifier) ?: error("Task registry not found")
         val t = Task(
             id = id,
             identifier = task.identifier,
@@ -396,9 +396,7 @@ internal class WorkManagerCoreTaskManager(
             runAttemptCount = 0,
             state = State.Enqueued,
             processTime = Clock.System.now(),
-            inputData = task.data?.let { data ->
-                registration.inputSerializer.encodeToBytes(data)
-            },
+            inputData = registration.inputSerializer.encodeToBytes(task.data),
             outputData = null,
             networkRequired = task.constraints.requiresNetwork,
             createdAt = Clock.System.now(),

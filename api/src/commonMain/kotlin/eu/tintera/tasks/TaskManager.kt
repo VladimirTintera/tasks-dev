@@ -8,7 +8,7 @@ import kotlin.time.Duration
 import kotlin.uuid.Uuid
 
 interface TaskManager {
-    fun <Input, Output, Progress> register(
+    fun <Input: Any, Output: Any, Progress: Any> register(
         identifier: String,
         currentVersion: Int = 1,
         factory: () -> TaskHandler<Input, Output, Progress>,
@@ -18,14 +18,14 @@ interface TaskManager {
         migrations: List<Migration> = emptyList()
     )
 
-    suspend fun enqueueUniqueTask(
-        task: TaskRequest<*>,
+    suspend fun <T: Any> enqueueUniqueTask(
+        task: TaskRequest<T>,
         uniqueName: String = task.identifier,
         existingTaskPolicy: ExistingTaskPolicy = ExistingTaskPolicy.Keep
     ): Uuid
 
-    suspend fun enqueueTask(
-        task: TaskRequest<*>
+    suspend fun <T: Any> enqueueTask(
+        task: TaskRequest<T>
     ): Uuid
 
     suspend fun enqueueContinuation(
@@ -38,8 +38,8 @@ interface TaskManager {
         existingTaskPolicy: ExistingTaskPolicy = ExistingTaskPolicy.Keep
     )
 
-    suspend fun enqueuePeriodicUniqueTask(
-        task: TaskRequest<*>,
+    suspend fun <T: Any> enqueuePeriodicUniqueTask(
+        task: TaskRequest<T>,
         repeatInterval: Duration,
         uniqueName: String = task.identifier,
         existingTaskPolicy: ExistingPeriodicTaskPolicy = ExistingPeriodicTaskPolicy.Keep
@@ -51,12 +51,12 @@ interface TaskManager {
     suspend fun cancelTaskById(id: Uuid)
     suspend fun cancelTasksByTag(tag: String)
 
-    suspend fun cancelTask(type: KClass<out TaskHandler<*, *, *>>) = cancelTasksByTag(type.fullName)
+    suspend fun cancelTask(type: KClass<out TaskHandler<Any, Any, Any>>) = cancelTasksByTag(type.fullName)
 
     companion object
 }
 
-inline fun <reified T : TaskHandler<I, O, P>, reified I, reified O, reified P> TaskManager.register(
+inline fun <reified T : TaskHandler<I, O, P>, reified I: Any, reified O: Any, reified P: Any> TaskManager.register(
     currentVersion: Int = 1,
     inputSerializer: TaskDataSerializer<I>,
     outputSerializer: TaskDataSerializer<O>,
@@ -74,5 +74,5 @@ inline fun <reified T : TaskHandler<I, O, P>, reified I, reified O, reified P> T
 )
 
 
-suspend inline fun <reified T : TaskHandler<*, *, *>> TaskManager.cancelTask() = cancelTask(T::class)
+suspend inline fun <reified T : TaskHandler<Any, Any, Any>> TaskManager.cancelTask() = cancelTask(T::class)
 

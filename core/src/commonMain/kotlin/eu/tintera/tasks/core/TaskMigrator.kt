@@ -4,15 +4,14 @@ import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.core.migrations.findMigrationPath
 import eu.tintera.tasks.migrations.FieldMigrator
-import eu.tintera.tasks.migrations.Migration
 
-internal class TasksMigrator(
+internal class TaskMigrator(
     private val repository: Repository
 ) {
 
     suspend fun migrate(
         task: Task,
-        registration: TaskRegistry.TaskRegistration<*, *, *>
+        registration: TaskRegistry.TaskRegistration<Any, Any, Any>
     ): Any? {
 
         val migrationsToRun = registration.migrations.findMigrationPath(

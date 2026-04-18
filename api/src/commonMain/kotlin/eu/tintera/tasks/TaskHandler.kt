@@ -2,7 +2,7 @@ package eu.tintera.tasks
 
 import kotlin.reflect.KClass
 
-fun interface TaskHandler<Input, Output, Progress> {
+fun interface TaskHandler<Input: Any, Output: Any, Progress: Any> {
     suspend fun TaskScope<Input, Progress>.run(): TaskResult<Output>
 }
 

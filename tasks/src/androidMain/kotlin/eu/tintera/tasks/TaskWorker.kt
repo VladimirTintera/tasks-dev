@@ -48,7 +48,7 @@ internal class TaskWorker(
 
         EventBus.send("TaskWorker", "Task started '$taskIdentifier', data = ${inputData.toData()}")
 
-        val registration = taskRegistry.resolve<Any?, Any?, Any?>(taskIdentifier) ?: return Result.failure()
+        val registration = taskRegistry.resolve<Any, Any, Any>(taskIdentifier) ?: return Result.failure()
 
         val taskId = id.toKotlinUuid()
 

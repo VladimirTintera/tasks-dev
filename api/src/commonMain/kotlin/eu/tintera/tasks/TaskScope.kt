@@ -2,7 +2,7 @@ package eu.tintera.tasks
 
 import kotlin.uuid.Uuid
 
-interface TaskScope<Input, Progress> {
+interface TaskScope<Input: Any, Progress: Any> {
     val taskId: Uuid
     val data: Input
     val retryCount: Int
@@ -62,5 +62,11 @@ inline fun <reified T : Any> TaskScope<*, *>.parentOutputOfType(): T =
 // 3. Benevolentní získání
 inline fun <reified T : Any> TaskScope<*, *>.parentOutputOfTypeOrNull(): T? =
     parentOutputsOfType<T>().firstOrNull()
+
+inline fun <reified T : Any> TaskScope<*, *>.latestParentOutputOfTypeOrNull(): T? =
+    parents
+        .filter { it.data is T }
+        .maxByOrNull { it.finishedAt }
+        ?.let { it.data as T }
 
 typealias LegacyTaskScope = TaskScope<Data, Data>

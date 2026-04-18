@@ -13,7 +13,7 @@ import kotlin.time.Duration.Companion.seconds
 
 class TaskRegistry {
 
-    class TaskRegistration<Input, Output, Progress>(
+    class TaskRegistration<Input: Any, Output: Any, Progress: Any>(
         val currentVersion: Int,
         val factory: () -> TaskHandler<Input, Output, Progress>,
         val inputSerializer: TaskDataSerializer<Input>,
@@ -49,7 +49,7 @@ class TaskRegistry {
 
     private val registry = MutableStateFlow<Map<String, TaskRegistration<*, *, *>>>(emptyMap())
 
-    fun <Input, Output, Progress> register(
+    fun <Input: Any, Output: Any, Progress: Any> register(
         identifier: String,
         registration: TaskRegistration<Input, Output, Progress>
     ) {
@@ -62,7 +62,7 @@ class TaskRegistry {
     }
 
     @Suppress("UNCHECKED_CAST")
-    suspend fun <I, O, P> resolve(
+    suspend fun <I: Any, O: Any, P: Any> resolve(
         identifier: String
     ): TaskRegistration<I, O, P>? = withTimeoutOrNull(5.seconds) {
         registry.first {

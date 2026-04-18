@@ -17,7 +17,7 @@ class RepositoryCoreTaskManager(
     private val taskRegistry: TaskRegistry,
 ) : CoreTaskManager {
 
-    override suspend fun <T> enqueueUniqueTask(
+    override suspend fun <T: Any> enqueueUniqueTask(
         task: TaskRequest<T>,
         uniqueName: String,
         existingTaskPolicy: ExistingTaskPolicy,
@@ -54,11 +54,11 @@ class RepositoryCoreTaskManager(
         t.id
     }
 
-    private suspend fun <I, O, P> findRegistrationOrNull(
+    private suspend fun <I: Any, O: Any, P: Any> findRegistrationOrNull(
         identifier: String
-    ) = taskRegistry.resolve<I, O, P>(identifier) as? TaskRegistry.TaskRegistration<I, O, P>
+    ) = taskRegistry.resolve<I, O, P>(identifier)
 
-    private suspend fun <I, O, P> findRegistration(
+    private suspend fun <I: Any, O: Any, P: Any> findRegistration(
         identifier: String
     ) = findRegistrationOrNull<I, O, P>(identifier) ?: error("Task '$identifier' is not registered!")
 
@@ -108,7 +108,7 @@ class RepositoryCoreTaskManager(
         insertContinuation(continuation, uniqueName, parentIds.toSet())
     }
 
-    private fun <T> TaskRequest<T>.toTask(
+    private fun <T: Any> TaskRequest<T>.toTask(
         uniqueName: String,
         state: State,
         registration: TaskRegistry.TaskRegistration<T, *, *>,
@@ -136,7 +136,7 @@ class RepositoryCoreTaskManager(
         version = registration.currentVersion
     )
 
-    override suspend fun <T> enqueueTask(
+    override suspend fun <T: Any> enqueueTask(
         task: TaskRequest<T>,
     ): Uuid = repository.withTransaction {
         insertTask(task, Uuid.random().toString(), setOf())
@@ -156,7 +156,7 @@ class RepositoryCoreTaskManager(
         }
     }
 
-    private suspend fun <T> Repository.insertTask(
+    private suspend fun <T: Any> Repository.insertTask(
         taskRequest: TaskRequest<T>,
         uniqueName: String,
         parentIds: Set<Uuid>,
@@ -171,7 +171,7 @@ class RepositoryCoreTaskManager(
         return task.id
     }
 
-    override suspend fun <T> enqueuePeriodicUniqueTask(
+    override suspend fun <T: Any> enqueuePeriodicUniqueTask(
         task: TaskRequest<T>,
         repeatInterval: Duration,
         uniqueName: String,

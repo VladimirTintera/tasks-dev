@@ -8,7 +8,7 @@ data class FullTask(
     val tags: Set<String>
 )
 
-fun <O, P> FullTask.toTaskInfo(
+fun <O: Any, P: Any> FullTask.toTaskInfo(
     registration: TaskRegistry.TaskRegistration<Any, O, P>?
 ): TaskInfo {
     return TaskInfo(

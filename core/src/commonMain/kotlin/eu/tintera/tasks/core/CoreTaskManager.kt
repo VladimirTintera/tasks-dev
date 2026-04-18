@@ -11,13 +11,13 @@ import kotlin.time.Duration
 import kotlin.uuid.Uuid
 
 interface CoreTaskManager {
-    suspend fun <T> enqueueUniqueTask(
+    suspend fun <T: Any> enqueueUniqueTask(
         task: TaskRequest<T>,
         uniqueName: String = task.identifier,
         existingTaskPolicy: ExistingTaskPolicy = ExistingTaskPolicy.Keep
     ) : Uuid
 
-    suspend fun <T> enqueueTask(
+    suspend fun <T: Any> enqueueTask(
         task: TaskRequest<T>
     ) : Uuid
 
@@ -31,7 +31,7 @@ interface CoreTaskManager {
         existingTaskPolicy: ExistingTaskPolicy = ExistingTaskPolicy.Keep
     )
 
-    suspend fun <T> enqueuePeriodicUniqueTask(
+    suspend fun <T: Any> enqueuePeriodicUniqueTask(
         task: TaskRequest<T>,
         repeatInterval: Duration,
         uniqueName: String = task.identifier,

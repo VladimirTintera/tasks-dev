@@ -3,7 +3,7 @@ package eu.tintera.tasks
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 
-data class TaskRequest<I>(
+data class TaskRequest<I: Any>(
     val identifier: String,
     val initialDelay: Duration = Duration.ZERO,
     val data: I,
@@ -13,7 +13,7 @@ data class TaskRequest<I>(
     val keepResultsForAtLeast: Duration = 24.hours
 )
 
-inline fun <reified T : TaskHandler<I, *, *>, I> taskRequest(
+inline fun <reified T : TaskHandler<I, *, *>, I: Any> taskRequest(
     data: I,
     identifier: String = T::class.fullName,
     initialDelay: Duration = Duration.ZERO,
