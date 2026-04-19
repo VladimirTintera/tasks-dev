@@ -1,8 +1,6 @@
 package eu.tintera.tasks.core
 
 import eu.tintera.tasks.*
-import eu.tintera.tasks.legacy.LegacyTaskHandler
-import eu.tintera.tasks.legacy.legacySerializer
 import eu.tintera.tasks.migrations.Migration
 import eu.tintera.tasks.serialization.TaskDataSerializer
 import kotlinx.coroutines.flow.Flow
@@ -33,24 +31,6 @@ class TaskManagerImpl(
             migrations = migrations
         )
     )
-
-    @Deprecated("Use typed registration instead")
-    fun register(
-        identifier: String,
-        currentVersion: Int,
-        factory: () -> LegacyTaskHandler,
-    ) = taskRegistry.register(
-        identifier = identifier,
-        registration = TaskRegistry.TaskRegistration(
-            currentVersion = currentVersion,
-            factory = factory,
-            inputSerializer = legacySerializer(),
-            outputSerializer = legacySerializer(),
-            progressSerializer = legacySerializer(),
-            migrations = emptyList()
-        )
-    )
-
 
     override suspend fun <T: Any> enqueueUniqueTask(
         task: TaskRequest<T>,

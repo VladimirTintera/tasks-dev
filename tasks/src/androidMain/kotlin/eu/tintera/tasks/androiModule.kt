@@ -28,10 +28,15 @@ internal fun androidModule(
             maxConcurrentTasks = 10
         )
     }
+
     single {
         ExecutionContextConfig(
             releaseDebounce = config.executionContextReleaseDebounce
         )
+    }
+
+    single {
+        WorkManagerConfiguration(compatTransformation = config.compatTransformation)
     }
 
     single<SQLiteDriver> { AndroidSQLiteDriver() }

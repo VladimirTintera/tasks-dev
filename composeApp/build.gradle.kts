@@ -58,6 +58,7 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.koin.android)
+            implementation(projects.compat)
         }
 
         commonMain.dependencies {
@@ -79,7 +80,7 @@ kotlin {
 
             implementation(projects.tasks)
             implementation(projects.koin)
-
+            implementation(projects.compat)
 
         }
         commonTest.dependencies {

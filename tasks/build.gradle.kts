@@ -41,11 +41,13 @@ kotlin {
             api(projects.api)
             api(libs.androidx.sqlite)
             api(libs.guard)
+            implementation(projects.compat)
         }
 
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
+
         }
 
         androidMain.dependencies {

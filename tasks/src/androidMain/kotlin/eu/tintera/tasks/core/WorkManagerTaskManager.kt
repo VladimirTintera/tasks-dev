@@ -1,12 +1,22 @@
 package eu.tintera.tasks.core
 
 import android.annotation.SuppressLint
-import androidx.work.*
+import androidx.work.Data
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkContinuation
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import androidx.work.WorkRequest
+import androidx.work.await
 import eu.tintera.tasks.*
 import eu.tintera.tasks.BackoffPolicy
 import eu.tintera.tasks.Constraints
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
+import eu.tintera.tasks.serialization.TaskDataSerializer
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.*
@@ -38,7 +48,7 @@ internal class WorkManagerCoreTaskManager(
             )
         }.build()
 
-    override suspend fun <T: Any> enqueueUniqueTask(
+    override suspend fun <T : Any> enqueueUniqueTask(
         task: TaskRequest<T>,
         uniqueName: String,
         existingTaskPolicy: ExistingTaskPolicy,
@@ -72,7 +82,7 @@ internal class WorkManagerCoreTaskManager(
         }
     }
 
-    override suspend fun <T: Any> enqueueTask(
+    override suspend fun <T : Any> enqueueTask(
         task: TaskRequest<T>,
     ): Uuid {
         val request = task.oneTimeWorkRequest()
@@ -200,7 +210,7 @@ internal class WorkManagerCoreTaskManager(
         return uncompletedExisting?.id?.toKotlinUuid()
     }
 
-    override suspend fun <T: Any> enqueuePeriodicUniqueTask(
+    override suspend fun <T : Any> enqueuePeriodicUniqueTask(
         task: TaskRequest<T>,
         repeatInterval: Duration,
         uniqueName: String,
@@ -264,7 +274,7 @@ internal class WorkManagerCoreTaskManager(
         backoffCriteria: BackoffCriteria?,
         keepResultsForAtLeast: Duration
     ) {
-        val inputData = androidx.work.Data.Builder().putString(TaskWorker.TASK_IDENTIFIER, identifier).build()
+        val inputData = Data.Builder().putString(TaskWorker.TASK_IDENTIFIER, identifier).build()
         setInputData(inputData)
         if (constraints.requiresNetwork || constraints.requiresDeviceIdle)
             setConstraints(
@@ -367,13 +377,13 @@ internal class WorkManagerCoreTaskManager(
             }.toSet(),
             runAttemptCount = runAttemptCount,
             outputData = task?.outputData?.let {
-                registration?.outputSerializer?.decodeFromBytes(it)
+                registration?.outputSerializer?.decodeFromBytesOrNull(it)
             },
             nextScheduledTime = Instant.fromEpochMilliseconds(nextScheduleTimeMillis).takeIf {
                 it < Instant.DISTANT_FUTURE
             },
             progress = task?.progressData?.let {
-                registration?.progressSerializer?.decodeFromBytes(it)
+                registration?.progressSerializer?.decodeFromBytesOrNull(it)
             },
             finishedAt = task?.finishedAt,
             createdAt = task?.createdAt ?: Instant.DISTANT_PAST,
@@ -381,7 +391,7 @@ internal class WorkManagerCoreTaskManager(
         )
     }
 
-    private suspend fun <T: Any> saveTask(
+    private suspend fun <T : Any> saveTask(
         id: Uuid,
         task: TaskRequest<T>,
         uniqueName: String,
@@ -412,4 +422,10 @@ internal class WorkManagerCoreTaskManager(
 
         repository.insert(task = t, tags = emptySet(), parentIds = parentIds)
     }
+}
+
+private fun <T> TaskDataSerializer<T>.decodeFromBytesOrNull(data: ByteArray) = try {
+    decodeFromBytes(data)
+} catch (_: Exception) {
+    null
 }

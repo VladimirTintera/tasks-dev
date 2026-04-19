@@ -1,11 +1,7 @@
 package eu.tintera.koin
 
-import eu.tintera.tasks.TaskHandler
-import eu.tintera.tasks.TaskManager
-import eu.tintera.tasks.fullName
-import eu.tintera.tasks.legacy.LegacyTaskHandler
+import eu.tintera.tasks.*
 import eu.tintera.tasks.migrations.Migration
-import eu.tintera.tasks.register
 import org.koin.core.Koin
 import org.koin.core.definition.Definition
 import org.koin.core.definition.KoinDefinition
@@ -52,7 +48,7 @@ internal class TasksRegistrations(
             progressSerializer = registration.progressSerializer,
             migrations = registration.migrations,
             factory = { registration.koinFactory(koin) }      // Kompilátor vidí: () -> TaskHandler<I, O, P>
-        ) // VŠECHNO DOKONALE SEDÍ!
+        )
     }
 }
 

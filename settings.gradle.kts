@@ -38,6 +38,7 @@ include(":core")
 include(":db")
 include(":api")
 include(":koin")
+include(":compat")
 
 includeBuild("external/guard") {
     dependencySubstitution {

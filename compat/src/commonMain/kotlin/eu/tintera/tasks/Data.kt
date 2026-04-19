@@ -1,4 +1,6 @@
-package eu.tintera.tasks.legacy
+package eu.tintera.tasks
+
+import kotlin.collections.plus
 
 
 class Data internal constructor(
@@ -33,4 +35,12 @@ fun taskDataOf(vararg pairs: Pair<String, Any?>) = Data(
         }
     }.toMap()
 )
+
+internal operator fun Data.plus(other: Data): Data = taskDataOf(
+    *(map + other.map).toList().toTypedArray()
+)
+
+internal fun Collection<Data>.sum(): Data = fold(Data.EMPTY) { acc, data ->
+    acc + data
+}
 

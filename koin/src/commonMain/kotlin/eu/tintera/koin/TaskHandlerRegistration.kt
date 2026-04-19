@@ -1,9 +1,9 @@
 package eu.tintera.koin
 
+import eu.tintera.tasks.Data
+import eu.tintera.tasks.LegacyTaskHandler
 import eu.tintera.tasks.TaskHandler
 import eu.tintera.tasks.fullName
-import eu.tintera.tasks.legacy.Data
-import eu.tintera.tasks.legacy.LegacyTaskHandler
 import eu.tintera.tasks.migrations.Migration
 import eu.tintera.tasks.serialization.TaskDataSerializer
 import eu.tintera.tasks.serialization.jsonSerializer

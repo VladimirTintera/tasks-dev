@@ -8,12 +8,13 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import eu.tintera.tasks.core.*
+import eu.tintera.tasks.core.ExecutionResult
+import eu.tintera.tasks.core.TaskEvaluator
+import eu.tintera.tasks.core.TaskResultProcessor
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
+import eu.tintera.tasks.core.nonTerminalStates
 import eu.tintera.tasks.koin.TasksKoinComponent
-import eu.tintera.tasks.legacy.Data
-import eu.tintera.tasks.legacy.taskDataOf
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import org.koin.core.component.inject
@@ -34,7 +35,8 @@ internal class TaskWorker(
     private val taskEvaluator: TaskEvaluator by inject()
     private val repository: Repository by inject()
     private val taskResultProcessor: TaskResultProcessor by inject()
-    private val taskRegistry: TaskRegistry by inject()
+
+    private val workManagerConfiguration: WorkManagerConfiguration by inject()
 
     override suspend fun doWork(): Result {
 
@@ -46,8 +48,6 @@ internal class TaskWorker(
 
         EventBus.send("TaskWorker", "Task started '$taskIdentifier'")
 
-        val registration = taskRegistry.resolve<Any, Any, Any>(taskIdentifier) ?: return Result.failure()
-
         val taskId = id.toKotlinUuid()
 
         var task = repository.task(taskId).first()
@@ -56,29 +56,37 @@ internal class TaskWorker(
             // ADOPCE STARÉHO ÚKOLU:
             // Vytáhneme všechna data z WorkManageru a zabalíme je do starého formátu (Verze 1)
 
-            task = Task(
-                id = taskId,
-                identifier = taskIdentifier,
-                inputData = registration.inputSerializer.encodeToBytes(inputData.toData()),
-                outputData = null,
-                progressData = null,
-                version = 1, // DŮLEŽITÉ: Je to starý task, jde do verze 1
-                state = State.Running,
-                runAttemptCount = runAttemptCount + 1,
-                uniqueName = "",
-                initialDelay = Duration.ZERO,
-                processTime = null,
-                networkRequired = false,
-                createdAt = Clock.System.now(),
-                finishedAt = null,
-                repeatInterval = null,
-                backoffCriteria = null,
-                retentionDelay = 24.hours,
-                requiresDeviceIdle = false
-            )
+            val sourceData = inputData.keyValueMap.mapNotNull { (key, value) ->
+                key.takeIf { it != TASK_IDENTIFIER }?.let {
+                    key to value
+                }
+            }.toMap()
 
-            // Založíme ho u nás, aby o něm systém odteď věděl
-            repository.insert(task, emptySet(), emptySet())
+            workManagerConfiguration.compatTransformation(sourceData)?.let { byteArray ->
+                task = Task(
+                    id = taskId,
+                    identifier = taskIdentifier,
+                    inputData = byteArray,
+                    outputData = null,
+                    progressData = null,
+                    version = 1, // DŮLEŽITÉ: Je to starý task, jde do verze 1
+                    state = State.Running,
+                    runAttemptCount = runAttemptCount + 1,
+                    uniqueName = "",
+                    initialDelay = Duration.ZERO,
+                    processTime = null,
+                    networkRequired = false,
+                    createdAt = Clock.System.now(),
+                    finishedAt = null,
+                    repeatInterval = null,
+                    backoffCriteria = null,
+                    retentionDelay = 24.hours,
+                    requiresDeviceIdle = false
+                )
+
+                // Založíme ho u nás, aby o něm systém odteď věděl
+                repository.insert(task, emptySet(), emptySet())
+            }
         } else {
             // Úkol už je náš, jen updatneme stav (pokud se např. jedná o Retry)
             repository.updateState(
@@ -88,12 +96,14 @@ internal class TaskWorker(
                 resetProcessTime = true,
 
                 )
+
             task = task.copy(
                 state = State.Running,
                 runAttemptCount = runAttemptCount + 1
             )
         }
 
+        if (task == null) return Result.failure()
 
         val result = taskEvaluator.handle(
             task = task,
@@ -160,11 +170,4 @@ internal class TaskWorker(
         const val TASK_IDENTIFIER = "task_identifier"
     }
 
-    private fun androidx.work.Data.toData() = taskDataOf(
-        *keyValueMap.mapNotNull { (key, value) ->
-            key.takeIf { it != TASK_IDENTIFIER }?.let {
-                key to value
-            }
-        }.toTypedArray()
-    )
 }

@@ -76,7 +76,7 @@ internal class TaskEvaluatorImpl(
             return TaskResult.Failure
         }
 
-
+        scope.flushProgressAndClose()
 
         return when (typedResult) {
             is TaskResult.Success -> {

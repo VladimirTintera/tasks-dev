@@ -1,10 +1,5 @@
-package eu.tintera.tasks.legacy
+package eu.tintera.tasks
 
-import eu.tintera.tasks.BackoffCriteria
-import eu.tintera.tasks.Constraints
-import eu.tintera.tasks.TaskHandler
-import eu.tintera.tasks.TaskRequest
-import eu.tintera.tasks.fullName
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 

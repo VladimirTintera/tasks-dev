@@ -1,4 +1,4 @@
-package eu.tintera.tasks.legacy
+package eu.tintera.tasks
 
 import eu.tintera.tasks.serialization.TaskDataSerializer
 import kotlinx.serialization.Serializable
@@ -16,13 +16,13 @@ private object LegacyTaskDataSerializer : TaskDataSerializer<Data> {
 
     override fun decodeFromBytes(bytes: ByteArray): Data {
         val surrogate = protoBuf.decodeFromByteArray(SerializableTaskData.serializer(), bytes)
-        return surrogate.toData()
+        return surrogate.toByteArray()
     }
 }
 
 fun legacySerializer(): TaskDataSerializer<Data> = LegacyTaskDataSerializer
 
-private fun SerializableTaskData.toData() = taskDataOf(
+private fun SerializableTaskData.toByteArray() = taskDataOf(
     *values.flatMap { value ->
         listOfNotNull(
             value.intValue?.let { value.key to it },
