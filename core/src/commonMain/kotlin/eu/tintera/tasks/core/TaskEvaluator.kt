@@ -1,12 +1,15 @@
 package eu.tintera.tasks.core
 
-import eu.tintera.tasks.*
+import eu.tintera.tasks.EventBus
+import eu.tintera.tasks.ForegroundInfo
+import eu.tintera.tasks.ParentData
+import eu.tintera.tasks.TaskResult
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.plus
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Instant
-import kotlin.uuid.Uuid
 
 interface TaskEvaluator {
     suspend fun handle(
@@ -19,7 +22,10 @@ interface TaskEvaluator {
 internal class TaskEvaluatorImpl(
     private val taskRegistry: TaskRegistry,
     private val repository: Repository,
-    private val taskMigrator: TaskMigrator
+    private val taskMigrator: TaskMigrator,
+    private val taskScopeFactory: TaskScopeFactory,
+    private val applicationScope: ApplicationScope,
+    private val dispatchers: AppDispatchers
 ) : TaskEvaluator {
 
     override suspend fun handle(
@@ -47,23 +53,15 @@ internal class TaskEvaluatorImpl(
             }
         }
 
-        val scope = object : TaskScope<Any, Any> {
-            override val taskId: Uuid = task.id
-            override val data: Any = typedInput
-            override val retryCount: Int = task.runAttemptCount - 1
-            override val parents: List<ParentData> = parents
-
-            override suspend fun setForegroundInfo(foregroundInfo: ForegroundInfo): Boolean {
-                return onForegroundInfo(foregroundInfo)
-            }
-
-            override suspend fun setProgress(data: Any) {
-                repository.updateProgressData(
-                    id = taskId,
-                    progressData = registration.progressSerializer.encodeToBytes(data)
-                )
-            }
-        }
+        val scope = taskScopeFactory.createForTask(
+            taskId = task.id,
+            data = typedInput,
+            retryCount = task.runAttemptCount - 1,
+            parentData = parents,
+            onForegroundInfoProvided = onForegroundInfo,
+            progressSerializer = registration.progressSerializer,
+            scope = applicationScope + dispatchers.default
+        )
 
         val typedResult = try {
             val handler = registration.factory()

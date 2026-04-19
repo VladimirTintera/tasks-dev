@@ -72,7 +72,7 @@ internal class TaskMigrator(
         val inputBytes: ByteArray?,
         val outputBytes: ByteArray?,
         val progressBytes: ByteArray?,
-        val parsedInput: Any? = null, // TADY SI ULOŽÍME HOTOVÝ OBJEKT!
+        val parsedInput: Any? = null,
         val version: Int
     )
 }
