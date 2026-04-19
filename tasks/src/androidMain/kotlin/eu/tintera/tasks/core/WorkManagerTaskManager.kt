@@ -36,7 +36,7 @@ internal class WorkManagerCoreTaskManager(
     private val taskRegistry: TaskRegistry
 ) : CoreTaskManager {
 
-    private fun TaskRequest<*>.oneTimeWorkRequest() =
+    private fun <T: Any> TaskRequest<T>.oneTimeWorkRequest() =
         OneTimeWorkRequestBuilder<TaskWorker>().apply {
             set(
                 identifier = identifier,
@@ -354,7 +354,15 @@ internal class WorkManagerCoreTaskManager(
     }
 
     override suspend fun cancelTaskById(id: Uuid) {
-        workManager.cancelWorkById(id.toJavaUuid()).await()
+        withContext(NonCancellable) {
+            repository.updateTerminatingState(
+                id = id,
+                state = State.Cancelled,
+                finishedAt = Clock.System.now(),
+                outputData = null
+            )
+            workManager.cancelWorkById(id.toJavaUuid()).await()
+        }
     }
 
     override suspend fun cancelTasksByTag(tag: String) {
@@ -382,7 +390,9 @@ internal class WorkManagerCoreTaskManager(
             nextScheduledTime = Instant.fromEpochMilliseconds(nextScheduleTimeMillis).takeIf {
                 it < Instant.DISTANT_FUTURE
             },
-            progress = task?.progressData?.let {
+            progress = task?.progressData?.takeIf {
+                state != WorkInfo.State.FAILED && state != WorkInfo.State.CANCELLED
+            }?.let {
                 registration?.progressSerializer?.decodeFromBytesOrNull(it)
             },
             finishedAt = task?.finishedAt,

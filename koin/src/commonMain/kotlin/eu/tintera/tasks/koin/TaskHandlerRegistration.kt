@@ -11,8 +11,8 @@ import org.koin.core.qualifier.named
 import kotlin.reflect.KClass
 
 
-class TaskHandlerRegistration<Input : Any, Output : Any, Progress : Any, T : TaskHandler<Input, Output, Progress>>(
-    val type: KClass<T>,
+@PublishedApi
+internal class TaskHandlerRegistration<Input : Any, Output : Any, Progress : Any, T : TaskHandler<Input, Output, Progress>>(
     val koinFactory: (Koin) -> TaskHandler<Input, Output, Progress>,
     val identifier: String,
     val currentVersion: Int,
@@ -40,8 +40,7 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
             inputSerializer = inputSerializer,
             outputSerializer = outputSerializer,
             progressSerializer = progressSerializer,
-            koinFactory = { koinInstance -> koinInstance.get<R>() },
-            type = R::class
+            koinFactory = { koinInstance -> koinInstance.get<R>() }
         )
     }
 }

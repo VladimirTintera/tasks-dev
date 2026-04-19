@@ -43,7 +43,7 @@ internal class DatabaseCleaner(
                     constraints = Constraints(requiresDeviceIdle = false),
                     data = Unit
                 ),
-                existingTaskPolicy = ExistingPeriodicTaskPolicy.Keep,
+                existingTaskPolicy = ExistingPeriodicTaskPolicy.Replace,
                 repeatInterval = 24.hours,
             )
         }
