@@ -1,4 +1,4 @@
-package eu.tintera.koin
+package eu.tintera.tasks.koin
 
 import eu.tintera.tasks.TaskManager
 import eu.tintera.tasks.getInstance

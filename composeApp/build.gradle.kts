@@ -58,7 +58,7 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.koin.android)
-            implementation(projects.compat)
+
         }
 
         commonMain.dependencies {
@@ -79,8 +79,9 @@ kotlin {
             implementation(libs.koin.compose.viewmodel)
 
             implementation(projects.tasks)
-            implementation(projects.koin)
-            implementation(projects.compat)
+            implementation(projects.koinJson)
+            implementation(projects.serializationCompat)
+            implementation(projects.serializationJson)
 
         }
         commonTest.dependencies {

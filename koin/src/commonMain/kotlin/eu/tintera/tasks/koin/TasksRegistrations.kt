@@ -1,15 +1,14 @@
-package eu.tintera.koin
+package eu.tintera.tasks.koin
 
-import eu.tintera.tasks.*
+import eu.tintera.tasks.TaskHandler
+import eu.tintera.tasks.TaskManager
 import eu.tintera.tasks.migrations.Migration
+import eu.tintera.tasks.serialization.TaskDataSerializer
 import org.koin.core.Koin
 import org.koin.core.definition.Definition
-import org.koin.core.definition.KoinDefinition
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.qualifier.Qualifier
-import org.koin.core.qualifier.named
-import org.koin.dsl.bind
 
 internal class TasksRegistrations(
     koin: Koin,
@@ -17,55 +16,40 @@ internal class TasksRegistrations(
     registrations: List<TaskHandlerRegistration<*, *, *, *>>
 ) {
     init {
-        registrations.forEach { registration ->
-            when (registration) {
-                is TaskHandlerRegistration.Legacy -> {
-                    taskManager.register(
-                        identifier = registration.type.fullName,
-                        factory = {
-                            registration.koinFactory(koin)
-                        }
-                    )
-                }
-
-                is TaskHandlerRegistration.Typed -> {
-                    registerTyped(taskManager, koin, registration)
-                }
-            }
-        }
+        registrations.forEach { register(taskManager, koin, it) }
     }
 
-    private fun <I : Any, O : Any, P : Any, T : TaskHandler<I, O, P>> registerTyped(
+    private fun <I : Any, O : Any, P : Any, T : TaskHandler<I, O, P>> register(
         taskManager: TaskManager,
         koin: Koin,
-        registration: TaskHandlerRegistration.Typed<I, O, P, T>
+        registration: TaskHandlerRegistration<I, O, P, T>
     ) {
         taskManager.register(
             identifier = registration.identifier,
             currentVersion = registration.currentVersion,
-            inputSerializer = registration.inputSerializer,   // Kompilátor vidí: TaskDataSerializer<I>
-            outputSerializer = registration.outputSerializer, // Kompilátor vidí: TaskDataSerializer<O>
+            inputSerializer = registration.inputSerializer,
+            outputSerializer = registration.outputSerializer,
             progressSerializer = registration.progressSerializer,
             migrations = registration.migrations,
-            factory = { registration.koinFactory(koin) }      // Kompilátor vidí: () -> TaskHandler<I, O, P>
+            factory = { registration.koinFactory(koin) }
         )
     }
-}
-
-inline fun <reified R : LegacyTaskHandler> Module.taskHandlerOf(
-    crossinline constructor: () -> R,
-) = legacyTaskHandlerRegistration {
-    factoryOf(constructor)
 }
 
 inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>> Module.taskHandlerOf(
     crossinline constructor: () -> R,
     identifier: String = "",
     currentVersion: Int = 1,
+    inputSerializer: TaskDataSerializer<Input>,
+    outputSerializer: TaskDataSerializer<Output>,
+    progressSerializer: TaskDataSerializer<Progress>,
     migrations: List<Migration> = emptyList(),
 ) = taskHandlerRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
+    inputSerializer = inputSerializer,
+    outputSerializer = outputSerializer,
+    progressSerializer = progressSerializer,
     migrations = migrations,
 ) {
     factoryOf(constructor)
@@ -75,10 +59,16 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     crossinline constructor: (T1) -> R,
     identifier: String = "",
     currentVersion: Int = 1,
+    inputSerializer: TaskDataSerializer<Input>,
+    outputSerializer: TaskDataSerializer<Output>,
+    progressSerializer: TaskDataSerializer<Progress>,
     migrations: List<Migration> = emptyList(),
 ) = taskHandlerRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
+    inputSerializer = inputSerializer,
+    outputSerializer = outputSerializer,
+    progressSerializer = progressSerializer,
     migrations = migrations
 ) {
     factoryOf(constructor)
@@ -88,10 +78,16 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     crossinline constructor: (T1, T2) -> R,
     identifier: String = "",
     currentVersion: Int = 1,
+    inputSerializer: TaskDataSerializer<Input>,
+    outputSerializer: TaskDataSerializer<Output>,
+    progressSerializer: TaskDataSerializer<Progress>,
     migrations: List<Migration> = emptyList(),
 ) = taskHandlerRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
+    inputSerializer = inputSerializer,
+    outputSerializer = outputSerializer,
+    progressSerializer = progressSerializer,
     migrations = migrations
 ) {
     factoryOf(constructor)
@@ -101,10 +97,16 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     crossinline constructor: (T1, T2, T3) -> R,
     identifier: String = "",
     currentVersion: Int = 1,
+    inputSerializer: TaskDataSerializer<Input>,
+    outputSerializer: TaskDataSerializer<Output>,
+    progressSerializer: TaskDataSerializer<Progress>,
     migrations: List<Migration> = emptyList(),
 ) = taskHandlerRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
+    inputSerializer = inputSerializer,
+    outputSerializer = outputSerializer,
+    progressSerializer = progressSerializer,
     migrations = migrations
 ) {
     factoryOf(constructor)
@@ -114,10 +116,16 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     crossinline constructor: (T1, T2, T3, T4) -> R,
     identifier: String = "",
     currentVersion: Int = 1,
+    inputSerializer: TaskDataSerializer<Input>,
+    outputSerializer: TaskDataSerializer<Output>,
+    progressSerializer: TaskDataSerializer<Progress>,
     migrations: List<Migration> = emptyList(),
 ) = taskHandlerRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
+    inputSerializer = inputSerializer,
+    outputSerializer = outputSerializer,
+    progressSerializer = progressSerializer,
     migrations = migrations
 ) {
     factoryOf(constructor)
@@ -127,10 +135,16 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     crossinline constructor: (T1, T2, T3, T4, T5) -> R,
     identifier: String = "",
     currentVersion: Int = 1,
+    inputSerializer: TaskDataSerializer<Input>,
+    outputSerializer: TaskDataSerializer<Output>,
+    progressSerializer: TaskDataSerializer<Progress>,
     migrations: List<Migration> = emptyList(),
 ) = taskHandlerRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
+    inputSerializer = inputSerializer,
+    outputSerializer = outputSerializer,
+    progressSerializer = progressSerializer,
     migrations = migrations
 ) {
     factoryOf(constructor)
@@ -140,10 +154,16 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     crossinline constructor: (T1, T2, T3, T4, T5, T6) -> R,
     identifier: String = "",
     currentVersion: Int = 1,
+    inputSerializer: TaskDataSerializer<Input>,
+    outputSerializer: TaskDataSerializer<Output>,
+    progressSerializer: TaskDataSerializer<Progress>,
     migrations: List<Migration> = emptyList(),
 ) = taskHandlerRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
+    inputSerializer = inputSerializer,
+    outputSerializer = outputSerializer,
+    progressSerializer = progressSerializer,
     migrations = migrations
 ) {
     factoryOf(constructor)
@@ -154,37 +174,19 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     currentVersion: Int = 1,
     migrations: List<Migration> = emptyList(),
     qualifier: Qualifier? = null,
+    inputSerializer: TaskDataSerializer<Input>,
+    outputSerializer: TaskDataSerializer<Output>,
+    progressSerializer: TaskDataSerializer<Progress>,
     noinline definition: Definition<R>,
 ) = taskHandlerRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
+    inputSerializer = inputSerializer,
+    outputSerializer = outputSerializer,
+    progressSerializer = progressSerializer,
     migrations = migrations
 ) {
     factory(qualifier, definition)
 }
 
-@Deprecated("Use typed registration instead")
-inline fun <reified R : LegacyTaskHandler> Module.legacyTaskHandlerRegistration(
-    noinline definition: Module.() -> KoinDefinition<R>
-) {
-    definition()
-    single(named<R>()) {
-        legacyTaskHandlerRegistration<R>()
-    } bind TaskHandlerRegistration::class
-}
 
-inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>> Module.taskHandlerRegistration(
-    currentVersion: Int,
-    identifier: String,
-    migrations: List<Migration>,
-    noinline definition: Module.() -> KoinDefinition<R>
-) {
-    definition()
-    single(named<R>()) {
-        taskHandlerRegistration<Input, Output, Progress, R>(
-            currentVersion = currentVersion,
-            identifier = identifier,
-            migrations = migrations
-        )
-    } bind TaskHandlerRegistration::class
-}

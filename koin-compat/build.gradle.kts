@@ -11,10 +11,13 @@ kotlin {
     compilerOptions {
         freeCompilerArgs.addAll(
             "-Xexpect-actual-classes",
-            "-Xexplicit-backing-fields"
+            "-Xexplicit-backing-fields",
         )
 
-        optIn.addAll("kotlin.uuid.ExperimentalUuidApi")
+        optIn.addAll(
+            "kotlin.uuid.ExperimentalUuidApi",
+            "kotlinx.serialization.ExperimentalSerializationApi"
+        )
     }
 
     iosX64()
@@ -24,11 +27,12 @@ kotlin {
     jvm()
 
     sourceSets {
+        androidMain.dependencies {
+            implementation(libs.androidx.work.runtime.ktx)
+        }
         commonMain.dependencies {
-            api(project.dependencies.platform(libs.koin.bom))
-            api(libs.koin.core)
-            implementation(projects.tasks)
             api(projects.api)
+            api(projects.koin)
             implementation(projects.serializationCompat)
         }
         commonTest.dependencies {
@@ -38,13 +42,12 @@ kotlin {
 }
 
 android {
-    namespace = "eu.tintera.tasks.koin"
-    sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
+    namespace = "eu.tintera.tasks"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
+        consumerProguardFiles("consumer-rules.pro")
     }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11

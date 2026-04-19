@@ -1,6 +1,5 @@
 package eu.tintera.tasks
 
-@Deprecated("Use typed registration instead")
 fun TaskManager.register(
     identifier: String,
     factory: () -> LegacyTaskHandler

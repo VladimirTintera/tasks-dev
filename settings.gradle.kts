@@ -37,8 +37,17 @@ include(":tasks")
 include(":core")
 include(":db")
 include(":api")
-include(":koin")
+
 include(":compat")
+
+include(":koin")
+include(":koin-json")
+include(":koin-protobuf")
+include(":koin-compat")
+
+include(":serialization-json")
+include(":serialization-protobuf")
+include(":serialization-compat")
 
 includeBuild("external/guard") {
     dependencySubstitution {

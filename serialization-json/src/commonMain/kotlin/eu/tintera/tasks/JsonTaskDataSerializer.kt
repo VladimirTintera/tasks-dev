@@ -1,5 +1,6 @@
-package eu.tintera.tasks.serialization
+package eu.tintera.tasks
 
+import eu.tintera.tasks.serialization.TaskDataSerializer
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
@@ -9,12 +10,12 @@ private val json: Json = Json {
     encodeDefaults = true
     explicitNulls = false
 }
-private class JsonTaskDataSerializer<T>(
+
+private class JsonTaskDataSerializer<T : Any>(
     private val kSerializer: KSerializer<T>
 ) : TaskDataSerializer<T> {
 
     override fun encodeToBytes(value: T): ByteArray {
-        if (value == null) return byteArrayOf() // Pokud podporuješ null
         return json.encodeToString(kSerializer, value).encodeToByteArray()
     }
 
@@ -23,6 +24,6 @@ private class JsonTaskDataSerializer<T>(
     }
 }
 
-fun <T> jsonSerializer(serializer: KSerializer<T>): TaskDataSerializer<T> = JsonTaskDataSerializer(serializer)
+fun <T : Any> jsonSerializer(serializer: KSerializer<T>): TaskDataSerializer<T> = JsonTaskDataSerializer(serializer)
 
-inline fun <reified T> jsonSerializer(): TaskDataSerializer<T> = jsonSerializer(serializer<T>())
+inline fun <reified T : Any> jsonSerializer(): TaskDataSerializer<T> = jsonSerializer(serializer<T>())

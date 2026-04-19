@@ -1,13 +1,12 @@
 package eu.tintera.tasks
 
 import co.touchlab.kermit.Logger
-import eu.tintera.koin.taskHandlerOf
-import eu.tintera.koin.tasksKoinModule
 import eu.tintera.tasks.handlers.TestHandler
 import eu.tintera.tasks.handlers.TestHandlerData
 import eu.tintera.tasks.handlers.TestHandlerProgress
+import eu.tintera.tasks.koin.json.taskHandlerOf
+import eu.tintera.tasks.koin.tasksKoinModule
 import eu.tintera.tasks.migrations.migration
-import eu.tintera.tasks.serialization.jsonSerializer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
