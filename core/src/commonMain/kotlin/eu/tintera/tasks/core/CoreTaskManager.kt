@@ -5,7 +5,6 @@ import eu.tintera.tasks.ExistingTaskPolicy
 import eu.tintera.tasks.TaskContinuation
 import eu.tintera.tasks.TaskInfo
 import eu.tintera.tasks.TaskRequest
-import eu.tintera.tasks.fullName
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Duration
 import kotlin.uuid.Uuid

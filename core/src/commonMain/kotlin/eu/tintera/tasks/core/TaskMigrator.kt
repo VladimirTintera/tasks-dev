@@ -5,10 +5,9 @@ import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.core.migrations.findMigrationPath
 import eu.tintera.tasks.migrations.FieldMigrator
 
-internal class TaskMigrator(
+class TaskMigrator(
     private val repository: Repository
 ) {
-
     suspend fun migrate(
         task: Task,
         registration: TaskRegistry.TaskRegistration<Any, Any, Any>

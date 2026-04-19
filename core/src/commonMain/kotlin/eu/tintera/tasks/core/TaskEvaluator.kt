@@ -19,7 +19,7 @@ interface TaskEvaluator {
 }
 
 @Suppress("UNCHECKED_CAST")
-internal class TaskEvaluatorImpl(
+class TaskEvaluatorImpl(
     private val taskRegistry: TaskRegistry,
     private val repository: Repository,
     private val taskMigrator: TaskMigrator,

@@ -15,7 +15,6 @@ fun TaskManager.register(
 }
 
 inline fun <reified T : LegacyTaskHandler> TaskManager.register(
-    identifier: String,
     noinline factory: () -> T
 ) = register(
     identifier = T::class.fullName,

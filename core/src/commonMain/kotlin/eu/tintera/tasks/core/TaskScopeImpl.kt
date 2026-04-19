@@ -18,7 +18,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.Uuid
 
 
-internal class TaskScopeFactory(
+class TaskScopeFactory(
     private val repository: Repository
 ) {
     fun <Input: Any, Progress: Any> createForTask(
@@ -41,7 +41,7 @@ internal class TaskScopeFactory(
     )
 }
 
-internal class TaskScopeImpl<Input: Any, Progress: Any>(
+class TaskScopeImpl<Input: Any, Progress: Any>(
     override val taskId: Uuid,
     override val data: Input,
     override val retryCount: Int,

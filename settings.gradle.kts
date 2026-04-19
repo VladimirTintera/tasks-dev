@@ -35,6 +35,7 @@ plugins {
 include(":composeApp")
 include(":tasks")
 include(":core")
+include(":engine")
 include(":db")
 include(":api")
 

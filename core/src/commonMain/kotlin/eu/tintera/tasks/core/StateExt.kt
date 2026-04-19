@@ -7,7 +7,7 @@ import eu.tintera.tasks.State
         State.Cancelled, State.Succeeded, State.Failed
     )
 
-internal val runningStates = listOf(State.Enqueued, State.Blocked, State.Running)
+val runningStates = listOf(State.Enqueued, State.Blocked, State.Running)
 
 val nonTerminalStates = State.entries.filterNot { it in terminalStates }
 

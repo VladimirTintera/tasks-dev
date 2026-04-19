@@ -5,6 +5,7 @@ import eu.tintera.tasks.ExistingPeriodicTaskPolicy
 import eu.tintera.tasks.TaskManager
 import eu.tintera.tasks.core.AppDispatchers
 import eu.tintera.tasks.core.ApplicationScope
+import eu.tintera.tasks.core.serialization.UnitTaskDataSerializer
 import eu.tintera.tasks.serialization.TaskDataSerializer
 import eu.tintera.tasks.taskRequest
 import kotlinx.coroutines.launch
@@ -16,23 +17,12 @@ internal class DatabaseCleaner(
     scope: ApplicationScope,
     dispatchers: AppDispatchers
 ) {
-
-    private val unitSerializer = object : TaskDataSerializer<Unit> {
-        override fun encodeToBytes(value: Unit): ByteArray {
-            return byteArrayOf()
-        }
-
-        override fun decodeFromBytes(bytes: ByteArray) {
-
-        }
-    }
-
     init {
         taskManager.register(
             identifier = IDENTIFIER,
-            inputSerializer = unitSerializer,
-            outputSerializer = unitSerializer,
-            progressSerializer = unitSerializer,
+            inputSerializer = UnitTaskDataSerializer,
+            outputSerializer = UnitTaskDataSerializer,
+            progressSerializer = UnitTaskDataSerializer,
             factory = { handler },
         )
 
