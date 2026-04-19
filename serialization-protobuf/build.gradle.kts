@@ -12,7 +12,6 @@ kotlin {
     compilerOptions {
         freeCompilerArgs.addAll(
             "-Xexpect-actual-classes",
-            "-Xexplicit-backing-fields",
         )
 
         optIn.addAll(

@@ -6,6 +6,7 @@ import eu.tintera.tasks.TaskScope
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.serialization.TaskDataSerializer
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
@@ -52,6 +53,7 @@ internal class TaskScopeImpl<Input: Any, Progress: Any>(
 ) : TaskScope<Input, Progress> {
 
     private val progress = MutableStateFlow<Progress?>(null)
+    @OptIn(FlowPreview::class)
     private val job = scope.launch {
         progress.filterNotNull().sample(300.milliseconds).collect {
             repository.updateProgressData(

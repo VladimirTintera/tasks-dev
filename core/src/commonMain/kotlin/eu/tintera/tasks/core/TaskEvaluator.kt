@@ -64,8 +64,7 @@ internal class TaskEvaluatorImpl(
         )
 
         val typedResult = try {
-            val handler = registration.factory()
-            with(handler) {
+            with(registration.factory()) {
                 scope.run()
             }
         } catch (e: CancellationException) {

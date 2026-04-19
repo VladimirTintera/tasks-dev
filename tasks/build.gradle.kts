@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
-    alias(libs.plugins.serialization)
 }
 kotlin {
     jvmToolchain(11)
@@ -10,13 +9,11 @@ kotlin {
 
     compilerOptions {
         freeCompilerArgs.addAll(
-            "-Xexpect-actual-classes",
-            "-Xexplicit-backing-fields"
+            "-Xexpect-actual-classes"
         )
         optIn.addAll(
             "kotlin.uuid.ExperimentalUuidApi",
-            "kotlin.concurrent.atomics.ExperimentalAtomicApi",
-            "kotlinx.serialization.ExperimentalSerializationApi"
+            "kotlin.concurrent.atomics.ExperimentalAtomicApi"
         )
     }
 
@@ -35,13 +32,9 @@ kotlin {
             implementation(projects.db)
             implementation(projects.core)
 
-            implementation(libs.kotlinx.serialization.protobuf)
-            implementation(libs.kotlinx.serialization.json)
-
             api(projects.api)
             api(libs.androidx.sqlite)
             api(libs.guard)
-            implementation(projects.compat)
         }
 
         commonTest.dependencies {

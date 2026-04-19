@@ -13,3 +13,11 @@ fun TaskManager.register(
         progressSerializer = legacySerializer()
     )
 }
+
+inline fun <reified T : LegacyTaskHandler> TaskManager.register(
+    identifier: String,
+    noinline factory: () -> T
+) = register(
+    identifier = T::class.fullName,
+    factory = factory,
+)

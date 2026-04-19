@@ -71,7 +71,7 @@ internal class TaskWorker(
                     progressData = null,
                     version = 1, // DŮLEŽITÉ: Je to starý task, jde do verze 1
                     state = State.Running,
-                    runAttemptCount = runAttemptCount + 1,
+                    runAttemptCount = runAttemptCount,
                     uniqueName = "",
                     initialDelay = Duration.ZERO,
                     processTime = null,
@@ -93,9 +93,8 @@ internal class TaskWorker(
                 id = taskId,
                 state = State.Running,
                 allowedSourceStates = nonTerminalStates.toSet(),
-                resetProcessTime = true,
-
-                )
+                resetProcessTime = true
+            )
 
             task = task.copy(
                 state = State.Running,

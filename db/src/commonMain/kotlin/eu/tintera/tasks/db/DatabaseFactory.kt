@@ -10,6 +10,7 @@ internal class DatabaseFactory(
     fun create(): TasksDatabase = builder.create(
         databaseConfiguration.databaseName.ifEmpty { "eu.tintera.tasks.db" }
     ).apply {
+        addMigrations(Migration9to10)
         fallbackToDestructiveMigration(true)
         setDriver(driver)
     }.build()

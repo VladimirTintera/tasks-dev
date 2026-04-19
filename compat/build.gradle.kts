@@ -12,12 +12,10 @@ kotlin {
     compilerOptions {
         freeCompilerArgs.addAll(
             "-Xexpect-actual-classes",
-            "-Xexplicit-backing-fields",
         )
 
         optIn.addAll(
-            "kotlin.uuid.ExperimentalUuidApi",
-            "kotlinx.serialization.ExperimentalSerializationApi"
+            "kotlin.uuid.ExperimentalUuidApi"
         )
     }
 
@@ -28,9 +26,6 @@ kotlin {
     jvm()
 
     sourceSets {
-        androidMain.dependencies {
-            implementation(libs.androidx.work.runtime.ktx)
-        }
         commonMain.dependencies {
             api(projects.api)
             implementation(libs.kotlinx.serialization.protobuf)

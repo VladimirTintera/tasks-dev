@@ -173,7 +173,7 @@ internal interface TaskDao {
                 JOIN Task child ON child.id = pt.taskId
                 AND pt.parentTaskId = Task.id AND child.state NOT IN (:states)
             )
-            AND (CAST(strftime('%s', finishedAt) AS INTEGER) * 1000 + retentionDelay) <= :currentTimeMillis"""
+            AND (finishedAt + retentionDelay) <= :currentTimeMillis"""
     )
     suspend fun cleanOld(currentTimeMillis: Long, states: List<State>)
 

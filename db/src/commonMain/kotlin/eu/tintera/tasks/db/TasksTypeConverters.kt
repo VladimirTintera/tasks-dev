@@ -28,14 +28,14 @@ internal object TasksTypeConverters {
 
     @TypeConverter
     @JvmStatic
-    fun toInstant(value: String?): Instant? {
-        return value?.let { Instant.parse(it) }
+    fun toInstant(value: Long?): Instant? {
+        return value?.let { Instant.fromEpochMilliseconds(it) }
     }
 
     @TypeConverter
     @JvmStatic
-    fun fromInstant(value: Instant?): String? {
-        return value?.toString()
+    fun fromInstant(value: Instant?): Long? {
+        return value?.toEpochMilliseconds()
     }
 
 

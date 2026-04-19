@@ -8,7 +8,7 @@ import kotlin.time.Duration
 import kotlin.uuid.Uuid
 
 interface TaskManager {
-    fun <Input: Any, Output: Any, Progress: Any> register(
+    fun <Input : Any, Output : Any, Progress : Any> register(
         identifier: String,
         currentVersion: Int = 1,
         factory: () -> TaskHandler<Input, Output, Progress>,
@@ -18,13 +18,13 @@ interface TaskManager {
         migrations: List<Migration> = emptyList()
     )
 
-    suspend fun <T: Any> enqueueUniqueTask(
+    suspend fun <T : Any> enqueueUniqueTask(
         task: TaskRequest<T>,
         uniqueName: String = task.identifier,
         existingTaskPolicy: ExistingTaskPolicy = ExistingTaskPolicy.Keep
     ): Uuid
 
-    suspend fun <T: Any> enqueueTask(
+    suspend fun <T : Any> enqueueTask(
         task: TaskRequest<T>
     ): Uuid
 
@@ -38,7 +38,7 @@ interface TaskManager {
         existingTaskPolicy: ExistingTaskPolicy = ExistingTaskPolicy.Keep
     )
 
-    suspend fun <T: Any> enqueuePeriodicUniqueTask(
+    suspend fun <T : Any> enqueuePeriodicUniqueTask(
         task: TaskRequest<T>,
         repeatInterval: Duration,
         uniqueName: String = task.identifier,
@@ -56,7 +56,25 @@ interface TaskManager {
     companion object
 }
 
-inline fun <reified T : TaskHandler<I, O, P>, reified I: Any, reified O: Any, reified P: Any> TaskManager.register(
+inline fun <reified T : TaskHandler<I, O, P>, reified I : Any, reified O : Any, reified P : Any> TaskManager.register(
+    identifier: String,
+    currentVersion: Int = 1,
+    inputSerializer: TaskDataSerializer<I>,
+    outputSerializer: TaskDataSerializer<O>,
+    progressSerializer: TaskDataSerializer<P>,
+    migrations: List<Migration> = emptyList(),
+    noinline factory: () -> T
+) = register(
+    identifier = identifier,
+    currentVersion = currentVersion,
+    factory = factory,
+    inputSerializer = inputSerializer,
+    outputSerializer = outputSerializer,
+    progressSerializer = progressSerializer,
+    migrations = migrations,
+)
+
+inline fun <reified T : TaskHandler<I, O, P>, reified I : Any, reified O : Any, reified P : Any> TaskManager.register(
     currentVersion: Int = 1,
     inputSerializer: TaskDataSerializer<I>,
     outputSerializer: TaskDataSerializer<O>,

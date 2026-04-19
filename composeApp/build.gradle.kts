@@ -19,8 +19,7 @@ kotlin {
 
     compilerOptions {
         freeCompilerArgs.addAll(
-            "-Xexpect-actual-classes",
-            "-Xexplicit-backing-fields"
+            "-Xexpect-actual-classes"
         )
         optIn.addAll(
             "kotlin.uuid.ExperimentalUuidApi",
