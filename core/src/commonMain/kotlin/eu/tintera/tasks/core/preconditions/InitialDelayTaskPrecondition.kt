@@ -1,17 +1,15 @@
 package eu.tintera.tasks.core.preconditions
 
-import eu.tintera.tasks.core.TaskPrecondition
 import eu.tintera.tasks.core.data.Task
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-class InitialDelayTaskPrecondition : TaskPrecondition {
-    override fun hasConstraint(task: Task) = task.initialDelay.isPositive()
+internal class InitialDelayTaskPrecondition : TaskPrecondition {
+    override fun hasConstraint(task: Task) = task.initialDelay.isPositive() && task.runAttemptCount == 0
 
-    override fun isValid(task: Task): Flow<Boolean> = flow {
+    override fun isValid(task: Task) = flow {
         delay(task.initialDelay)
-        emit(true)
+        emit(PreconditionResult.Met)
     }
 
     override val monitorDuringExecution = false

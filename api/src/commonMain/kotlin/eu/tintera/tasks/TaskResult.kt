@@ -13,4 +13,3 @@ sealed class TaskResult<out Output> {
     }
 }
 
-typealias LegacyTaskResult = TaskResult<Data>

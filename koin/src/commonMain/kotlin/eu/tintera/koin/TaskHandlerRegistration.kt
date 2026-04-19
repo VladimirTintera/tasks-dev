@@ -1,9 +1,9 @@
 package eu.tintera.koin
 
-import eu.tintera.tasks.Data
-import eu.tintera.tasks.LegacyTaskHandler
 import eu.tintera.tasks.TaskHandler
 import eu.tintera.tasks.fullName
+import eu.tintera.tasks.legacy.Data
+import eu.tintera.tasks.legacy.LegacyTaskHandler
 import eu.tintera.tasks.migrations.Migration
 import eu.tintera.tasks.serialization.TaskDataSerializer
 import eu.tintera.tasks.serialization.jsonSerializer
@@ -12,7 +12,7 @@ import kotlin.reflect.KClass
 
 
 @PublishedApi
-internal sealed interface TaskHandlerRegistration<Input: Any, Output: Any, Progress: Any, T : TaskHandler<Input, Output, Progress>> {
+internal sealed interface TaskHandlerRegistration<Input : Any, Output : Any, Progress : Any, T : TaskHandler<Input, Output, Progress>> {
     val type: KClass<T>
     val koinFactory: (Koin) -> TaskHandler<Input, Output, Progress>
 
@@ -21,7 +21,7 @@ internal sealed interface TaskHandlerRegistration<Input: Any, Output: Any, Progr
         override val koinFactory: (Koin) -> T
     ) : TaskHandlerRegistration<Data, Data, Data, T>
 
-    class Typed<Input: Any, Output: Any, Progress: Any, T : TaskHandler<Input, Output, Progress>>(
+    class Typed<Input : Any, Output : Any, Progress : Any, T : TaskHandler<Input, Output, Progress>>(
         override val type: KClass<T>,
         override val koinFactory: (Koin) -> TaskHandler<Input, Output, Progress>,
         val identifier: String,
@@ -34,7 +34,7 @@ internal sealed interface TaskHandlerRegistration<Input: Any, Output: Any, Progr
 }
 
 @PublishedApi
-internal inline fun <reified Input: Any, reified Output: Any, reified Progress: Any, reified T : TaskHandler<Input, Output, Progress>> taskHandlerRegistration(
+internal inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified T : TaskHandler<Input, Output, Progress>> taskHandlerRegistration(
     identifier: String,
     currentVersion: Int,
     migrations: List<Migration> = emptyList(),
@@ -51,7 +51,7 @@ internal inline fun <reified Input: Any, reified Output: Any, reified Progress: 
     migrations = migrations,
     koinFactory = { koinInstance -> koinInstance.get<T>() },
 
-)
+    )
 
 @PublishedApi
 internal inline fun <reified T : LegacyTaskHandler> legacyTaskHandlerRegistration() = TaskHandlerRegistration.Legacy(

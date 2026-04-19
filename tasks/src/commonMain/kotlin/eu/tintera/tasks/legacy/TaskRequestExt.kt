@@ -2,7 +2,6 @@ package eu.tintera.tasks.legacy
 
 import eu.tintera.tasks.BackoffCriteria
 import eu.tintera.tasks.Constraints
-import eu.tintera.tasks.Data
 import eu.tintera.tasks.TaskHandler
 import eu.tintera.tasks.TaskRequest
 import eu.tintera.tasks.fullName

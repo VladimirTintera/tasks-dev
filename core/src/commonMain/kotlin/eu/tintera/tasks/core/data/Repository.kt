@@ -1,6 +1,5 @@
 package eu.tintera.tasks.core.data
 
-import eu.tintera.tasks.Data
 import eu.tintera.tasks.State
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Instant
@@ -8,7 +7,14 @@ import kotlin.uuid.Uuid
 
 interface Repository {
     fun parentsFor(id: Uuid): Flow<List<Task>>
-    suspend fun updateNextRun(id: Uuid, processTime: Instant, state: State, progressData: ByteArray?, runAttemptCount: Int?)
+    fun parentStatesForTask(id: Uuid) : Flow<List<State>>
+    suspend fun updateNextRun(
+        id: Uuid,
+        processTime: Instant,
+        state: State,
+        progressData: ByteArray?,
+        runAttemptCount: Int?
+    )
 
     suspend fun updateRunAttemptCount(id: Uuid, runAttemptsCount: Int)
     suspend fun updateTerminatingState(
@@ -30,7 +36,7 @@ interface Repository {
     fun taskInfosByTag(name: String): Flow<List<FullTask>>
     fun taskById(id: Uuid): Flow<FullTask?>
 
-    fun tasksByIds(ids: Set<Uuid>) : Flow<List<Task>>
+    fun tasksByIds(ids: Set<Uuid>): Flow<List<Task>>
 
     fun tasksByState(states: List<State>): Flow<List<Task>>
 

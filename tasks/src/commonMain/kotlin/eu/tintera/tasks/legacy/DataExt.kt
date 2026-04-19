@@ -1,7 +1,5 @@
 package eu.tintera.tasks.legacy
 
-import eu.tintera.tasks.Data
-import eu.tintera.tasks.taskDataOf
 import kotlin.collections.plus
 
 internal operator fun Data.plus(other: Data): Data = taskDataOf(

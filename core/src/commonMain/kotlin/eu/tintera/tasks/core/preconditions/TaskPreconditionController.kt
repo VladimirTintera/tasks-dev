@@ -1,6 +1,5 @@
 package eu.tintera.tasks.core.preconditions
 
-import eu.tintera.tasks.core.TaskPrecondition
 import eu.tintera.tasks.core.data.Task
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.combine
@@ -12,17 +11,30 @@ internal class TaskPreconditionController(
     private val preconditions: List<TaskPrecondition>
 ) {
 
-    private val executionPreconditions = preconditions.filter { it.monitorDuringExecution }
-
-    suspend fun waitForAll(task: Task) = preconditions.filter {
-        it.hasConstraint(task)
-    }.takeIf { it.isNotEmpty() }?.also { preconditions ->
-        combine(preconditions.map { it.isValid(task) }) { array ->
-            array.all { it }
-        }.first { it }
+    enum class WaitResult {
+        SUCCESS,
+        FAILED,
+        CANCELED
     }
 
-    suspend fun waitForFail(task: Task): List<TaskPrecondition> {
+    private val executionPreconditions = preconditions.filter { it.monitorDuringExecution }
+
+    suspend fun waitForAll(task: Task): WaitResult = preconditions.filter {
+        it.hasConstraint(task)
+    }.takeIf { it.isNotEmpty() }?.let { preconditions ->
+        combine(preconditions.map { it.isValid(task) }) { array ->
+            when {
+                PreconditionResult.Failed in array -> WaitResult.FAILED
+                PreconditionResult.Cancelled in array -> WaitResult.CANCELED
+                array.all { it == PreconditionResult.Met } -> WaitResult.SUCCESS
+                else -> null
+            }
+        }.first {
+            it != null
+        }
+    } ?: WaitResult.SUCCESS
+
+    suspend fun waitForUnmet(task: Task): List<TaskPrecondition> {
         val taskPreconditions = executionPreconditions.filter { it.hasConstraint(task) }
 
         if (taskPreconditions.isEmpty()) awaitCancellation()
@@ -32,7 +44,7 @@ internal class TaskPreconditionController(
                 precondition.isValid(task).map { isValid -> precondition to isValid }
             }
         ) { array ->
-            array.filter { !it.second }.map { it.first }.takeIf { it.isNotEmpty() }
+            array.filter { it.second != PreconditionResult.Met }.map { it.first }.takeIf { it.isNotEmpty() }
         }.filterNotNull().first()
     }
 }

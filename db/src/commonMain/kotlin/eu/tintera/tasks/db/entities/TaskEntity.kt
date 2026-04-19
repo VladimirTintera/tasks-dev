@@ -143,6 +143,9 @@ internal interface TaskDao {
     @Query("SELECT t.* FROM Task t JOIN TaskParentTask p ON p.parentTaskId = t.id WHERE p.taskId = :id")
     fun parentsFor(id: Uuid): Flow<List<TaskEntity>>
 
+    @Query("SELECT DISTINCT t.state FROM Task t JOIN TaskParentTask p ON p.parentTaskId = t.id WHERE p.taskId = :id")
+    fun parentStatesForTask(id: Uuid): Flow<List<State>>
+
     @Query("DELETE FROM Task WHERE id = :id")
     suspend fun delete(id: Uuid)
 

@@ -1,7 +1,11 @@
 package eu.tintera.koin
 
-import eu.tintera.tasks.*
+import eu.tintera.tasks.TaskHandler
+import eu.tintera.tasks.TaskManager
+import eu.tintera.tasks.fullName
+import eu.tintera.tasks.legacy.LegacyTaskHandler
 import eu.tintera.tasks.migrations.Migration
+import eu.tintera.tasks.register
 import org.koin.core.Koin
 import org.koin.core.definition.Definition
 import org.koin.core.definition.KoinDefinition
@@ -35,7 +39,7 @@ internal class TasksRegistrations(
         }
     }
 
-    private fun <I: Any, O: Any, P: Any, T : TaskHandler<I, O, P>> registerTyped(
+    private fun <I : Any, O : Any, P : Any, T : TaskHandler<I, O, P>> registerTyped(
         taskManager: TaskManager,
         koin: Koin,
         registration: TaskHandlerRegistration.Typed<I, O, P, T>
@@ -58,7 +62,7 @@ inline fun <reified R : LegacyTaskHandler> Module.taskHandlerOf(
     factoryOf(constructor)
 }
 
-inline fun <reified Input: Any, reified Output: Any, reified Progress: Any, reified R : TaskHandler<Input, Output, Progress>> Module.taskHandlerOf(
+inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>> Module.taskHandlerOf(
     crossinline constructor: () -> R,
     identifier: String = "",
     currentVersion: Int = 1,
@@ -71,7 +75,7 @@ inline fun <reified Input: Any, reified Output: Any, reified Progress: Any, reif
     factoryOf(constructor)
 }
 
-inline fun <reified Input: Any, reified Output: Any, reified Progress: Any, reified R : TaskHandler<Input, Output, Progress>, reified T1> Module.taskHandlerOf(
+inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>, reified T1> Module.taskHandlerOf(
     crossinline constructor: (T1) -> R,
     identifier: String = "",
     currentVersion: Int = 1,
@@ -84,7 +88,7 @@ inline fun <reified Input: Any, reified Output: Any, reified Progress: Any, reif
     factoryOf(constructor)
 }
 
-inline fun <reified Input: Any, reified Output: Any, reified Progress: Any, reified R : TaskHandler<Input, Output, Progress>, reified T1, reified T2> Module.taskHandlerOf(
+inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>, reified T1, reified T2> Module.taskHandlerOf(
     crossinline constructor: (T1, T2) -> R,
     identifier: String = "",
     currentVersion: Int = 1,
@@ -97,7 +101,7 @@ inline fun <reified Input: Any, reified Output: Any, reified Progress: Any, reif
     factoryOf(constructor)
 }
 
-inline fun <reified Input: Any, reified Output: Any, reified Progress: Any, reified R : TaskHandler<Input, Output, Progress>, reified T1, reified T2, reified T3> Module.taskHandlerOf(
+inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>, reified T1, reified T2, reified T3> Module.taskHandlerOf(
     crossinline constructor: (T1, T2, T3) -> R,
     identifier: String = "",
     currentVersion: Int = 1,
@@ -110,7 +114,7 @@ inline fun <reified Input: Any, reified Output: Any, reified Progress: Any, reif
     factoryOf(constructor)
 }
 
-inline fun <reified Input: Any, reified Output: Any, reified Progress: Any, reified R : TaskHandler<Input, Output, Progress>, reified T1, reified T2, reified T3, reified T4> Module.taskHandlerOf(
+inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>, reified T1, reified T2, reified T3, reified T4> Module.taskHandlerOf(
     crossinline constructor: (T1, T2, T3, T4) -> R,
     identifier: String = "",
     currentVersion: Int = 1,
@@ -123,7 +127,7 @@ inline fun <reified Input: Any, reified Output: Any, reified Progress: Any, reif
     factoryOf(constructor)
 }
 
-inline fun <reified Input: Any, reified Output: Any, reified Progress: Any, reified R : TaskHandler<Input, Output, Progress>, reified T1, reified T2, reified T3, reified T4, reified T5> Module.taskHandlerOf(
+inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>, reified T1, reified T2, reified T3, reified T4, reified T5> Module.taskHandlerOf(
     crossinline constructor: (T1, T2, T3, T4, T5) -> R,
     identifier: String = "",
     currentVersion: Int = 1,
@@ -136,7 +140,7 @@ inline fun <reified Input: Any, reified Output: Any, reified Progress: Any, reif
     factoryOf(constructor)
 }
 
-inline fun <reified Input: Any, reified Output: Any, reified Progress: Any, reified R : TaskHandler<Input, Output, Progress>, reified T1, reified T2, reified T3, reified T4, reified T5, reified T6> Module.taskHandlerOf(
+inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>, reified T1, reified T2, reified T3, reified T4, reified T5, reified T6> Module.taskHandlerOf(
     crossinline constructor: (T1, T2, T3, T4, T5, T6) -> R,
     identifier: String = "",
     currentVersion: Int = 1,
@@ -149,7 +153,7 @@ inline fun <reified Input: Any, reified Output: Any, reified Progress: Any, reif
     factoryOf(constructor)
 }
 
-inline fun <reified Input: Any, reified Output: Any, reified Progress: Any, reified R : TaskHandler<Input, Output, Progress>> Module.taskHandler(
+inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>> Module.taskHandler(
     identifier: String = "",
     currentVersion: Int = 1,
     migrations: List<Migration> = emptyList(),
@@ -173,7 +177,7 @@ inline fun <reified R : LegacyTaskHandler> Module.legacyTaskHandlerRegistration(
     } bind TaskHandlerRegistration::class
 }
 
-inline fun <reified Input: Any, reified Output: Any, reified Progress: Any, reified R : TaskHandler<Input, Output, Progress>> Module.taskHandlerRegistration(
+inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>> Module.taskHandlerRegistration(
     currentVersion: Int,
     identifier: String,
     migrations: List<Migration>,

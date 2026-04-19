@@ -1,8 +1,6 @@
 package eu.tintera.tasks.legacy
 
-import eu.tintera.tasks.Data
 import eu.tintera.tasks.serialization.TaskDataSerializer
-import eu.tintera.tasks.taskDataOf
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoBuf
 import kotlinx.serialization.protobuf.ProtoNumber

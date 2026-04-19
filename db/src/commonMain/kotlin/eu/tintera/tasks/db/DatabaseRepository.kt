@@ -23,7 +23,11 @@ internal class DatabaseRepository(
 
     override fun parentsFor(id: Uuid) = taskDao.parentsFor(id).map { list ->
         list.map { it.toTask() }
-    }
+    }.distinctUntilChanged()
+
+    override fun parentStatesForTask(id: Uuid) = taskDao.parentStatesForTask(id).map { list ->
+        list.map { it.toTaskState() }
+    }.distinctUntilChanged()
 
     override suspend fun updateNextRun(
         id: Uuid,
@@ -67,7 +71,7 @@ internal class DatabaseRepository(
         id: Uuid
     ) = taskDao.task(id).map {
         it?.toTask()
-    }
+    }.distinctUntilChanged()
 
     override suspend fun allByUniqueName(
         uniqueName: String

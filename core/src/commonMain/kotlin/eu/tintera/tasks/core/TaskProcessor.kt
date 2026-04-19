@@ -5,12 +5,17 @@ import eu.tintera.guard.invoke
 import eu.tintera.tasks.EventBus
 import eu.tintera.tasks.State
 import eu.tintera.tasks.TaskResult
+import eu.tintera.tasks.core.ExecutionResult.Canceled
+import eu.tintera.tasks.core.ExecutionResult.Finished
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.core.preconditions.PreconditionLostException
 import eu.tintera.tasks.core.preconditions.TaskPreconditionController
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlin.coroutines.cancellation.CancellationException
@@ -40,15 +45,14 @@ internal class TaskProcessorImpl(
         val actualTask = MutableStateFlow<Task?>(task)
 
         val workflowJob = launch {
-            val taskParents = waitForPreconditions(task, actualTask) ?: return@launch
-            val latestTaskSnapshot = actualTask.value ?: return@launch
+
+            waitForPreconditions(task)
 
             concurrencySemaphore.withPermit {
-                executeTask(latestTaskSnapshot, taskParents)
+                executeTask(actualTask.value ?: return@launch)
             }
         }
 
-        // 2. ZDE BĚŽÍ GLOBÁLNÍ HLÍDAČ (Paralelně vedle pracovníka)
         val observeJob = launch {
             repository.task(task.id).onEach { actualTask.update { it } }
                 .first { t ->
@@ -62,46 +66,25 @@ internal class TaskProcessorImpl(
     }
 
     private suspend fun waitForPreconditions(
-        task: Task,
-        actualTask: StateFlow<Task?>
-    ): List<Task>? {
-        task.processTime?.also {
-            waitForProcessTime(it)
-        }
-
-        val parents = repository.parentsFor(task.id).onEach { parents ->
-            actualTask.value?.also { t ->
-                if (t.state != State.Blocked && parents.any { !it.state.terminal() }) {
-                    updateState(id = task.id, state = State.Blocked, resetProcessTime = true)
-                }
+        task: Task
+    ) {
+        when (preconditionController.waitForAll(task)) {
+            TaskPreconditionController.WaitResult.SUCCESS -> {
+                updateState(id = task.id, State.Enqueued, resetProcessTime = true)
             }
-        }.first { parents ->
-            parents.isEmpty() || parents.all { it.state.terminal() }
-        }
 
-        if (parents.any { it.state == State.Failed }) {
-            val result = ExecutionResult.Finished(TaskResult.failure())
-            withContext(NonCancellable) {
-                EventBus.send(TAG, "task finished '${task.identifier}', result = $result")
-                taskResultProcessor.handleResult(task, result)
+            TaskPreconditionController.WaitResult.FAILED -> withContext(NonCancellable) {
+                taskResultProcessor.handleResult(task, Finished(TaskResult.failure()))
             }
-            return null // Konec, nepokračujeme
+
+            TaskPreconditionController.WaitResult.CANCELED -> withContext(NonCancellable) {
+                taskResultProcessor.handleResult(task, Canceled)
+            }
         }
-
-        updateState(id = task.id, State.Enqueued, resetProcessTime = true)
-
-        preconditionController.waitForAll(task)
-
-        if (actualTask.value?.state?.terminal() != false) {
-            return null // Konec, nepokračujeme
-        }
-
-        return parents // Vše připraveno, vracíme data pro další fázi
     }
 
     private suspend fun executeTask(
-        task: Task,
-        taskParents: List<Task>
+        task: Task
     ) = executionContextProvider {
 
         updateState(id = task.id, state = State.Running, resetProcessTime = true)
@@ -110,14 +93,9 @@ internal class TaskProcessorImpl(
             coroutineScope {
 
                 val capabilityWatcher = launch {
-                    val failedPreconditions = preconditionController.waitForFail(task)
+                    val failedPreconditions = preconditionController.waitForUnmet(task)
                     this@coroutineScope.cancel(PreconditionLostException(failedPreconditions))
                 }
-
-                /*val taskData = taskParents
-                    .sortedBy { it.finishedAt }
-                    .map { it.outputData }
-                    .sum() + task.inputData*/
 
                 val result = taskEvaluator.handle(
                     task = task,
@@ -125,7 +103,7 @@ internal class TaskProcessorImpl(
                 )
 
                 capabilityWatcher.cancel()
-                ExecutionResult.Finished(result)
+                Finished(result)
             }
         } catch (e: PreconditionLostException) {
             EventBus.send(
@@ -139,7 +117,7 @@ internal class TaskProcessorImpl(
             throw e
         } catch (e: Throwable) {
             EventBus.send(TAG, "Task failed '${task.identifier}'")
-            ExecutionResult.Finished(TaskResult.failure())
+            Finished(TaskResult.failure())
         }
 
         withContext(NonCancellable) {
@@ -147,7 +125,6 @@ internal class TaskProcessorImpl(
             taskResultProcessor.handleResult(task, taskResult)
         }
     }
-
 
     private suspend fun updateState(
         id: Uuid,
@@ -159,12 +136,6 @@ internal class TaskProcessorImpl(
         allowedSourceStates = state.allowedSourceStatesForChangeTo().toSet(),
         resetProcessTime = resetProcessTime
     )
-
-    private suspend fun waitForProcessTime(time: Instant) {
-        val now = Clock.System.now()
-        val diff = time - now
-        if (diff.isPositive()) delay(diff)
-    }
 
     companion object {
         private const val TAG = "TaskProcessor"

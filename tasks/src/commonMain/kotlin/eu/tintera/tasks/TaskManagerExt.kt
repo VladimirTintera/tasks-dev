@@ -1,6 +1,7 @@
 package eu.tintera.tasks
 
 import eu.tintera.tasks.koin.Resolver
+import eu.tintera.tasks.legacy.LegacyTaskHandler
 import eu.tintera.tasks.legacy.legacySerializer
 import org.koin.core.component.get
 

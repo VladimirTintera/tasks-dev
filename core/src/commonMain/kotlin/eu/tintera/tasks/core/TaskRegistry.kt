@@ -1,10 +1,9 @@
 package eu.tintera.tasks.core
 
-import eu.tintera.tasks.Data
-import eu.tintera.tasks.serialization.TaskDataSerializer
 import eu.tintera.tasks.TaskHandler
 import eu.tintera.tasks.core.migrations.findMigrationPath
 import eu.tintera.tasks.migrations.Migration
+import eu.tintera.tasks.serialization.TaskDataSerializer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
@@ -13,7 +12,7 @@ import kotlin.time.Duration.Companion.seconds
 
 class TaskRegistry {
 
-    class TaskRegistration<Input: Any, Output: Any, Progress: Any>(
+    class TaskRegistration<Input : Any, Output : Any, Progress : Any>(
         val currentVersion: Int,
         val factory: () -> TaskHandler<Input, Output, Progress>,
         val inputSerializer: TaskDataSerializer<Input>,
@@ -49,7 +48,7 @@ class TaskRegistry {
 
     private val registry = MutableStateFlow<Map<String, TaskRegistration<*, *, *>>>(emptyMap())
 
-    fun <Input: Any, Output: Any, Progress: Any> register(
+    fun <Input : Any, Output : Any, Progress : Any> register(
         identifier: String,
         registration: TaskRegistration<Input, Output, Progress>
     ) {
@@ -62,7 +61,7 @@ class TaskRegistry {
     }
 
     @Suppress("UNCHECKED_CAST")
-    suspend fun <I: Any, O: Any, P: Any> resolve(
+    suspend fun <I : Any, O : Any, P : Any> resolve(
         identifier: String
     ): TaskRegistration<I, O, P>? = withTimeoutOrNull(5.seconds) {
         registry.first {

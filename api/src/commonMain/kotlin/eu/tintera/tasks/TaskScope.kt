@@ -69,4 +69,3 @@ inline fun <reified T : Any> TaskScope<*, *>.latestParentOutputOfTypeOrNull(): T
         .maxByOrNull { it.finishedAt }
         ?.let { it.data as T }
 
-typealias LegacyTaskScope = TaskScope<Data, Data>

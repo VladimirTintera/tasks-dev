@@ -8,14 +8,12 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import eu.tintera.tasks.core.ExecutionResult
-import eu.tintera.tasks.core.TaskEvaluator
-import eu.tintera.tasks.core.TaskRegistry
-import eu.tintera.tasks.core.TaskResultProcessor
+import eu.tintera.tasks.core.*
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
-import eu.tintera.tasks.core.nonTerminalStates
 import eu.tintera.tasks.koin.TasksKoinComponent
+import eu.tintera.tasks.legacy.Data
+import eu.tintera.tasks.legacy.taskDataOf
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import org.koin.core.component.inject
@@ -46,7 +44,7 @@ internal class TaskWorker(
             it.isNotBlank()
         } ?: return Result.failure()
 
-        EventBus.send("TaskWorker", "Task started '$taskIdentifier', data = ${inputData.toData()}")
+        EventBus.send("TaskWorker", "Task started '$taskIdentifier'")
 
         val registration = taskRegistry.resolve<Any, Any, Any>(taskIdentifier) ?: return Result.failure()
 
@@ -161,4 +159,12 @@ internal class TaskWorker(
     companion object {
         const val TASK_IDENTIFIER = "task_identifier"
     }
+
+    private fun androidx.work.Data.toData() = taskDataOf(
+        *keyValueMap.mapNotNull { (key, value) ->
+            key.takeIf { it != TASK_IDENTIFIER }?.let {
+                key to value
+            }
+        }.toTypedArray()
+    )
 }

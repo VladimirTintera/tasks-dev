@@ -1,6 +1,5 @@
 package eu.tintera.tasks.core
 
-import eu.tintera.tasks.Data
 import eu.tintera.tasks.State
 import eu.tintera.tasks.TaskResult
 import eu.tintera.tasks.core.data.Repository
@@ -84,6 +83,13 @@ class TaskResultProcessorImpl(
                     runAttemptCount = null
                 )
             }
+
+            ExecutionResult.Canceled -> repository.updateTerminatingState(
+                id = task.id,
+                state = State.Cancelled,
+                finishedAt = now,
+                outputData = null
+            )
         }
     }
 }

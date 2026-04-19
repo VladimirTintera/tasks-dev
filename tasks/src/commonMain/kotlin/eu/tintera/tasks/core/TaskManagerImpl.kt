@@ -1,6 +1,7 @@
 package eu.tintera.tasks.core
 
 import eu.tintera.tasks.*
+import eu.tintera.tasks.legacy.LegacyTaskHandler
 import eu.tintera.tasks.legacy.legacySerializer
 import eu.tintera.tasks.migrations.Migration
 import eu.tintera.tasks.serialization.TaskDataSerializer

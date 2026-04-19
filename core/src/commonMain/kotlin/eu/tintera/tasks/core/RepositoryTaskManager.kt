@@ -7,7 +7,6 @@ import eu.tintera.tasks.core.data.toTaskInfo
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import kotlin.Any
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.uuid.Uuid
@@ -17,7 +16,7 @@ class RepositoryCoreTaskManager(
     private val taskRegistry: TaskRegistry,
 ) : CoreTaskManager {
 
-    override suspend fun <T: Any> enqueueUniqueTask(
+    override suspend fun <T : Any> enqueueUniqueTask(
         task: TaskRequest<T>,
         uniqueName: String,
         existingTaskPolicy: ExistingTaskPolicy,
@@ -54,11 +53,11 @@ class RepositoryCoreTaskManager(
         t.id
     }
 
-    private suspend fun <I: Any, O: Any, P: Any> findRegistrationOrNull(
+    private suspend fun <I : Any, O : Any, P : Any> findRegistrationOrNull(
         identifier: String
     ) = taskRegistry.resolve<I, O, P>(identifier)
 
-    private suspend fun <I: Any, O: Any, P: Any> findRegistration(
+    private suspend fun <I : Any, O : Any, P : Any> findRegistration(
         identifier: String
     ) = findRegistrationOrNull<I, O, P>(identifier) ?: error("Task '$identifier' is not registered!")
 
@@ -108,35 +107,38 @@ class RepositoryCoreTaskManager(
         insertContinuation(continuation, uniqueName, parentIds.toSet())
     }
 
-    private fun <T: Any> TaskRequest<T>.toTask(
+    private fun <T : Any> TaskRequest<T>.toTask(
         uniqueName: String,
         state: State,
         registration: TaskRegistry.TaskRegistration<T, *, *>,
         repeatInterval: Duration?
-    ) = Task(
-        id = Uuid.random(),
-        identifier = identifier,
-        uniqueName = uniqueName,
-        runAttemptCount = 0,
-        state = state,
-        processTime = Clock.System.now(),
-        inputData = data?.let {
-            registration.inputSerializer.encodeToBytes(it)
-        },
-        outputData = null,
-        networkRequired = constraints.requiresNetwork,
-        createdAt = Clock.System.now(),
-        finishedAt = null,
-        repeatInterval = repeatInterval,
-        initialDelay = initialDelay,
-        backoffCriteria = backoffCriteria ?: BackoffCriteria.DEFAULT,
-        progressData = null,
-        retentionDelay = keepResultsForAtLeast,
-        requiresDeviceIdle = constraints.requiresDeviceIdle,
-        version = registration.currentVersion
-    )
+    ) : Task {
+        val now = Clock.System.now()
+        return Task(
+            id = Uuid.random(),
+            identifier = identifier,
+            uniqueName = uniqueName,
+            runAttemptCount = 0,
+            state = state,
+            processTime = initialDelay.takeIf { it.isPositive() }?.let {
+                now + it
+            },
+            inputData = registration.inputSerializer.encodeToBytes(data),
+            outputData = null,
+            networkRequired = constraints.requiresNetwork,
+            createdAt = now,
+            finishedAt = null,
+            repeatInterval = repeatInterval,
+            initialDelay = initialDelay,
+            backoffCriteria = backoffCriteria ?: BackoffCriteria.DEFAULT,
+            progressData = null,
+            retentionDelay = keepResultsForAtLeast,
+            requiresDeviceIdle = constraints.requiresDeviceIdle,
+            version = registration.currentVersion
+        )
+    }
 
-    override suspend fun <T: Any> enqueueTask(
+    override suspend fun <T : Any> enqueueTask(
         task: TaskRequest<T>,
     ): Uuid = repository.withTransaction {
         insertTask(task, Uuid.random().toString(), setOf())
@@ -156,7 +158,7 @@ class RepositoryCoreTaskManager(
         }
     }
 
-    private suspend fun <T: Any> Repository.insertTask(
+    private suspend fun <T : Any> Repository.insertTask(
         taskRequest: TaskRequest<T>,
         uniqueName: String,
         parentIds: Set<Uuid>,
@@ -171,7 +173,7 @@ class RepositoryCoreTaskManager(
         return task.id
     }
 
-    override suspend fun <T: Any> enqueuePeriodicUniqueTask(
+    override suspend fun <T : Any> enqueuePeriodicUniqueTask(
         task: TaskRequest<T>,
         repeatInterval: Duration,
         uniqueName: String,

@@ -1,4 +1,4 @@
-package eu.tintera.tasks
+package eu.tintera.tasks.legacy
 
 
 class Data internal constructor(
@@ -33,3 +33,4 @@ fun taskDataOf(vararg pairs: Pair<String, Any?>) = Data(
         }
     }.toMap()
 )
+

@@ -103,6 +103,8 @@ fun TaskRow(
                         }
                     }
 
+
+
                     // Textový stav
                     Text(
                         text = info.state.name,
@@ -111,6 +113,8 @@ fun TaskRow(
                         fontWeight = FontWeight.Bold
                     )
                 }
+
+
 
                 Spacer(modifier = Modifier.height(6.dp))
 
@@ -164,9 +168,9 @@ fun TaskRow(
                     )
                 }
             }
-
-            actions()
         }
+
+        actions()
 
         (info.progress as? TestHandlerProgress)?.also {
             Column {

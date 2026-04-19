@@ -6,6 +6,7 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.Serializable
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
 
@@ -26,8 +27,11 @@ class TestHandler : TaskHandler<TestHandlerData, TestHandlerData, TestHandlerPro
 
     override suspend fun TaskScope<TestHandlerData, TestHandlerProgress>.run(): TaskResult<TestHandlerData> {
         return merge(
-            _interruptionEventBus.filter { it == taskId }.map {
+            _retryEventBus.filter { it == taskId }.map {
                 TaskResult.retry()
+            },
+            _failedEventBus.filter { it == taskId }.map {
+                TaskResult.failure()
             },
             normalRun()
         ).first()
@@ -48,11 +52,18 @@ class TestHandler : TaskHandler<TestHandlerData, TestHandlerData, TestHandlerPro
     }
 
     companion object {
-        private val _interruptionEventBus =
+        private val _retryEventBus =
             MutableSharedFlow<Uuid>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
-        fun interrupt(id: Uuid) {
-            _interruptionEventBus.tryEmit(id)
+        private val _failedEventBus =
+            MutableSharedFlow<Uuid>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+
+        fun retry(id: Uuid) {
+            _retryEventBus.tryEmit(id)
+        }
+
+        fun fail(id: Uuid) {
+            _failedEventBus.tryEmit(id)
         }
 
 
@@ -61,7 +72,8 @@ class TestHandler : TaskHandler<TestHandlerData, TestHandlerData, TestHandlerPro
 
 fun testTaskRequest(
     count: Int,
-    name: String
+    name: String,
+    initialDelay: Duration = Duration.ZERO
 ) = taskRequest<TestHandler, TestHandlerData>(
     data = TestHandlerData(
         count = count,
@@ -72,10 +84,16 @@ fun testTaskRequest(
         requiresDeviceIdle = false,
         requiresNetwork = true
     ),
+    initialDelay = initialDelay
 )
 
 suspend fun TaskManager.scheduleTestHandler(
-    count: Int
+    count: Int,
+    initialDelay: Duration
 ) = enqueueTask(
-    testTaskRequest(count, "test")
+    testTaskRequest(
+        count = count,
+        name = "test",
+        initialDelay = initialDelay
+    )
 )

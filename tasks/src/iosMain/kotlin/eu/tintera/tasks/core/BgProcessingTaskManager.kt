@@ -2,6 +2,8 @@ package eu.tintera.tasks.core
 
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
+import eu.tintera.tasks.core.preconditions.PreconditionResult
+import eu.tintera.tasks.core.preconditions.TaskPrecondition
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import platform.BackgroundTasks.BGProcessingTaskRequest
@@ -33,7 +35,9 @@ internal class BgProcessingTaskManager(
 
     override fun hasConstraint(task: Task) = task.requiresDeviceIdle
 
-    override fun isValid(task: Task) = currentToken.map { it != null }
+    override fun isValid(task: Task) = currentToken.map {
+        if (it != null) PreconditionResult.Met else PreconditionResult.Unmet
+    }
 
     override val monitorDuringExecution = true
 }
