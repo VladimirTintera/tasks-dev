@@ -2,6 +2,11 @@ package eu.tintera.tasks
 
 import kotlin.uuid.Uuid
 
+// --- VÝJIMKY ---
+open class TaskGraphException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
+class ParentTaskNotFoundException(message: String) : TaskGraphException(message)
+class TaskTypeMismatchException(message: String) : TaskGraphException(message)
+
 interface TaskScope<Input: Any, Progress: Any> {
     val taskId: Uuid
     val data: Input
@@ -13,15 +18,14 @@ interface TaskScope<Input: Any, Progress: Any> {
     suspend fun setProgress(data: Progress)
 }
 
-// 1. ZÁKLADNÍ FUNKCE (Vrací seznam všech výstupů daného typu)
 inline fun <reified T> TaskScope<*, *>.parentOutputs(
     identifier: String
 ): List<T> = parents
     .filter { it.identifier == identifier }
     .map {
-        it.data as? T ?: error(
-            "🚨 Typový nesoulad u rodičovského úkolu '$identifier'! " +
-                    "Očekáván typ '${T::class.simpleName}', ale přijat '${it.data?.let { d -> d::class.simpleName } ?: "null"}'."
+        it.data as? T ?: throw TaskTypeMismatchException(
+            "🚨 Type mismatch in parent task '$identifier'! " +
+                    "Expected type '${T::class.simpleName}', but received '${it.data?.let { d -> d::class.simpleName } ?: "null"}'."
         )
     }
 
@@ -29,14 +33,12 @@ inline fun <reified T> TaskScope<*, *>.parentOutputs(
 inline fun <reified T> TaskScope<*, *>.parentOutput(
     identifier: String
 ): T = parentOutputs<T>(identifier).firstOrNull()
-    ?: error("🚨 Rodičovský úkol '$identifier' nebyl nalezen. Ujisti se, že je správně napojen v grafu!")
+    ?: throw ParentTaskNotFoundException("🚨 Parent task '$identifier' not found. Make sure it is correctly connected in the graph!")
 
 // 3. BENEVOLENTNÍ ZÍSKÁNÍ VOLITELNÉHO RODIČE (Novinka pro flexibilitu)
 inline fun <reified T> TaskScope<*, *>.parentOutputOrNull(
     identifier: String
-): T? = parents.filter {
-    it.identifier == identifier
-}.firstNotNullOfOrNull { it.data as? T }
+): T? = parentOutputs<T>(identifier).firstOrNull()
 
 
 // --- ALIAS EXTENZE PRO TYPOVÉ TŘÍDY ---
@@ -57,15 +59,20 @@ inline fun <reified T : Any> TaskScope<*, *>.parentOutputsOfType(): List<T> =
 // 2. Striktní získání (Fail-Fast), pokud nutně potřebuješ právě jeden výstup tohoto typu
 inline fun <reified T : Any> TaskScope<*, *>.parentOutputOfType(): T =
     parentOutputsOfType<T>().firstOrNull()
-        ?: error("🚨 V grafu nebyl nalezen žádný rodičovský úkol vracející typ '${T::class.simpleName}'!")
+        ?: throw ParentTaskNotFoundException("🚨 No parent task returning type '${T::class.simpleName}' was found in the graph!")
 
 // 3. Benevolentní získání
 inline fun <reified T : Any> TaskScope<*, *>.parentOutputOfTypeOrNull(): T? =
     parentOutputsOfType<T>().firstOrNull()
 
+// 4. Striktní získání nejnovějšího rodiče podle typu
+inline fun <reified T : Any> TaskScope<*, *>.latestParentOutputOfType(): T =
+    latestParentOutputOfTypeOrNull<T>()
+        ?: throw ParentTaskNotFoundException("🚨 No parent task returning type '${T::class.simpleName}' was found in the graph!")
+
+// 5. Benevolentní získání nejnovějšího rodiče podle typu
 inline fun <reified T : Any> TaskScope<*, *>.latestParentOutputOfTypeOrNull(): T? =
     parents
         .filter { it.data is T }
         .maxByOrNull { it.finishedAt }
         ?.let { it.data as T }
-

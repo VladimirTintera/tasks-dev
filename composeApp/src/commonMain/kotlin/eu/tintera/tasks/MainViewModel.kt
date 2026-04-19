@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
@@ -41,7 +42,7 @@ class MainViewModel(
     )
 
     fun enqueueTask() = viewModelScope.launch {
-        taskManager.scheduleTestHandler(count = 10, initialDelay = 1.minutes)
+        taskManager.scheduleTestHandler(count = 10, initialDelay = 5.seconds)
     }
 
     fun enqueueContinuation() = viewModelScope.launch {
