@@ -117,7 +117,7 @@ class FakeRepository : Repository {
     }
 
     override suspend fun cleanOld(
-        states: Set<State>,
+        terminalStates: Set<State>,
     ) {
         TODO("Not yet implemented")
     }

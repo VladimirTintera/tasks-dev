@@ -108,8 +108,8 @@ internal class DatabaseRepository(
     }
 
     override suspend fun cleanOld(
-        states: Set<State>
-    ) = taskDao.cleanOld(Clock.System.now().toEpochMilliseconds(), states.map { it.toEntityState() })
+        terminalStates: Set<State>
+    ) = taskDao.cleanOld(Clock.System.now().toEpochMilliseconds(), terminalStates.map { it.toEntityState() })
 
     override fun taskInfosByTag(
         name: String

@@ -4,6 +4,7 @@ import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import eu.tintera.guard.*
 import eu.tintera.tasks.core.*
+import eu.tintera.tasks.core.cleanup.DatabaseCleanupPolicy
 import eu.tintera.tasks.core.preconditions.TaskPrecondition
 import eu.tintera.tasks.db.DatabaseConfiguration
 import kotlinx.coroutines.Dispatchers
@@ -20,7 +21,9 @@ internal fun iosModule(
     config: IosTasksManagerConfiguration
 ): Module = module {
 
-    includes(engineModule)
+    includes(
+        engineModule(DatabaseCleanupPolicy.DISABLED_GHOST_TASKS_POLICY)
+    )
 
     single {
         TaskProcessorConfig(

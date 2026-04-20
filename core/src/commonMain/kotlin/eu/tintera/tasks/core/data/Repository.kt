@@ -31,7 +31,7 @@ interface Repository {
     suspend fun allByUniqueName(uniqueName: String): List<Task>
     suspend fun delete(id: Uuid)
     suspend fun insert(task: Task, tags: Set<String>, parentIds: Set<Uuid>)
-    suspend fun cleanOld(states: Set<State>)
+    suspend fun cleanOld(terminalStates: Set<State>)
 
     fun taskInfosByTag(name: String): Flow<List<FullTask>>
     fun taskById(id: Uuid): Flow<FullTask?>
