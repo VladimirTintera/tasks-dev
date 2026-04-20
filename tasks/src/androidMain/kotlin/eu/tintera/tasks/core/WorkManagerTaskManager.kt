@@ -16,6 +16,7 @@ import eu.tintera.tasks.BackoffPolicy
 import eu.tintera.tasks.Constraints
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
+import eu.tintera.tasks.core.migrations.TaskMigrator
 import eu.tintera.tasks.serialization.TaskDataSerializer
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
@@ -33,7 +34,8 @@ import kotlin.uuid.toKotlinUuid
 internal class WorkManagerCoreTaskManager(
     private val workManager: WorkManager,
     private val repository: Repository,
-    private val taskRegistry: TaskRegistry
+    private val taskRegistry: TaskRegistry,
+    private val taskMigrator: TaskMigrator
 ) : CoreTaskManager {
 
     private fun <T: Any> TaskRequest<T>.oneTimeWorkRequest() =
@@ -369,7 +371,20 @@ internal class WorkManagerCoreTaskManager(
         workManager.cancelAllWorkByTag(tag).await()
     }
 
-    private fun WorkInfo.toTaskInfo(task: Task?, registration: TaskRegistry.TaskRegistration<*, *, *>?): TaskInfo {
+    private fun WorkInfo.toTaskInfo(
+        task: Task?,
+        registration: TaskRegistry.TaskRegistration<Any, Any, Any>?
+    ): TaskInfo {
+
+        val migrationResult = task?.let { task ->
+            registration?.let { registration ->
+                taskMigrator.migrate(
+                    task = task,
+                    registration = registration
+                )
+            }
+        }
+
         return TaskInfo(
             id = id.toKotlinUuid(),
             state = when (state) {
@@ -385,7 +400,7 @@ internal class WorkManagerCoreTaskManager(
             }.toSet(),
             runAttemptCount = runAttemptCount,
             outputData = task?.outputData?.let {
-                registration?.outputSerializer?.decodeFromBytesOrNull(it)
+                migrationResult?.output ?: registration?.outputSerializer?.decodeFromBytesOrNull(it)
             },
             nextScheduledTime = Instant.fromEpochMilliseconds(nextScheduleTimeMillis).takeIf {
                 it < Instant.DISTANT_FUTURE
@@ -393,7 +408,7 @@ internal class WorkManagerCoreTaskManager(
             progress = task?.progressData?.takeIf {
                 state != WorkInfo.State.FAILED && state != WorkInfo.State.CANCELLED
             }?.let {
-                registration?.progressSerializer?.decodeFromBytesOrNull(it)
+                migrationResult?.progress ?: registration?.progressSerializer?.decodeFromBytesOrNull(it)
             },
             finishedAt = task?.finishedAt,
             createdAt = task?.createdAt ?: Instant.DISTANT_PAST,

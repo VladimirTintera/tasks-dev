@@ -2,13 +2,12 @@ package eu.tintera.tasks.core
 
 import eu.tintera.tasks.BackoffCriteria
 import eu.tintera.tasks.State
-import eu.tintera.tasks.TaskHandler
 import eu.tintera.tasks.TaskResult
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.core.fakes.*
+import eu.tintera.tasks.core.migrations.TaskMigrator
 import eu.tintera.tasks.core.preconditions.NetworkStateTaskPrecondition
 import eu.tintera.tasks.core.preconditions.TaskPreconditionController
-import eu.tintera.tasks.core.serialization.UnitTaskDataSerializer
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceTimeBy

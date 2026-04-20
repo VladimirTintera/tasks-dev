@@ -3,6 +3,7 @@ package eu.tintera.tasks.core
 import eu.tintera.tasks.core.cleanup.DatabaseCleaner
 import eu.tintera.tasks.core.cleanup.DatabaseCleanupPolicy
 import eu.tintera.tasks.core.cleanup.DatabaseCleanupTaskHandler
+import eu.tintera.tasks.core.migrations.TaskMigrator
 import kotlinx.coroutines.SupervisorJob
 import org.koin.core.module.dsl.createdAtStart
 import org.koin.core.module.dsl.factoryOf

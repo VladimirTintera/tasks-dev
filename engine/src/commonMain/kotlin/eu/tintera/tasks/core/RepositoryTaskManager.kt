@@ -4,6 +4,7 @@ import eu.tintera.tasks.*
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.core.data.toTaskInfo
+import eu.tintera.tasks.core.migrations.TaskMigrator
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -14,6 +15,7 @@ import kotlin.uuid.Uuid
 class RepositoryCoreTaskManager(
     private val repository: Repository,
     private val taskRegistry: TaskRegistry,
+    private val taskMigrator: TaskMigrator
 ) : CoreTaskManager {
 
     override suspend fun <T : Any> enqueueUniqueTask(
@@ -112,7 +114,7 @@ class RepositoryCoreTaskManager(
         state: State,
         registration: TaskRegistry.TaskRegistration<T, *, *>,
         repeatInterval: Duration?
-    ) : Task {
+    ): Task {
         val now = Clock.System.now()
         return Task(
             id = Uuid.random(),
@@ -210,9 +212,16 @@ class RepositoryCoreTaskManager(
     override fun taskInfosByTag(
         tag: String,
     ): Flow<List<TaskInfo>> = repository.taskInfosByTag(tag).distinctUntilChanged().map { map ->
-        map.map {
-            it.toTaskInfo<Any, Any>(
-                findRegistrationOrNull(it.task.identifier)
+        map.map { fullTask ->
+            val registration = findRegistrationOrNull<Any, Any, Any>(fullTask.task.identifier)
+            fullTask.toTaskInfo(
+                registration = registration,
+                migrationResult = registration?.let {
+                    taskMigrator.migrate(
+                        task = fullTask.task,
+                        registration = registration
+                    )
+                }
             )
         }
     }
@@ -220,9 +229,18 @@ class RepositoryCoreTaskManager(
     override fun taskInfoById(
         id: Uuid,
     ): Flow<TaskInfo?> = repository.taskById(id).distinctUntilChanged().map { task ->
-        task?.toTaskInfo<Any, Any>(
-            registration = findRegistrationOrNull(task.task.identifier)
-        )
+        task?.let {
+            val registration = findRegistrationOrNull<Any, Any, Any>(task.task.identifier)
+            task.toTaskInfo(
+                registration = registration,
+                migrationResult = registration?.let {
+                    taskMigrator.migrate(
+                        task = task.task,
+                        registration = registration
+                    )
+                }
+            )
+        }
     }
 
     override suspend fun cancelTaskById(id: Uuid) = repository.withTransaction {

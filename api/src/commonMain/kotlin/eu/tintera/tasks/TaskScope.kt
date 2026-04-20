@@ -7,15 +7,19 @@ open class TaskGraphException(message: String, cause: Throwable? = null) : Runti
 class ParentTaskNotFoundException(message: String) : TaskGraphException(message)
 class TaskTypeMismatchException(message: String) : TaskGraphException(message)
 
-interface TaskScope<Input: Any, Progress: Any> {
+interface TaskScope<Input: Any, Progress: Any> : InputTaskScope<Input> {
+    suspend fun setProgress(data: Progress)
+}
+
+interface SimpleTaskScope: TaskScope<Unit, Unit>
+interface InputTaskScope<T: Any> {
     val taskId: Uuid
-    val data: Input
+    val data: T
     val retryCount: Int
 
     val parents: List<ParentData>
 
     suspend fun setForegroundInfo(foregroundInfo: ForegroundInfo): Boolean
-    suspend fun setProgress(data: Progress)
 }
 
 inline fun <reified T> TaskScope<*, *>.parentOutputs(

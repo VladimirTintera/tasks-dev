@@ -6,6 +6,7 @@ import eu.tintera.tasks.ParentData
 import eu.tintera.tasks.TaskResult
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
+import eu.tintera.tasks.core.migrations.TaskMigrator
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.plus
 import kotlin.coroutines.cancellation.CancellationException
@@ -35,10 +36,28 @@ class TaskEvaluatorImpl(
 
         val registration = taskRegistry.resolve<Any, Any, Any>(task.identifier) ?: return TaskResult.failure()
 
-        val typedInput = taskMigrator.migrate(
+        val migrationResult = taskMigrator.migrate(
             task = task,
             registration = registration
-        ) ?: return TaskResult.failure()
+        )?.also {
+            repository.upgradeData(
+                id = task.id,
+                input = it.input?.let { input ->
+                    registration.inputSerializer.encodeToBytes(input)
+                } ?: task.inputData,
+                output = it.output?.let { output ->
+                    registration.outputSerializer.encodeToBytes(output)
+                } ?: task.outputData,
+                progress = it.progress?.let { progress ->
+                    registration.progressSerializer.encodeToBytes(progress)
+                } ?: task.progressData,
+                version = it.version
+            )
+        }
+
+        val typedInput = migrationResult?.input ?: task.inputData?.let {
+            registration.inputSerializer.decodeFromBytes(it)
+        } ?: return TaskResult.failure()
 
         val parents = repository.parentsFor(task.id).first().mapNotNull { parentEntity ->
             taskRegistry.resolve<Any, Any, Any>(parentEntity.identifier)?.let { parentRegistration ->
