@@ -1,6 +1,5 @@
 package eu.tintera.tasks.core.fakes
 
-import eu.tintera.tasks.Data
 import eu.tintera.tasks.State
 import eu.tintera.tasks.core.data.FullTask
 import eu.tintera.tasks.core.data.Repository
@@ -24,6 +23,10 @@ class FakeRepository : Repository {
         }
     }
 
+    override fun parentStatesForTask(id: Uuid): Flow<List<State>> {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun updateRunAttemptCount(
         id: Uuid,
         runAttemptsCount: Int
@@ -45,7 +48,7 @@ class FakeRepository : Repository {
         id: Uuid,
         processTime: Instant,
         state: State,
-        progressData: Data,
+        progressData: ByteArray?,
         runAttemptCount: Int?
     ) {
         tasks.update { currentTasks ->
@@ -68,7 +71,7 @@ class FakeRepository : Repository {
         id: Uuid,
         state: State,
         finishedAt: Instant,
-        outputData: Data
+        outputData: ByteArray?
     ) {
         tasks.update { currentTasks ->
             currentTasks.map {
@@ -130,6 +133,10 @@ class FakeRepository : Repository {
         TODO("Not yet implemented")
     }
 
+    override fun tasksByIds(ids: Set<Uuid>): Flow<List<Task>> {
+        TODO("Not yet implemented")
+    }
+
     override fun tasksByState(states: List<State>): Flow<List<Task>> {
         return tasks.map {
             it.filter { it.state in states }
@@ -157,7 +164,7 @@ class FakeRepository : Repository {
 
     override suspend fun updateProgressData(
         id: Uuid,
-        progressData: Data
+        progressData: ByteArray?
     ) {
         TODO("Not yet implemented")
     }
@@ -165,7 +172,8 @@ class FakeRepository : Repository {
     override suspend fun updateState(
         id: Uuid,
         state: State,
-        allowedSourceStates: Set<State>
+        allowedSourceStates: Set<State>,
+        resetProcessTime: Boolean
     ) {
         tasks.update {
             it.map {
@@ -182,6 +190,16 @@ class FakeRepository : Repository {
         id: Uuid,
         state: State,
         allowedSourceStates: Set<State>
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun upgradeData(
+        id: Uuid,
+        input: ByteArray?,
+        output: ByteArray?,
+        progress: ByteArray?,
+        version: Int
     ) {
         TODO("Not yet implemented")
     }

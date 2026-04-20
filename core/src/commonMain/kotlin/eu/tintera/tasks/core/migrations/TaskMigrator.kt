@@ -5,9 +5,9 @@ import eu.tintera.tasks.core.data.Task
 
 class TaskMigrator {
 
-    fun migrate(
+    fun <Input: Any, Output: Any, Progress: Any> migrate(
         task: Task,
-        registration: TaskRegistry.TaskRegistration<Any, Any, Any>
+        registration: TaskRegistry.TaskRegistration<Input, Output, Progress>
     ): MigrationResult? {
 
         if (task.version == registration.currentVersion) return null

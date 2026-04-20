@@ -111,8 +111,6 @@ internal class TaskWorker(
 
         taskResultProcessor.handleResult(task, ExecutionResult.Finished(result))
 
-        EventBus.send("TaskWorker", "Task finished '${taskIdentifier}', result = $result")
-
         return when (result) {
             TaskResult.Failure -> Result.failure()
             TaskResult.Retry -> Result.retry()

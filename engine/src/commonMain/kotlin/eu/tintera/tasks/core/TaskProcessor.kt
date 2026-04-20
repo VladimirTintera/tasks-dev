@@ -19,8 +19,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlin.coroutines.cancellation.CancellationException
-import kotlin.time.Clock
-import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 internal interface TaskProcessor {
@@ -46,9 +44,7 @@ internal class TaskProcessorImpl(
 
         val workflowJob = launch {
 
-            waitForPreconditions(task)
-
-            concurrencySemaphore.withPermit {
+            if (waitForPreconditions(task)) concurrencySemaphore.withPermit {
                 executeTask(actualTask.value ?: return@launch)
             }
         }
@@ -67,19 +63,20 @@ internal class TaskProcessorImpl(
 
     private suspend fun waitForPreconditions(
         task: Task
-    ) {
-        when (preconditionController.waitForAll(task)) {
-            TaskPreconditionController.WaitResult.SUCCESS -> {
-                updateState(id = task.id, State.Enqueued, resetProcessTime = true)
-            }
+    ): Boolean = when (preconditionController.waitForAll(task)) {
+        TaskPreconditionController.WaitResult.SUCCESS -> {
+            updateState(id = task.id, State.Enqueued, resetProcessTime = true)
+            true
+        }
 
-            TaskPreconditionController.WaitResult.FAILED -> withContext(NonCancellable) {
-                taskResultProcessor.handleResult(task, Finished(TaskResult.failure()))
-            }
+        TaskPreconditionController.WaitResult.FAILED -> withContext(NonCancellable) {
+            taskResultProcessor.handleResult(task, Finished(TaskResult.failure()))
+            false
+        }
 
-            TaskPreconditionController.WaitResult.CANCELED -> withContext(NonCancellable) {
-                taskResultProcessor.handleResult(task, Canceled)
-            }
+        TaskPreconditionController.WaitResult.CANCELED -> withContext(NonCancellable) {
+            taskResultProcessor.handleResult(task, Canceled)
+            false
         }
     }
 

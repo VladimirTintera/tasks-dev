@@ -4,9 +4,12 @@ import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.uuid.Uuid
@@ -19,11 +22,15 @@ internal class TaskDispatcher(
     private val activeTaskTracker: ActiveTaskTracker,
 ) {
     private val runningJobs = MutableStateFlow<Map<ExecutionKey, Job>>(emptyMap())
+    private val jobFinishedEvent = MutableSharedFlow<Unit>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_LATEST
+    )
 
     private fun tasks() = combine(
         repository.tasksByState(runningStates).distinctUntilChanged(),
-        runningJobs
-    ) { tasks, jobs -> Pair(tasks, jobs) }
+        jobFinishedEvent.onStart { emit(Unit) },
+    ) { tasks, _ -> tasks }
 
     private fun Task.executionKey() = ExecutionKey(id)
 
@@ -36,16 +43,15 @@ internal class TaskDispatcher(
     }
 
     private suspend fun collectAndDispatchTasks() {
-        tasks().collect { (tasks, currentJobsMap) ->
+        tasks().collect { tasks ->
 
             val currentExecutionKeys = tasks.map { it.executionKey() }.toSet()
 
-            // 2. Projdeme aktuální joby a zrušíme ty, co už nejsou validní
+            val currentJobsMap = runningJobs.value
+
             currentJobsMap.forEach { (key, job) ->
                 if (key !in currentExecutionKeys) {
                     job.cancel()
-                    // Z mapy to zde MAZAT NEMUSÍME.
-                    // job.cancel() vyvolá invokeOnCompletion, který si to smaže sám!
                 }
             }
 
@@ -56,22 +62,19 @@ internal class TaskDispatcher(
                 newTasks.forEach { task ->
                     val key = task.executionKey()
 
-                    // 1. Vytvoříme Job, ale zatím ho NEspustíme
                     val job = scope.launch(context = dispatchers.io, start = CoroutineStart.LAZY) {
                         taskProcessor.run(task)
                     }
 
-                    // 2. Nejdřív ho bezpečně zaregistrujeme do map a trackerů
                     runningJobs.update { it + (key to job) }
                     activeTaskTracker.track(task.id)
 
-                    // 3. Zaregistrujeme úklid
                     job.invokeOnCompletion {
                         runningJobs.update { it - key }
                         activeTaskTracker.untrack(task.id)
+                        jobFinishedEvent.tryEmit(Unit)
                     }
 
-                    // 4. Až teď ho bezpečně odstartujeme!
                     job.start()
                 }
             }
