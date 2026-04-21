@@ -1,5 +1,6 @@
 package eu.tintera.tasks.core
 
+import eu.tintera.tasks.core.data.ProcessableTask
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.core.preconditions.PreconditionResult
@@ -33,9 +34,9 @@ internal class BgProcessingTaskManager(
         requiresNetworkConnectivity = true
     }
 
-    override fun hasConstraint(task: Task) = task.requiresDeviceIdle
+    override fun hasConstraint(task: ProcessableTask) = task.requiresDeviceIdle
 
-    override fun isValid(task: Task) = currentToken.map {
+    override fun isValid(task: ProcessableTask) = currentToken.map {
         if (it != null) PreconditionResult.Met else PreconditionResult.Unmet
     }
 

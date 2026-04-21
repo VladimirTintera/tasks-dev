@@ -6,8 +6,14 @@ import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 interface Repository {
+
+    fun dispatchableTasks(states: List<State>): Flow<List<DispatchableTask>>
+    fun processableTask(id: Uuid): Flow<ProcessableTask?>
+
+    suspend fun executableTask(id: Uuid) : ExecutableTask?
+
     fun parentsFor(id: Uuid): Flow<List<Task>>
-    fun parentStatesForTask(id: Uuid) : Flow<List<State>>
+    fun parentStatesForTask(id: Uuid): Flow<List<State>>
     suspend fun updateNextRun(
         id: Uuid,
         processTime: Instant,
@@ -48,7 +54,13 @@ interface Repository {
 
     suspend fun updateProgressData(id: Uuid, progressData: ByteArray?)
 
-    suspend fun updateState(id: Uuid, state: State, allowedSourceStates: Set<State>, resetProcessTime: Boolean)
+    suspend fun updateState(
+        id: Uuid,
+        state: State,
+        allowedSourceStates: Set<State>,
+        resetProcessTime: Boolean,
+        runAttemptCount: Int?
+    )
 
     suspend fun updateStateWithDescendants(id: Uuid, state: State, allowedSourceStates: Set<State>)
 

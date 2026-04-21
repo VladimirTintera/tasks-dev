@@ -1,6 +1,7 @@
 package eu.tintera.tasks.core.preconditions
 
 import eu.tintera.tasks.State
+import eu.tintera.tasks.core.data.ProcessableTask
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.core.terminal
@@ -12,10 +13,10 @@ internal class ParentsTaskPrecondition(
     private val repository: Repository
 ) : TaskPrecondition {
 
-    override fun hasConstraint(task: Task): Boolean = true
+    override fun hasConstraint(task: ProcessableTask): Boolean = true
 
     override fun isValid(
-        task: Task
+        task: ProcessableTask
     ) = repository.parentStatesForTask(task.id).map { states ->
         when {
             states.isEmpty() -> PreconditionResult.Met

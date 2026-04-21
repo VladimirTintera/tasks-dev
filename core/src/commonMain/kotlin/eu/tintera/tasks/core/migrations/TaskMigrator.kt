@@ -1,12 +1,13 @@
 package eu.tintera.tasks.core.migrations
 
 import eu.tintera.tasks.core.TaskRegistry
+import eu.tintera.tasks.core.data.ExecutableTask
 import eu.tintera.tasks.core.data.Task
 
 class TaskMigrator {
 
     fun <Input: Any, Output: Any, Progress: Any> migrate(
-        task: Task,
+        task: ExecutableTask,
         registration: TaskRegistry.TaskRegistration<Input, Output, Progress>
     ): MigrationResult? {
 

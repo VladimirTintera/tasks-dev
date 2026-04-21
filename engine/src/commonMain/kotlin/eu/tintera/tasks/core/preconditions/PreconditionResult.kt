@@ -1,7 +1,5 @@
 package eu.tintera.tasks.core.preconditions
 
-import eu.tintera.tasks.State
-
 sealed interface PreconditionResult {
     data object Met : PreconditionResult       // Vše splněno (Boolean true)
     data object Unmet : PreconditionResult     // Zatím čekáme, ale šance žije (Boolean false)

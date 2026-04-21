@@ -1,23 +1,22 @@
 package eu.tintera.tasks.core
 
+import eu.tintera.tasks.BackoffCriteria
 import eu.tintera.tasks.State
 import eu.tintera.tasks.TaskResult
 import eu.tintera.tasks.core.data.Repository
-import eu.tintera.tasks.core.data.Task
-import eu.tintera.tasks.core.data.backoffCriteriaOrDefault
 import kotlin.time.Clock
 
 interface TaskResultProcessor {
-    suspend fun handleResult(task: Task, result: ExecutionResult)
+    suspend fun handleResult(task: eu.tintera.tasks.core.data.TaskProcessResult)
 }
 
 class TaskResultProcessorImpl(
     private val repository: Repository
 ) : TaskResultProcessor {
 
-    override suspend fun handleResult(task: Task, result: ExecutionResult) {
+    override suspend fun handleResult(task: eu.tintera.tasks.core.data.TaskProcessResult) {
         val now = Clock.System.now()
-        when (result) {
+        when (val result = task.executionResult) {
             is ExecutionResult.Finished -> {
                 when (val taskResult = result.result) {
                     TaskResult.Failure -> {
@@ -62,7 +61,7 @@ class TaskResultProcessorImpl(
                     }
 
                     TaskResult.Retry -> {
-                        val backoff = task.backoffCriteriaOrDefault.calculate(task.runAttemptCount + 1)
+                        val backoff = (task.backoffCriteria ?: BackoffCriteria.DEFAULT).calculate(task.retryCount)
                         repository.updateNextRun(
                             id = task.id,
                             state = State.Enqueued,

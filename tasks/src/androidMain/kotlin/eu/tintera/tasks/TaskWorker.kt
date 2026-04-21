@@ -11,8 +11,11 @@ import androidx.work.WorkerParameters
 import eu.tintera.tasks.core.ExecutionResult
 import eu.tintera.tasks.core.TaskEvaluator
 import eu.tintera.tasks.core.TaskResultProcessor
+import eu.tintera.tasks.core.data.ExecutableTask
+import eu.tintera.tasks.core.data.ProcessableTask
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
+import eu.tintera.tasks.core.data.TaskProcessResult
 import eu.tintera.tasks.core.nonTerminalStates
 import eu.tintera.tasks.koin.TasksKoinComponent
 import kotlinx.coroutines.CancellationException
@@ -71,7 +74,7 @@ internal class TaskWorker(
                     progressData = null,
                     version = 1, // DŮLEŽITÉ: Je to starý task, jde do verze 1
                     state = State.Running,
-                    runAttemptCount = runAttemptCount,
+                    runAttemptCount = runAttemptCount + 1,
                     uniqueName = "",
                     initialDelay = Duration.ZERO,
                     processTime = null,
@@ -93,11 +96,7 @@ internal class TaskWorker(
                 id = taskId,
                 state = State.Running,
                 allowedSourceStates = nonTerminalStates.toSet(),
-                resetProcessTime = true
-            )
-
-            task = task.copy(
-                state = State.Running,
+                resetProcessTime = true,
                 runAttemptCount = runAttemptCount + 1
             )
         }
@@ -105,11 +104,27 @@ internal class TaskWorker(
         if (task == null) return Result.failure()
 
         val result = taskEvaluator.handle(
-            task = task,
+            id = taskId,
+            task = ExecutableTask(
+                identifier = task.identifier,
+                runAttemptCount = task.runAttemptCount,
+                version = task.version,
+                inputData = task.inputData,
+                outputData = task.outputData,
+                progressData = task.progressData
+            ),
             onForegroundInfo = ::internalSetForegroundInfo
         )
 
-        taskResultProcessor.handleResult(task, ExecutionResult.Finished(result))
+        taskResultProcessor.handleResult(
+            TaskProcessResult(
+                id = taskId,
+                executionResult = ExecutionResult.Finished(result),
+                repeatInterval = task.repeatInterval,
+                backoffCriteria = task.backoffCriteria,
+                retryCount = task.runAttemptCount
+            )
+        )
 
         return when (result) {
             TaskResult.Failure -> Result.failure()

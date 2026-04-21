@@ -14,6 +14,7 @@ import androidx.work.await
 import eu.tintera.tasks.*
 import eu.tintera.tasks.BackoffPolicy
 import eu.tintera.tasks.Constraints
+import eu.tintera.tasks.core.data.ExecutableTask
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.core.migrations.TaskMigrator
@@ -379,7 +380,14 @@ internal class WorkManagerCoreTaskManager(
         val migrationResult = task?.let { task ->
             registration?.let { registration ->
                 taskMigrator.migrate(
-                    task = task,
+                    task = ExecutableTask(
+                        identifier = task.identifier,
+                        runAttemptCount = task.runAttemptCount,
+                        version = task.version,
+                        inputData = task.inputData,
+                        outputData = task.outputData,
+                        progressData = task.progressData
+                    ),
                     registration = registration
                 )
             }

@@ -2,7 +2,6 @@ package eu.tintera.tasks.core.data
 
 import eu.tintera.tasks.BackoffCriteria
 import eu.tintera.tasks.State
-import eu.tintera.tasks.core.DEFAULT
 import kotlin.time.Duration
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
@@ -77,5 +76,3 @@ data class Task(
         return result
     }
 }
-
-internal val Task.backoffCriteriaOrDefault: BackoffCriteria get() = backoffCriteria ?: BackoffCriteria.DEFAULT

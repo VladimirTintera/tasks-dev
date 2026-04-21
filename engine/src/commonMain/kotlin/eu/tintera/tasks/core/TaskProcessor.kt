@@ -7,22 +7,23 @@ import eu.tintera.tasks.State
 import eu.tintera.tasks.TaskResult
 import eu.tintera.tasks.core.ExecutionResult.Canceled
 import eu.tintera.tasks.core.ExecutionResult.Finished
+import eu.tintera.tasks.core.data.ExecutableTask
+import eu.tintera.tasks.core.data.ProcessableTask
 import eu.tintera.tasks.core.data.Repository
-import eu.tintera.tasks.core.data.Task
+import eu.tintera.tasks.core.data.TaskProcessResult
 import eu.tintera.tasks.core.preconditions.PreconditionLostException
 import eu.tintera.tasks.core.preconditions.TaskPreconditionController
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.uuid.Uuid
 
 internal interface TaskProcessor {
-    suspend fun run(task: Task)
+    suspend fun run(id: Uuid)
 }
 
 internal class TaskProcessorImpl(
@@ -36,24 +37,34 @@ internal class TaskProcessorImpl(
 
     private val concurrencySemaphore = Semaphore(config.maxConcurrentTasks)
 
-    override suspend fun run(task: Task) = coroutineScope {
+    private fun ProcessableTask?.isDisrupted() = this == null || state.terminal()
 
-        EventBus.send(TAG, "running task ${task.id}")
+    override suspend fun run(id: Uuid) = coroutineScope {
 
-        val actualTask = MutableStateFlow<Task?>(task)
+        EventBus.send(TAG, "running task $id")
+
+        val task = repository.processableTask(id).stateIn(this)
+
+        if (task.value.isDisrupted()) return@coroutineScope
 
         val workflowJob = launch {
 
-            if (waitForPreconditions(task)) concurrencySemaphore.withPermit {
-                executeTask(actualTask.value ?: return@launch)
+            val preconditionsValid = waitForPreconditions(
+                id = id,
+                task = task
+            )
+
+            if (preconditionsValid) concurrencySemaphore.withPermit {
+                executeTask(
+                    id = id,
+                    task = task,
+                    executableTask = repository.executableTask(id) ?: return@launch
+                )
             }
         }
 
         val observeJob = launch {
-            repository.task(task.id).onEach { actualTask.update { it } }
-                .first { t ->
-                    t == null || t.state.terminal()
-                }
+            task.first { it.isDisrupted() }
             workflowJob.cancelAndJoin()
         }
 
@@ -62,40 +73,76 @@ internal class TaskProcessorImpl(
     }
 
     private suspend fun waitForPreconditions(
-        task: Task
-    ): Boolean = when (preconditionController.waitForAll(task)) {
-        TaskPreconditionController.WaitResult.SUCCESS -> {
-            updateState(id = task.id, State.Enqueued, resetProcessTime = true)
-            true
-        }
+        id: Uuid,
+        task: StateFlow<ProcessableTask?>
+    ): Boolean {
+        return when (preconditionController.waitForAll(task)) {
+            TaskPreconditionController.WaitResult.SUCCESS -> {
+                updateState(
+                    id = id,
+                    state = State.Enqueued,
+                    resetProcessTime = true,
+                    runAttemptCount = null
+                )
+                true
+            }
 
-        TaskPreconditionController.WaitResult.FAILED -> withContext(NonCancellable) {
-            taskResultProcessor.handleResult(task, Finished(TaskResult.failure()))
-            false
-        }
+            TaskPreconditionController.WaitResult.FAILED -> withContext(NonCancellable) {
+                task.value?.let {
+                    taskResultProcessor.handleResult(
+                        TaskProcessResult(
+                            id = id,
+                            executionResult = Finished(TaskResult.failure()),
+                            repeatInterval = it.repeatInterval,
+                            backoffCriteria = it.backoffCriteria,
+                            retryCount = it.runAttemptCount
+                        )
+                    )
+                }
+                false
+            }
 
-        TaskPreconditionController.WaitResult.CANCELED -> withContext(NonCancellable) {
-            taskResultProcessor.handleResult(task, Canceled)
-            false
+            TaskPreconditionController.WaitResult.CANCELED -> withContext(NonCancellable) {
+                task.value?.let {
+                    taskResultProcessor.handleResult(
+                        TaskProcessResult(
+                            id = id,
+                            executionResult = Canceled,
+                            repeatInterval = it.repeatInterval,
+                            backoffCriteria = it.backoffCriteria,
+                            retryCount = it.runAttemptCount
+                        )
+                    )
+                }
+                false
+            }
         }
     }
 
     private suspend fun executeTask(
-        task: Task
+        id: Uuid,
+        task: StateFlow<ProcessableTask?>,
+        executableTask: ExecutableTask
     ) = executionContextProvider {
 
-        updateState(id = task.id, state = State.Running, resetProcessTime = true)
+        updateState(
+            id = id,
+            state = State.Running,
+            resetProcessTime = true,
+            runAttemptCount = executableTask.runAttemptCount + 1
+        )
 
         val taskResult = try {
             coroutineScope {
 
                 val capabilityWatcher = launch {
-                    val failedPreconditions = preconditionController.waitForUnmet(task)
-                    this@coroutineScope.cancel(PreconditionLostException(failedPreconditions))
+                    preconditionController.waitForUnmet(task)
+                    this@coroutineScope.cancel(PreconditionLostException())
                 }
 
                 val result = taskEvaluator.handle(
-                    task = task,
+                    id = id,
+                    task = executableTask,
                     onForegroundInfo = { true }
                 )
 
@@ -105,7 +152,7 @@ internal class TaskProcessorImpl(
         } catch (e: PreconditionLostException) {
             EventBus.send(
                 TAG,
-                "Task interrupted '${task.identifier}' due to lost capability (${e.failedPreconditions}). Enqueueing back."
+                "Task interrupted '${executableTask.identifier}' due to lost capability. Enqueueing back."
             )
             ExecutionResult.Yielded
         } catch (e: CancellationException) {
@@ -113,25 +160,37 @@ internal class TaskProcessorImpl(
             // Let it crash
             throw e
         } catch (e: Throwable) {
-            EventBus.send(TAG, "Task failed '${task.identifier}'")
+            EventBus.send(TAG, "Task failed '${executableTask.identifier}'")
             Finished(TaskResult.failure())
         }
 
-        withContext(NonCancellable) {
-            EventBus.send(TAG, "Task finished '${task.identifier}', result = $taskResult")
-            taskResultProcessor.handleResult(task, taskResult)
+        task.value?.let {
+            withContext(NonCancellable) {
+                EventBus.send(TAG, "Task finished '${executableTask.identifier}', result = $taskResult")
+                taskResultProcessor.handleResult(
+                    TaskProcessResult(
+                        id = id,
+                        executionResult = taskResult,
+                        repeatInterval = it.repeatInterval,
+                        backoffCriteria = it.backoffCriteria,
+                        retryCount = it.runAttemptCount
+                    )
+                )
+            }
         }
     }
 
     private suspend fun updateState(
         id: Uuid,
         state: State,
-        resetProcessTime: Boolean
+        resetProcessTime: Boolean,
+        runAttemptCount: Int?
     ) = repository.updateState(
         id = id,
         state = state,
         allowedSourceStates = state.allowedSourceStatesForChangeTo().toSet(),
-        resetProcessTime = resetProcessTime
+        resetProcessTime = resetProcessTime,
+        runAttemptCount = runAttemptCount
     )
 
     companion object {

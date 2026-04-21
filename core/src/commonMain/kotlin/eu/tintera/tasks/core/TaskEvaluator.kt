@@ -4,17 +4,19 @@ import eu.tintera.tasks.EventBus
 import eu.tintera.tasks.ForegroundInfo
 import eu.tintera.tasks.ParentData
 import eu.tintera.tasks.TaskResult
+import eu.tintera.tasks.core.data.ExecutableTask
 import eu.tintera.tasks.core.data.Repository
-import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.core.migrations.TaskMigrator
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.plus
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Instant
+import kotlin.uuid.Uuid
 
 interface TaskEvaluator {
     suspend fun handle(
-        task: Task,
+        id: Uuid,
+        task: ExecutableTask,
         onForegroundInfo: suspend (ForegroundInfo) -> Boolean
     ): TaskResult<ByteArray>
 }
@@ -30,7 +32,8 @@ class TaskEvaluatorImpl(
 ) : TaskEvaluator {
 
     override suspend fun handle(
-        task: Task,
+        id: Uuid,
+        task: ExecutableTask,
         onForegroundInfo: suspend (ForegroundInfo) -> Boolean
     ): TaskResult<ByteArray> {
 
@@ -41,7 +44,7 @@ class TaskEvaluatorImpl(
             registration = registration
         )?.also {
             repository.upgradeData(
-                id = task.id,
+                id = id,
                 input = it.input?.let { input ->
                     registration.inputSerializer.encodeToBytes(input)
                 } ?: task.inputData,
@@ -59,7 +62,7 @@ class TaskEvaluatorImpl(
             registration.inputSerializer.decodeFromBytes(it)
         } ?: return TaskResult.failure()
 
-        val parents = repository.parentsFor(task.id).first().mapNotNull { parentEntity ->
+        val parents = repository.parentsFor(id).first().mapNotNull { parentEntity ->
             taskRegistry.resolve<Any, Any, Any>(parentEntity.identifier)?.let { parentRegistration ->
                 ParentData(
                     id = parentEntity.id.toString(),
@@ -67,13 +70,13 @@ class TaskEvaluatorImpl(
                     data = parentEntity.outputData?.let {
                         parentRegistration.outputSerializer.decodeFromBytes(it)
                     },
-                    finishedAt = task.finishedAt ?: Instant.DISTANT_PAST
+                    finishedAt = parentEntity.finishedAt ?: Instant.DISTANT_PAST
                 )
             }
         }
 
         val scope = taskScopeFactory.createForTask(
-            taskId = task.id,
+            taskId = id,
             data = typedInput,
             retryCount = task.runAttemptCount - 1,
             parentData = parents,

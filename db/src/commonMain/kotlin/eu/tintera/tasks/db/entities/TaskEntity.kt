@@ -106,8 +106,21 @@ internal interface TaskDao {
     @Query("UPDATE Task set progressData = :progressData WHERE id = :id")
     suspend fun updateProgressData(id: Uuid, progressData: ByteArray?)
 
-    @Query("UPDATE Task set state = :state, processTime = (CASE WHEN :resetProcessTime THEN NULL ELSE processTime END) WHERE id = :id AND state IN (:allowedSourceStates)")
-    suspend fun updateState(id: Uuid, state: State, allowedSourceStates: List<State>, resetProcessTime: Boolean)
+    @Query(
+        """
+        UPDATE Task set 
+            state = :state, 
+            processTime = (CASE WHEN :resetProcessTime THEN NULL ELSE processTime END),
+            runAttemptCount = (CASE WHEN :runAttemptCount IS NULL THEN runAttemptCount ELSE :runAttemptCount END)
+        WHERE id = :id AND state IN (:allowedSourceStates)"""
+    )
+    suspend fun updateState(
+        id: Uuid,
+        state: State,
+        allowedSourceStates: List<State>,
+        resetProcessTime: Boolean,
+        runAttemptCount: Int?
+    )
 
     @Query("UPDATE Task set state = :state, finishedAt = :finishedAt, outputData = :outputData, processTime = NULL, progressData = null  WHERE id = :id")
     suspend fun updateTerminatingState(
@@ -215,4 +228,14 @@ internal interface TaskDao {
         progress: ByteArray?,
         version: Int
     )
+
+    @Query("SELECT id, state FROM Task WHERE state IN (:states)")
+    fun dispatchableTasks(states: List<State>): Flow<List<DispatchableTaskEntity>>
+
+    @Query("SELECT state, initialDelay, runAttemptCount, networkRequired, requiresDeviceIdle, repeatInterval, backoffCriteria from Task where id = :id")
+    fun processableTask(id: Uuid): Flow<ProcessableTaskEntity?>
+
+    @Query("SELECT identifier, runAttemptCount, version, inputData, outputData, progressData from Task where id = :id")
+    suspend fun executableTask(id: Uuid): ExecutableTaskEntity?
+
 }
