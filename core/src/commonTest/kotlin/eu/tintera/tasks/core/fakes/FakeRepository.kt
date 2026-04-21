@@ -30,7 +30,7 @@ class FakeRepository : Repository {
         TODO("Not yet implemented")
     }
 
-    override fun parentsFor(id: Uuid): Flow<List<Task>> {
+    override fun parentsDataFor(id: Uuid): Flow<List<Task>> {
         val parentIds = parentMap[id] ?: emptySet()
         return tasks.map { allTasks ->
             allTasks.filter { it.id in parentIds }
@@ -143,11 +143,11 @@ class FakeRepository : Repository {
         TODO("Not yet implemented")
     }
 
-    override fun taskById(id: Uuid): Flow<FullTask?> {
+    override fun taskInfoById(id: Uuid): Flow<FullTask?> {
         TODO("Not yet implemented")
     }
 
-    override fun tasksByIds(ids: Set<Uuid>): Flow<List<Task>> {
+    override fun taskInfoByIds(ids: Set<Uuid>): Flow<List<Task>> {
         TODO("Not yet implemented")
     }
 
@@ -161,7 +161,7 @@ class FakeRepository : Repository {
         TODO("Not yet implemented")
     }
 
-    override suspend fun tasksByTagAndState(
+    override suspend fun taskIdsByTagAndState(
         states: List<State>,
         tag: String
     ): List<Task> {
@@ -201,7 +201,7 @@ class FakeRepository : Repository {
         }
     }
 
-    override suspend fun updateStateWithDescendants(
+    override suspend fun terminateWithDescendants(
         id: Uuid,
         state: State,
         allowedSourceStates: Set<State>

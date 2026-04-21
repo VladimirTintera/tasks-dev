@@ -1,5 +1,6 @@
 package eu.tintera.tasks.core
 
+import eu.tintera.guard.EventBus
 import eu.tintera.tasks.core.data.Repository
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
@@ -54,6 +55,7 @@ internal class TaskDispatcher(
                 newTasks.forEach { task ->
 
                     val job = scope.launch(context = dispatchers.io, start = CoroutineStart.LAZY) {
+                        EventBus.send(TAG, "Task started '${task.id}'")
                         taskProcessor.run(task.id)
                     }
 
@@ -64,6 +66,7 @@ internal class TaskDispatcher(
                         runningJobs.update { it - task.id }
                         activeTaskTracker.untrack(task.id)
                         jobFinishedEvent.tryEmit(Unit)
+                        EventBus.send(TAG, "Task invokeOnCompletion '${task.id}'")
                     }
 
                     job.start()

@@ -1,13 +1,15 @@
 package eu.tintera.tasks.core.data
 
+import eu.tintera.tasks.core.migrations.MigratableData
+
 data class ExecutableTask(
     val identifier: String,
     val runAttemptCount: Int,
-    val version: Int,
-    val inputData: ByteArray?,
-    val outputData: ByteArray?,
-    val progressData: ByteArray?
-) {
+    override val version: Int,
+    override val inputData: ByteArray?,
+    override val outputData: ByteArray?,
+    override val progressData: ByteArray?
+) : MigratableData {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || this::class != other::class) return false

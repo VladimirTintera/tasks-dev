@@ -1,38 +1,36 @@
 package eu.tintera.tasks.core.migrations
 
 import eu.tintera.tasks.core.TaskRegistry
-import eu.tintera.tasks.core.data.ExecutableTask
-import eu.tintera.tasks.core.data.Task
 
 class TaskMigrator {
 
     fun <Input: Any, Output: Any, Progress: Any> migrate(
-        task: ExecutableTask,
+        data: MigratableData,
         registration: TaskRegistry.TaskRegistration<Input, Output, Progress>
     ): MigrationResult? {
 
-        if (task.version == registration.currentVersion) return null
+        if (data.version == registration.currentVersion) return null
 
         val migrationsToRun = registration.migrations.findMigrationPath(
-            startVersion = task.version,
+            startVersion = data.version,
             targetVersion = registration.currentVersion,
         )
 
-        return migrationsToRun.fold(MigrationResult(version = task.version)) { acc, migration ->
+        return migrationsToRun.fold(MigrationResult(version = data.version)) { acc, migration ->
             acc.copy(
-                input = task.inputData?.let { bytes ->
+                input = data.inputData?.let { bytes ->
                     migration.inputMigrator?.let {
                         val obj = acc.input ?: it.fromSerializer.decodeFromBytes(bytes)
                         it.migrationBlock(obj)
                     } ?: acc.input
                 },
-                output = task.outputData?.let { bytes ->
+                output = data.outputData?.let { bytes ->
                     migration.outputMigrator?.let {
                         val obj = acc.output ?: it.fromSerializer.decodeFromBytes(bytes)
                         it.migrationBlock(obj)
                     } ?: acc.output
                 },
-                progress = task.progressData?.let { bytes ->
+                progress = data.progressData?.let { bytes ->
                     migration.progressMigrator?.let {
                         val obj = acc.progress ?: it.fromSerializer.decodeFromBytes(bytes)
                         it.migrationBlock(obj)

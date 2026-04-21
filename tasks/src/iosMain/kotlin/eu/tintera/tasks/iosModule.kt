@@ -103,4 +103,23 @@ internal fun iosModule(
     singleOf(::AppLifecycleObserver) {
         createdAtStart()
     } bind AppStateObserver::class
+
+    singleOf(::DebugObserver) bind ExecutionContextObserver::class
+}
+
+class DebugObserver : ExecutionContextObserver {
+    override fun onPreCancel() {
+        EventBus.send(TAG, "nnPreCancel")
+    }
+
+    override suspend fun onPreRelease() {
+        EventBus.send(TAG, "onPreRelease")
+    }
+
+    override fun onStarted() {
+        EventBus.send(TAG, "onStarted")
+    }
+    companion object {
+        private const val TAG = "DebugObserver"
+    }
 }

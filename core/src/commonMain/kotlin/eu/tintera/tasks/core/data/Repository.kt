@@ -12,7 +12,7 @@ interface Repository {
 
     suspend fun executableTask(id: Uuid) : ExecutableTask?
 
-    fun parentsFor(id: Uuid): Flow<List<Task>>
+    suspend fun parentsDataFor(id: Uuid): List<ParentData>
     fun parentStatesForTask(id: Uuid): Flow<List<State>>
     suspend fun updateNextRun(
         id: Uuid,
@@ -30,25 +30,23 @@ interface Repository {
         outputData: ByteArray?,
     )
 
-    suspend fun taskState(id: Uuid): State?
-
-    fun task(id: Uuid): Flow<Task?>
+    suspend fun task(id: Uuid): Task?
 
     suspend fun allByUniqueName(uniqueName: String): List<Task>
     suspend fun delete(id: Uuid)
     suspend fun insert(task: Task, tags: Set<String>, parentIds: Set<Uuid>)
     suspend fun cleanOld(terminalStates: Set<State>)
 
-    fun taskInfosByTag(name: String): Flow<List<FullTask>>
-    fun taskById(id: Uuid): Flow<FullTask?>
+    fun taskInfosByTag(name: String): Flow<List<Info>>
+    fun taskInfoById(id: Uuid): Flow<Info?>
 
-    fun tasksByIds(ids: Set<Uuid>): Flow<List<Task>>
+    fun taskInfoByIds(ids: Set<Uuid>): Flow<List<Info>>
 
     fun tasksByState(states: List<State>): Flow<List<Task>>
 
     suspend fun childrenForTask(id: Uuid): List<Uuid>
 
-    suspend fun tasksByTagAndState(states: List<State>, tag: String): List<Task>
+    suspend fun taskIdsByTagAndState(states: List<State>, tag: String): List<Uuid>
 
     suspend fun resetState(from: State, to: State, excludedIds: Set<Uuid>)
 
@@ -62,7 +60,7 @@ interface Repository {
         runAttemptCount: Int?
     )
 
-    suspend fun updateStateWithDescendants(id: Uuid, state: State, allowedSourceStates: Set<State>)
+    suspend fun updateTerminatingStateWithDescendants(id: Uuid, state: State, allowedSourceStates: Set<State>, finishedAt: Instant)
 
     suspend fun upgradeData(id: Uuid, input: ByteArray?, output: ByteArray?, progress: ByteArray?, version: Int)
 

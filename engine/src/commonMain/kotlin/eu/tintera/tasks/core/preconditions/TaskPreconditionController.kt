@@ -1,14 +1,8 @@
 package eu.tintera.tasks.core.preconditions
 
 import eu.tintera.tasks.core.data.ProcessableTask
-import eu.tintera.tasks.core.data.Task
 import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.*
 
 internal class TaskPreconditionController(
     preconditions: List<TaskPrecondition>
@@ -31,7 +25,11 @@ internal class TaskPreconditionController(
     suspend fun waitForAll(
         taskFlow: StateFlow<ProcessableTask?>
     ): WaitResult = if (allPreconditions.isEmpty()) WaitResult.SUCCESS
-    else combine(allPreconditions.map { it.isValid(taskFlow) }) { array ->
+    else combine(
+        allPreconditions.map {
+            it.isValid(taskFlow).onStart { emit(PreconditionResult.Unmet) }
+        }
+    ) { array ->
         when {
             PreconditionResult.Failed in array -> WaitResult.FAILED
             PreconditionResult.Cancelled in array -> WaitResult.CANCELED

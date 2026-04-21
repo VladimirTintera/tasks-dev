@@ -127,34 +127,31 @@ internal interface TaskDao {
         id: Uuid,
         state: State,
         finishedAt: Instant,
-        outputData: ByteArray?,
+        outputData: ByteArray?
     )
 
     @Query("SELECT * FROM Task WHERE state IN (:states)")
     fun tasksByState(states: List<State>): Flow<List<TaskEntity>>
 
-    @Query("SELECT * FROM Task JOIN TaskTag ON TaskTag.taskId = Task.id WHERE Task.id = :id")
-    fun taskInfoById(id: Uuid): Flow<Map<TaskEntity, List<TaskTag>>>
+    @Query("SELECT Task.id, Task.identifier, Task.runAttemptCount, Task.state, Task.outputData, Task.processTime, Task.progressData, Task.finishedAt, Task.createdAt, Task.version, TaskTag.taskId, TaskTag.name FROM Task JOIN TaskTag ON TaskTag.taskId = Task.id WHERE Task.id = :id")
+    fun taskInfoById(id: Uuid): Flow<Map<InfoEntity, List<TaskTag>>>
 
-    @Query("SELECT * FROM Task LEFT JOIN TaskTag ON TaskTag.taskId = Task.id WHERE EXISTS(SELECT 1 FROM TaskTag tag WHERE tag.name = :name AND tag.taskId = Task.id)")
-    fun taskInfoByTag(name: String): Flow<Map<TaskEntity, List<TaskTag>>>
+    @Query("SELECT id, identifier, runAttemptCount, state, outputData, processTime, progressData, finishedAt, createdAt, version FROM Task WHERE id IN (:ids)")
+    fun taskInfoByIds(ids: Set<Uuid>): Flow<List<InfoEntity>>
+
+    @Query("SELECT Task.id, Task.identifier, Task.runAttemptCount, Task.state, Task.outputData, Task.processTime, Task.progressData, Task.finishedAt, Task.createdAt, Task.version, TaskTag.taskId, TaskTag.name FROM Task LEFT JOIN TaskTag ON TaskTag.taskId = Task.id WHERE EXISTS(SELECT 1 FROM TaskTag tag WHERE tag.name = :name AND tag.taskId = Task.id)")
+    fun taskInfoByTag(name: String): Flow<Map<InfoEntity, List<TaskTag>>>
 
     @Query(
-        "SELECT * FROM Task WHERE state IN (:states) AND EXISTS(SELECT * FROM TaskTag WHERE TaskTag.taskId = Task.id AND TaskTag.name = :tag)"
+        "SELECT id FROM Task WHERE state IN (:states) AND EXISTS(SELECT * FROM TaskTag WHERE TaskTag.taskId = Task.id AND TaskTag.name = :tag)"
     )
-    suspend fun tasksByTagAndState(states: List<State>, tag: String): List<TaskEntity>
+    suspend fun taskIdsByTagAndState(states: List<State>, tag: String): List<Uuid>
 
     @Query("SELECT * FROM Task WHERE id = :id")
-    fun task(id: Uuid): Flow<TaskEntity?>
+    suspend fun task(id: Uuid): TaskEntity?
 
-    @Query("SELECT * FROM Task WHERE id IN (:ids)")
-    fun tasks(ids: Set<Uuid>): Flow<List<TaskEntity>>
-
-    @Query("SELECT state FROM Task WHERE id = :id")
-    suspend fun taskState(id: Uuid): State?
-
-    @Query("SELECT t.* FROM Task t JOIN TaskParentTask p ON p.parentTaskId = t.id WHERE p.taskId = :id")
-    fun parentsFor(id: Uuid): Flow<List<TaskEntity>>
+    @Query("SELECT t.id, t.identifier, t.outputData, t.finishedAt, t.version FROM Task t JOIN TaskParentTask p ON p.parentTaskId = t.id WHERE p.taskId = :id")
+    suspend fun parentsDataFor(id: Uuid): List<ParentDataEntity>
 
     @Query("SELECT DISTINCT t.state FROM Task t JOIN TaskParentTask p ON p.parentTaskId = t.id WHERE p.taskId = :id")
     fun parentStatesForTask(id: Uuid): Flow<List<State>>
@@ -209,15 +206,16 @@ internal interface TaskDao {
     )
     -- 3. Hromadný Update: Zruš všechny tasky, jejichž ID jsme našli v rekurzi
     UPDATE Task 
-    SET state = :state 
+    SET state = :state, finishedAt = :finishedAt, processTime = NULL, progressData = NULL
     WHERE id IN Descendants 
     AND state IN (:allowedSourceStates)
 """
     )
-    suspend fun updateStateTaskAndAllDescendants(
+    suspend fun updateTerminatingStateWithAllDescendants(
         taskId: Uuid,
         state: State,
-        allowedSourceStates: List<State>
+        allowedSourceStates: List<State>,
+        finishedAt: Instant
     )
 
     @Query("UPDATE Task set version = :version, inputData = :input, outputData = :output, progressData = :progress WHERE id = :taskId")
@@ -232,7 +230,7 @@ internal interface TaskDao {
     @Query("SELECT id, state FROM Task WHERE state IN (:states)")
     fun dispatchableTasks(states: List<State>): Flow<List<DispatchableTaskEntity>>
 
-    @Query("SELECT state, initialDelay, runAttemptCount, networkRequired, requiresDeviceIdle, repeatInterval, backoffCriteria from Task where id = :id")
+    @Query("SELECT state, initialDelay, runAttemptCount, networkRequired, requiresDeviceIdle, repeatInterval, backoffCriteria, processTime from Task where id = :id")
     fun processableTask(id: Uuid): Flow<ProcessableTaskEntity?>
 
     @Query("SELECT identifier, runAttemptCount, version, inputData, outputData, progressData from Task where id = :id")

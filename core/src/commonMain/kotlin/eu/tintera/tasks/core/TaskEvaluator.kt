@@ -7,10 +7,8 @@ import eu.tintera.tasks.TaskResult
 import eu.tintera.tasks.core.data.ExecutableTask
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.migrations.TaskMigrator
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.plus
 import kotlin.coroutines.cancellation.CancellationException
-import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 interface TaskEvaluator {
@@ -40,7 +38,7 @@ class TaskEvaluatorImpl(
         val registration = taskRegistry.resolve<Any, Any, Any>(task.identifier) ?: return TaskResult.failure()
 
         val migrationResult = taskMigrator.migrate(
-            task = task,
+            data = task,
             registration = registration
         )?.also {
             repository.upgradeData(
@@ -62,15 +60,16 @@ class TaskEvaluatorImpl(
             registration.inputSerializer.decodeFromBytes(it)
         } ?: return TaskResult.failure()
 
-        val parents = repository.parentsFor(id).first().mapNotNull { parentEntity ->
+        val parents = repository.parentsDataFor(id).mapNotNull { parentEntity ->
             taskRegistry.resolve<Any, Any, Any>(parentEntity.identifier)?.let { parentRegistration ->
+                val migratedData = taskMigrator.migrate(data = parentEntity, registration = parentRegistration)
                 ParentData(
-                    id = parentEntity.id.toString(),
+                    id = parentEntity.id,
                     identifier = parentEntity.identifier,
                     data = parentEntity.outputData?.let {
-                        parentRegistration.outputSerializer.decodeFromBytes(it)
+                        migratedData?.output ?: parentRegistration.outputSerializer.decodeFromBytes(it)
                     },
-                    finishedAt = parentEntity.finishedAt ?: Instant.DISTANT_PAST
+                    finishedAt = parentEntity.finishedAt
                 )
             }
         }

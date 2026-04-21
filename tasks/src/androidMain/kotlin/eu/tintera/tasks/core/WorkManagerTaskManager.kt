@@ -1,20 +1,12 @@
 package eu.tintera.tasks.core
 
 import android.annotation.SuppressLint
-import androidx.work.Data
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkContinuation
-import androidx.work.WorkInfo
-import androidx.work.WorkManager
-import androidx.work.WorkRequest
-import androidx.work.await
+import androidx.work.*
 import eu.tintera.tasks.*
 import eu.tintera.tasks.BackoffPolicy
 import eu.tintera.tasks.Constraints
 import eu.tintera.tasks.core.data.ExecutableTask
+import eu.tintera.tasks.core.data.Info
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.core.migrations.TaskMigrator
@@ -39,7 +31,7 @@ internal class WorkManagerCoreTaskManager(
     private val taskMigrator: TaskMigrator
 ) : CoreTaskManager {
 
-    private fun <T: Any> TaskRequest<T>.oneTimeWorkRequest() =
+    private fun <T : Any> TaskRequest<T>.oneTimeWorkRequest() =
         OneTimeWorkRequestBuilder<TaskWorker>().apply {
             set(
                 identifier = identifier,
@@ -326,7 +318,7 @@ internal class WorkManagerCoreTaskManager(
                 if (ids.isEmpty()) {
                     flowOf(emptyList())
                 } else {
-                    repository.tasksByIds(ids)
+                    repository.taskInfoByIds(ids)
                 }
             }
 
@@ -338,7 +330,7 @@ internal class WorkManagerCoreTaskManager(
             workInfos.map { workInfo ->
                 val pair = taskMap[workInfo.id.toKotlinUuid()]
                 workInfo.toTaskInfo(
-                    task = pair?.first,
+                    info = pair?.first,
                     registration = pair?.second,
                 )
             }
@@ -350,10 +342,15 @@ internal class WorkManagerCoreTaskManager(
     override fun taskInfoById(
         id: Uuid
     ) = combine(
-        repository.taskById(id),
+        repository.taskInfoById(id),
         workManager.getWorkInfoByIdFlow(id.toJavaUuid())
     ) { task, workInfo ->
-        workInfo?.toTaskInfo(task?.task, task?.task?.identifier?.let { taskRegistry.resolve<Any, Any, Any>(it) })
+        workInfo?.toTaskInfo(
+            info = task,
+            registration = task?.identifier?.let {
+                taskRegistry.resolve(it)
+            }
+        )
     }
 
     override suspend fun cancelTaskById(id: Uuid) {
@@ -373,14 +370,14 @@ internal class WorkManagerCoreTaskManager(
     }
 
     private fun WorkInfo.toTaskInfo(
-        task: Task?,
+        info: Info?,
         registration: TaskRegistry.TaskRegistration<Any, Any, Any>?
     ): TaskInfo {
 
-        val migrationResult = task?.let { task ->
+        val migrationResult = info?.let { task ->
             registration?.let { registration ->
                 taskMigrator.migrate(
-                    task = ExecutableTask(
+                    data = ExecutableTask(
                         identifier = task.identifier,
                         runAttemptCount = task.runAttemptCount,
                         version = task.version,
@@ -407,20 +404,20 @@ internal class WorkManagerCoreTaskManager(
                 tag == TaskWorker::class.java.name
             }.toSet(),
             runAttemptCount = runAttemptCount,
-            outputData = task?.outputData?.let {
+            outputData = info?.outputData?.let {
                 migrationResult?.output ?: registration?.outputSerializer?.decodeFromBytesOrNull(it)
             },
             nextScheduledTime = Instant.fromEpochMilliseconds(nextScheduleTimeMillis).takeIf {
                 it < Instant.DISTANT_FUTURE
             },
-            progress = task?.progressData?.takeIf {
+            progress = info?.progressData?.takeIf {
                 state != WorkInfo.State.FAILED && state != WorkInfo.State.CANCELLED
             }?.let {
                 migrationResult?.progress ?: registration?.progressSerializer?.decodeFromBytesOrNull(it)
             },
-            finishedAt = task?.finishedAt,
-            createdAt = task?.createdAt ?: Instant.DISTANT_PAST,
-            identifier = task?.identifier ?: ""
+            finishedAt = info?.finishedAt,
+            createdAt = info?.createdAt ?: Instant.DISTANT_PAST,
+            identifier = info?.identifier ?: ""
         )
     }
 

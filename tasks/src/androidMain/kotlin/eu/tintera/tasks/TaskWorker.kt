@@ -12,14 +12,12 @@ import eu.tintera.tasks.core.ExecutionResult
 import eu.tintera.tasks.core.TaskEvaluator
 import eu.tintera.tasks.core.TaskResultProcessor
 import eu.tintera.tasks.core.data.ExecutableTask
-import eu.tintera.tasks.core.data.ProcessableTask
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.core.data.TaskProcessResult
 import eu.tintera.tasks.core.nonTerminalStates
 import eu.tintera.tasks.koin.TasksKoinComponent
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.flow.first
 import org.koin.core.component.inject
 import kotlin.time.Clock
 import kotlin.time.Duration
@@ -53,9 +51,15 @@ internal class TaskWorker(
 
         val taskId = id.toKotlinUuid()
 
-        var task = repository.task(taskId).first()
-
-        if (task == null) {
+        val task = repository.task(taskId)?.also {
+            repository.updateState(
+                id = taskId,
+                state = State.Running,
+                allowedSourceStates = nonTerminalStates.toSet(),
+                resetProcessTime = true,
+                runAttemptCount = runAttemptCount + 1
+            )
+        } ?: run {
             // ADOPCE STARÉHO ÚKOLU:
             // Vytáhneme všechna data z WorkManageru a zabalíme je do starého formátu (Verze 1)
 
@@ -66,13 +70,13 @@ internal class TaskWorker(
             }.toMap()
 
             workManagerConfiguration.compatTransformation(sourceData)?.let { byteArray ->
-                task = Task(
+                Task(
                     id = taskId,
                     identifier = taskIdentifier,
                     inputData = byteArray,
                     outputData = null,
                     progressData = null,
-                    version = 1, // DŮLEŽITÉ: Je to starý task, jde do verze 1
+                    version = 1, // IMPORTANT: Old task is always version 1
                     state = State.Running,
                     runAttemptCount = runAttemptCount + 1,
                     uniqueName = "",
@@ -85,20 +89,10 @@ internal class TaskWorker(
                     backoffCriteria = null,
                     retentionDelay = 24.hours,
                     requiresDeviceIdle = false
-                )
-
-                // Založíme ho u nás, aby o něm systém odteď věděl
-                repository.insert(task, emptySet(), emptySet())
+                ).also {
+                    repository.insert(it, emptySet(), emptySet())
+                }
             }
-        } else {
-            // Úkol už je náš, jen updatneme stav (pokud se např. jedná o Retry)
-            repository.updateState(
-                id = taskId,
-                state = State.Running,
-                allowedSourceStates = nonTerminalStates.toSet(),
-                resetProcessTime = true,
-                runAttemptCount = runAttemptCount + 1
-            )
         }
 
         if (task == null) return Result.failure()
@@ -145,16 +139,13 @@ internal class TaskWorker(
     }
 
     private fun ForegroundInfo.createForegroundInfo(): androidx.work.ForegroundInfo {
-
         createChannel(channelId, channelName)
-
-        val notification =
-            NotificationCompat.Builder(applicationContext, channelId)
-                .setContentTitle(notificationTitle)
-                .setTicker(notificationTitle)
-                .setOngoing(true)
-                .setSmallIcon(notificationIcon)
-                .build()
+        val notification = NotificationCompat.Builder(applicationContext, channelId)
+            .setContentTitle(notificationTitle)
+            .setTicker(notificationTitle)
+            .setOngoing(true)
+            .setSmallIcon(notificationIcon)
+            .build()
 
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
             androidx.work.ForegroundInfo(

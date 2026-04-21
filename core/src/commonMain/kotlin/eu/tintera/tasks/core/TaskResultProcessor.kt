@@ -4,17 +4,18 @@ import eu.tintera.tasks.BackoffCriteria
 import eu.tintera.tasks.State
 import eu.tintera.tasks.TaskResult
 import eu.tintera.tasks.core.data.Repository
+import eu.tintera.tasks.core.data.TaskProcessResult
 import kotlin.time.Clock
 
 interface TaskResultProcessor {
-    suspend fun handleResult(task: eu.tintera.tasks.core.data.TaskProcessResult)
+    suspend fun handleResult(task: TaskProcessResult)
 }
 
 class TaskResultProcessorImpl(
     private val repository: Repository
 ) : TaskResultProcessor {
 
-    override suspend fun handleResult(task: eu.tintera.tasks.core.data.TaskProcessResult) {
+    override suspend fun handleResult(task: TaskProcessResult) {
         val now = Clock.System.now()
         when (val result = task.executionResult) {
             is ExecutionResult.Finished -> {
@@ -87,7 +88,7 @@ class TaskResultProcessorImpl(
                 id = task.id,
                 state = State.Cancelled,
                 finishedAt = now,
-                outputData = null
+                outputData = null,
             )
         }
     }

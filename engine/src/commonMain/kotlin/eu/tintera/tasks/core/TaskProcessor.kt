@@ -43,33 +43,42 @@ internal class TaskProcessorImpl(
 
         EventBus.send(TAG, "running task $id")
 
-        val task = repository.processableTask(id).stateIn(this)
+        val taskFlowScope = CoroutineScope(coroutineContext + Job(coroutineContext.job))
 
-        if (task.value.isDisrupted()) return@coroutineScope
+        try {
 
-        val workflowJob = launch {
+            val task = repository.processableTask(id).stateIn(taskFlowScope)
 
-            val preconditionsValid = waitForPreconditions(
-                id = id,
-                task = task
-            )
+            if (task.value.isDisrupted()) return@coroutineScope
 
-            if (preconditionsValid) concurrencySemaphore.withPermit {
-                executeTask(
+            val workflowJob = launch {
+
+                val preconditionsValid = waitForPreconditions(
                     id = id,
-                    task = task,
-                    executableTask = repository.executableTask(id) ?: return@launch
+                    task = task
                 )
+
+                if (preconditionsValid) concurrencySemaphore.withPermit {
+                    executeTask(
+                        id = id,
+                        task = task,
+                        executableTask = repository.executableTask(id) ?: return@launch
+                    )
+                }
+
+                EventBus.send(TAG, "Task finished '$id'")
             }
-        }
 
-        val observeJob = launch {
-            task.first { it.isDisrupted() }
-            workflowJob.cancelAndJoin()
-        }
+            val observeJob = launch {
+                task.first { it.isDisrupted() }
+                workflowJob.cancelAndJoin()
+            }
 
-        workflowJob.join()
-        observeJob.cancel()
+            workflowJob.join()
+            observeJob.cancel()
+        } finally {
+            taskFlowScope.cancel()
+        }
     }
 
     private suspend fun waitForPreconditions(
@@ -88,36 +97,30 @@ internal class TaskProcessorImpl(
             }
 
             TaskPreconditionController.WaitResult.FAILED -> withContext(NonCancellable) {
-                task.value?.let {
-                    taskResultProcessor.handleResult(
-                        TaskProcessResult(
-                            id = id,
-                            executionResult = Finished(TaskResult.failure()),
-                            repeatInterval = it.repeatInterval,
-                            backoffCriteria = it.backoffCriteria,
-                            retryCount = it.runAttemptCount
-                        )
-                    )
+                task.value?.also {
+                    taskResultProcessor.handleResult(it.toTaskProcessResult(Finished(TaskResult.failure())))
                 }
                 false
             }
 
             TaskPreconditionController.WaitResult.CANCELED -> withContext(NonCancellable) {
-                task.value?.let {
-                    taskResultProcessor.handleResult(
-                        TaskProcessResult(
-                            id = id,
-                            executionResult = Canceled,
-                            repeatInterval = it.repeatInterval,
-                            backoffCriteria = it.backoffCriteria,
-                            retryCount = it.runAttemptCount
-                        )
-                    )
+                task.value?.also {
+                    taskResultProcessor.handleResult(it.toTaskProcessResult(Canceled))
                 }
                 false
             }
         }
     }
+
+    private fun ProcessableTask.toTaskProcessResult(
+        result: ExecutionResult
+    ) = TaskProcessResult(
+        id = id,
+        executionResult = result,
+        repeatInterval = repeatInterval,
+        backoffCriteria = backoffCriteria,
+        retryCount = runAttemptCount
+    )
 
     private suspend fun executeTask(
         id: Uuid,
@@ -125,11 +128,13 @@ internal class TaskProcessorImpl(
         executableTask: ExecutableTask
     ) = executionContextProvider {
 
+        val retryCount = executableTask.runAttemptCount
+
         updateState(
             id = id,
             state = State.Running,
             resetProcessTime = true,
-            runAttemptCount = executableTask.runAttemptCount + 1
+            runAttemptCount = retryCount + 1
         )
 
         val taskResult = try {
@@ -173,7 +178,7 @@ internal class TaskProcessorImpl(
                         executionResult = taskResult,
                         repeatInterval = it.repeatInterval,
                         backoffCriteria = it.backoffCriteria,
-                        retryCount = it.runAttemptCount
+                        retryCount = retryCount
                     )
                 )
             }

@@ -212,13 +212,13 @@ class RepositoryCoreTaskManager(
     override fun taskInfosByTag(
         tag: String,
     ): Flow<List<TaskInfo>> = repository.taskInfosByTag(tag).distinctUntilChanged().map { map ->
-        map.map { fullTask ->
-            val registration = findRegistrationOrNull<Any, Any, Any>(fullTask.task.identifier)
-            fullTask.toTaskInfo(
+        map.map { info ->
+            val registration = findRegistrationOrNull<Any, Any, Any>(info.identifier)
+            info.toTaskInfo(
                 registration = registration,
                 migrationResult = registration?.let {
                     taskMigrator.migrate(
-                        task = fullTask.task,
+                        data = info,
                         registration = registration
                     )
                 }
@@ -228,14 +228,14 @@ class RepositoryCoreTaskManager(
 
     override fun taskInfoById(
         id: Uuid,
-    ): Flow<TaskInfo?> = repository.taskById(id).distinctUntilChanged().map { task ->
-        task?.let {
-            val registration = findRegistrationOrNull<Any, Any, Any>(task.task.identifier)
-            task.toTaskInfo(
+    ): Flow<TaskInfo?> = repository.taskInfoById(id).distinctUntilChanged().map { info ->
+        info?.let {
+            val registration = findRegistrationOrNull<Any, Any, Any>(info.identifier)
+            info.toTaskInfo(
                 registration = registration,
                 migrationResult = registration?.let {
                     taskMigrator.migrate(
-                        task = task.task,
+                        data = info,
                         registration = registration
                     )
                 }
@@ -251,21 +251,22 @@ class RepositoryCoreTaskManager(
         tag: String
     ) = repository.withTransaction {
 
-        val tasks = tasksByTagAndState(
+        val tasks = taskIdsByTagAndState(
             tag = tag,
             states = listOf(State.Running, State.Blocked, State.Enqueued)
         )
 
         tasks.forEach {
-            cancelTask(it.id)
+            cancelTask(it)
         }
     }
 
     private suspend fun Repository.cancelTask(taskId: Uuid) {
-        updateStateWithDescendants(
+        updateTerminatingStateWithDescendants(
             id = taskId,
             state = State.Cancelled,
-            allowedSourceStates = State.Cancelled.allowedSourceStatesForChangeTo().toSet()
+            allowedSourceStates = State.Cancelled.allowedSourceStatesForChangeTo().toSet(),
+            finishedAt = Clock.System.now()
         )
     }
 }
