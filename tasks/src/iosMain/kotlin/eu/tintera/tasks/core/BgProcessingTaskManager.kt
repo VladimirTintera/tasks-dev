@@ -2,10 +2,9 @@ package eu.tintera.tasks.core
 
 import eu.tintera.tasks.core.data.ProcessableTask
 import eu.tintera.tasks.core.data.Repository
-import eu.tintera.tasks.core.data.Task
+import eu.tintera.tasks.core.data.SchedulableTask
 import eu.tintera.tasks.core.preconditions.PreconditionResult
 import eu.tintera.tasks.core.preconditions.TaskPrecondition
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import platform.BackgroundTasks.BGProcessingTaskRequest
 
@@ -25,13 +24,13 @@ internal class BgProcessingTaskManager(
     tag = "BgProcessingTaskManager"
 ), TaskPrecondition {
 
-    override fun List<Task>.filter(): List<Task> = if (!isAppRefreshTaskAllowed) this else filter {
+    override fun List<SchedulableTask>.filter() = if (!isAppRefreshTaskAllowed) this else filter {
         it.requiresDeviceIdle
     }
 
     override fun createRequest() = BGProcessingTaskRequest(taskIdentifier).apply {
         requiresExternalPower = false
-        requiresNetworkConnectivity = true
+        requiresNetworkConnectivity = lastKnownTasks.any { it.networkRequired }
     }
 
     override fun hasConstraint(task: ProcessableTask) = task.requiresDeviceIdle

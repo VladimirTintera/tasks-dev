@@ -130,8 +130,8 @@ internal interface TaskDao {
         outputData: ByteArray?
     )
 
-    @Query("SELECT * FROM Task WHERE state IN (:states)")
-    fun tasksByState(states: List<State>): Flow<List<TaskEntity>>
+    @Query("SELECT id, processTime, requiresDeviceIdle, networkRequired FROM Task WHERE state IN (:states)")
+    fun schedulableTasks(states: List<State>): List<SchedulableTaskEntity>
 
     @Query("SELECT Task.id, Task.identifier, Task.runAttemptCount, Task.state, Task.outputData, Task.processTime, Task.progressData, Task.finishedAt, Task.createdAt, Task.version, TaskTag.taskId, TaskTag.name FROM Task JOIN TaskTag ON TaskTag.taskId = Task.id WHERE Task.id = :id")
     fun taskInfoById(id: Uuid): Flow<Map<InfoEntity, List<TaskTag>>>

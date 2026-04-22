@@ -8,14 +8,11 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import eu.tintera.tasks.core.ExecutionResult
-import eu.tintera.tasks.core.TaskEvaluator
-import eu.tintera.tasks.core.TaskResultProcessor
+import eu.tintera.tasks.core.*
 import eu.tintera.tasks.core.data.ExecutableTask
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.core.data.TaskProcessResult
-import eu.tintera.tasks.core.nonTerminalStates
 import eu.tintera.tasks.koin.TasksKoinComponent
 import kotlinx.coroutines.CancellationException
 import org.koin.core.component.inject
@@ -38,6 +35,7 @@ internal class TaskWorker(
     private val taskResultProcessor: TaskResultProcessor by inject()
 
     private val workManagerConfiguration: WorkManagerConfiguration by inject()
+    private val taskLifecycleObserver: CompositeTaskLifecycleObserver by inject()
 
     override suspend fun doWork(): Result {
 
@@ -97,33 +95,43 @@ internal class TaskWorker(
 
         if (task == null) return Result.failure()
 
-        val result = taskEvaluator.handle(
-            id = taskId,
-            task = ExecutableTask(
-                identifier = task.identifier,
-                runAttemptCount = task.runAttemptCount,
-                version = task.version,
-                inputData = task.inputData,
-                outputData = task.outputData,
-                progressData = task.progressData
-            ),
-            onForegroundInfo = ::internalSetForegroundInfo
-        )
+        taskLifecycleObserver.onStarted(taskId)
 
-        taskResultProcessor.handleResult(
-            TaskProcessResult(
+        return try {
+            val result = taskEvaluator.handle(
                 id = taskId,
-                executionResult = ExecutionResult.Finished(result),
-                repeatInterval = task.repeatInterval,
-                backoffCriteria = task.backoffCriteria,
-                retryCount = task.runAttemptCount
+                task = ExecutableTask(
+                    identifier = task.identifier,
+                    runAttemptCount = task.runAttemptCount,
+                    version = task.version,
+                    inputData = task.inputData,
+                    outputData = task.outputData,
+                    progressData = task.progressData
+                ),
+                onForegroundInfo = ::internalSetForegroundInfo
             )
-        )
 
-        return when (result) {
-            TaskResult.Failure -> Result.failure()
-            TaskResult.Retry -> Result.retry()
-            is TaskResult.Success -> Result.success()
+            taskResultProcessor.handleResult(
+                TaskProcessResult(
+                    id = taskId,
+                    executionResult = ExecutionResult.EvaluatorResult(result),
+                    repeatInterval = task.repeatInterval,
+                    backoffCriteria = task.backoffCriteria,
+                    retryCount = task.runAttemptCount
+                )
+            )
+
+            when (result) {
+                TaskEvaluatorResult.Failure -> Result.failure()
+                TaskEvaluatorResult.Retry -> Result.retry()
+                is TaskEvaluatorResult.Success -> Result.success()
+            }
+        } catch (e: CancellationException) {
+            taskLifecycleObserver.onCanceled(taskId)
+            throw e
+        } catch (e: Throwable) {
+            taskLifecycleObserver.onCompleted(taskId, TaskResult.failure())
+            throw e
         }
     }
 

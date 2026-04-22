@@ -4,9 +4,6 @@ import eu.tintera.guard.ExecutionContextProvider
 import eu.tintera.guard.invoke
 import eu.tintera.tasks.EventBus
 import eu.tintera.tasks.State
-import eu.tintera.tasks.TaskResult
-import eu.tintera.tasks.core.ExecutionResult.Canceled
-import eu.tintera.tasks.core.ExecutionResult.Finished
 import eu.tintera.tasks.core.data.ExecutableTask
 import eu.tintera.tasks.core.data.ProcessableTask
 import eu.tintera.tasks.core.data.Repository
@@ -32,7 +29,8 @@ internal class TaskProcessorImpl(
     private val executionContextProvider: ExecutionContextProvider,
     config: TaskProcessorConfig = TaskProcessorConfig(),
     private val preconditionController: TaskPreconditionController,
-    private val taskResultProcessor: TaskResultProcessor
+    private val taskResultProcessor: TaskResultProcessor,
+    private val taskLifecycleObserver: CompositeTaskLifecycleObserver
 ) : TaskProcessor {
 
     private val concurrencySemaphore = Semaphore(config.maxConcurrentTasks)
@@ -53,6 +51,7 @@ internal class TaskProcessorImpl(
 
             val workflowJob = launch {
 
+                taskLifecycleObserver.onWaitingForPreconditions(id)
                 val preconditionsValid = waitForPreconditions(
                     id = id,
                     task = task
@@ -93,19 +92,28 @@ internal class TaskProcessorImpl(
                     resetProcessTime = true,
                     runAttemptCount = null
                 )
+                taskLifecycleObserver.onPreconditionsSucceeded(id)
                 true
             }
 
             TaskPreconditionController.WaitResult.FAILED -> withContext(NonCancellable) {
+                taskLifecycleObserver.onPreconditionsFailed(id)
                 task.value?.also {
-                    taskResultProcessor.handleResult(it.toTaskProcessResult(Finished(TaskResult.failure())))
+                    taskResultProcessor.handleResult(
+                        it.toTaskProcessResult(
+                            ExecutionResult.EvaluatorResult(
+                                TaskEvaluatorResult.Failure
+                            )
+                        )
+                    )
                 }
                 false
             }
 
             TaskPreconditionController.WaitResult.CANCELED -> withContext(NonCancellable) {
+                taskLifecycleObserver.onCanceled(id)
                 task.value?.also {
-                    taskResultProcessor.handleResult(it.toTaskProcessResult(Canceled))
+                    taskResultProcessor.handleResult(it.toTaskProcessResult(ExecutionResult.Canceled))
                 }
                 false
             }
@@ -128,6 +136,8 @@ internal class TaskProcessorImpl(
         executableTask: ExecutableTask
     ) = executionContextProvider {
 
+        taskLifecycleObserver.onStarted(id)
+
         val retryCount = executableTask.runAttemptCount
 
         updateState(
@@ -137,7 +147,7 @@ internal class TaskProcessorImpl(
             runAttemptCount = retryCount + 1
         )
 
-        val taskResult = try {
+        val evaluatorResult: ExecutionResult = try {
             coroutineScope {
 
                 val capabilityWatcher = launch {
@@ -152,30 +162,32 @@ internal class TaskProcessorImpl(
                 )
 
                 capabilityWatcher.cancel()
-                Finished(result)
+                ExecutionResult.EvaluatorResult(result)
             }
         } catch (e: PreconditionLostException) {
             EventBus.send(
                 TAG,
                 "Task interrupted '${executableTask.identifier}' due to lost capability. Enqueueing back."
             )
+            taskLifecycleObserver.onCanceled(id, "Precondition lost")
             ExecutionResult.Yielded
         } catch (e: CancellationException) {
             // when canceled, do nothing. Invalid Running states are handled by sweep mechanism
             // Let it crash
+            taskLifecycleObserver.onCanceled(id, "Context cancelled")
             throw e
         } catch (e: Throwable) {
             EventBus.send(TAG, "Task failed '${executableTask.identifier}'")
-            Finished(TaskResult.failure())
+            ExecutionResult.EvaluatorResult(TaskEvaluatorResult.Failure)
         }
 
         task.value?.let {
             withContext(NonCancellable) {
-                EventBus.send(TAG, "Task finished '${executableTask.identifier}', result = $taskResult")
+                EventBus.send(TAG, "Task finished '${executableTask.identifier}', result = $evaluatorResult")
                 taskResultProcessor.handleResult(
                     TaskProcessResult(
                         id = id,
-                        executionResult = taskResult,
+                        executionResult = evaluatorResult,
                         repeatInterval = it.repeatInterval,
                         backoffCriteria = it.backoffCriteria,
                         retryCount = retryCount

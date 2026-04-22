@@ -26,4 +26,7 @@ fun coreModule(
     factoryOf(::TaskMigrator)
     factoryOf(::TaskScopeFactory)
     single { databaseCleanupPolicy }
+    factory {
+        CompositeTaskLifecycleObserver(getAll())
+    }
 }

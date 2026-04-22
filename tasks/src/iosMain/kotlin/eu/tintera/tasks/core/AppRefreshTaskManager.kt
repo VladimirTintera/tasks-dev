@@ -1,6 +1,7 @@
 package eu.tintera.tasks.core
 
 import eu.tintera.tasks.core.data.Repository
+import eu.tintera.tasks.core.data.SchedulableTask
 import eu.tintera.tasks.core.data.Task
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -20,7 +21,7 @@ internal class AppRefreshTaskManager(
     appLifecycleObserver = appLifecycleObserver,
     tag = "AppRefreshTaskManager"
 ) {
-    override fun List<Task>.filter(): List<Task> = filterNot {
+    override fun List<SchedulableTask>.filter(): List<SchedulableTask> = filterNot {
         it.requiresDeviceIdle
     }
 

@@ -1,12 +1,13 @@
 package eu.tintera.tasks
 
-import eu.tintera.tasks.koin.startTasksKoin
-
 object TasksInitializer {
     fun initialize(
-        config: IosTasksManagerConfiguration = IosTasksManagerConfiguration()
+        config: IosTasksManagerConfiguration = IosTasksManagerConfiguration(),
+        taskLifecycleObservers: List<TaskLifecycleObserver> = emptyList()
     ) {
-        startTasksKoin {
+        TaskManagerBootstrapper.initialize(
+            taskLifecycleObservers = taskLifecycleObservers
+        ) {
             modules(
                 iosModule(config),
             )

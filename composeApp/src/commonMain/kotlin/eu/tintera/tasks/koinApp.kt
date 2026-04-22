@@ -12,8 +12,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.koin.core.context.startKoin
+import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.KoinAppDeclaration
+import org.koin.dsl.bind
 import org.koin.dsl.module
 
 fun koinApp(
@@ -23,6 +25,12 @@ fun koinApp(
     modules(
         tasksKoinModule(),
         module {
+            single {
+                TaskManager.getInstance()
+            }
+
+            factoryOf(::TasksObserver) bind TaskLifecycleObserver::class
+
             taskHandlerOf(
                 ::TestHandler,
                 currentVersion = 2,

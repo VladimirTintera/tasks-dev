@@ -3,18 +3,22 @@ package eu.tintera.tasks
 import android.app.Application
 import org.koin.android.ext.koin.androidContext
 
-class MainApplication : Application(), TaskManagerConfigProvider {
+class MainApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        koinApp {
+        val app = koinApp {
             androidContext(this@MainApplication)
         }
-    }
 
-    override val tasksManagerConfig: AndroidTasksConfiguration = AndroidTasksConfiguration(
-        compatTransformation = {
-            it.toByteArray()
-        }
-    )
+        TaskManagerInitializer.initialize(
+            context = this,
+            config = AndroidTasksConfiguration(
+                compatTransformation = {
+                    it.toByteArray()
+                }
+            ),
+            taskLifecycleObservers = app.koin.getAll()
+        )
+    }
 }

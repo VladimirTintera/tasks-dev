@@ -42,7 +42,7 @@ interface Repository {
 
     fun taskInfoByIds(ids: Set<Uuid>): Flow<List<Info>>
 
-    fun tasksByState(states: List<State>): Flow<List<Task>>
+    suspend fun schedulableTasks(states: List<State>): List<SchedulableTask>
 
     suspend fun childrenForTask(id: Uuid): List<Uuid>
 

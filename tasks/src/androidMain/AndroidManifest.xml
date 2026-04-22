@@ -10,7 +10,7 @@
             android:exported="false"
             tools:node="merge">
             <!-- This entry makes ExampleLoggerInitializer discoverable. -->
-            <meta-data android:name="eu.tintera.tasks.TasksInitializer"
+            <meta-data android:name="eu.tintera.tasks.TaskManagerStartupInitializer"
                 android:value="androidx.startup" />
         </provider>
 

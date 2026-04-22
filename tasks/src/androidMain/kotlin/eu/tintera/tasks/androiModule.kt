@@ -42,11 +42,11 @@ internal fun androidModule(
         WorkManagerConfiguration(compatTransformation = config.compatTransformation)
     }
 
-    single<SQLiteDriver> { AndroidSQLiteDriver() }
+    single<SQLiteDriver> { config.sqLiteDriver ?: AndroidSQLiteDriver() }
 
     single<DatabaseConfiguration> {
         object : DatabaseConfiguration {
-            override val databaseName: String = ""
+            override val databaseName: String = config.databaseName
         }
     }
 }

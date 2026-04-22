@@ -11,12 +11,25 @@ import kotlinx.coroutines.plus
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.uuid.Uuid
 
+sealed interface TaskEvaluatorResult<out Output> {
+    class Success<Output>(val outputData: Output, val bytes: ByteArray) : TaskEvaluatorResult<Output>
+    data object Failure : TaskEvaluatorResult<Nothing>
+    data object Retry : TaskEvaluatorResult<Nothing>
+
+    fun toTaskResult(): TaskResult<Output> = when (this) {
+        is Success -> TaskResult.success(outputData)
+        Failure -> TaskResult.failure()
+        Retry -> TaskResult.retry()
+    }
+}
+
+
 interface TaskEvaluator {
     suspend fun handle(
         id: Uuid,
         task: ExecutableTask,
         onForegroundInfo: suspend (ForegroundInfo) -> Boolean
-    ): TaskResult<ByteArray>
+    ): TaskEvaluatorResult<Any>
 }
 
 @Suppress("UNCHECKED_CAST")
@@ -33,9 +46,9 @@ class TaskEvaluatorImpl(
         id: Uuid,
         task: ExecutableTask,
         onForegroundInfo: suspend (ForegroundInfo) -> Boolean
-    ): TaskResult<ByteArray> {
+    ): TaskEvaluatorResult<Any> {
 
-        val registration = taskRegistry.resolve<Any, Any, Any>(task.identifier) ?: return TaskResult.failure()
+        val registration = taskRegistry.resolve<Any, Any, Any>(task.identifier) ?: return TaskEvaluatorResult.Failure
 
         val migrationResult = taskMigrator.migrate(
             data = task,
@@ -58,7 +71,7 @@ class TaskEvaluatorImpl(
 
         val typedInput = migrationResult?.input ?: task.inputData?.let {
             registration.inputSerializer.decodeFromBytes(it)
-        } ?: return TaskResult.failure()
+        } ?: return TaskResult.Failure.toResult(registration)
 
         val parents = repository.parentsDataFor(id).mapNotNull { parentEntity ->
             taskRegistry.resolve<Any, Any, Any>(parentEntity.identifier)?.let { parentRegistration ->
@@ -84,7 +97,7 @@ class TaskEvaluatorImpl(
             scope = applicationScope + dispatchers.default
         )
 
-        val typedResult = try {
+        return try {
             with(registration.factory()) {
                 scope.run()
             }
@@ -93,20 +106,21 @@ class TaskEvaluatorImpl(
         } catch (e: Exception) {
             e.printStackTrace()
             EventBus.send(TAG, "Task execution failed with error '${e.message}'")
-            return TaskResult.Failure
-        }
+            TaskResult.Failure
+        } finally {
+            scope.flushProgressAndClose()
+        }.toResult(registration)
+    }
 
-        scope.flushProgressAndClose()
-
-        return when (typedResult) {
-            is TaskResult.Success -> {
-                val rawOutput = registration.outputSerializer.encodeToBytes(typedResult.outputData)
-                TaskResult.Success(rawOutput)
-            }
-
-            TaskResult.Failure -> TaskResult.Failure
-            TaskResult.Retry -> TaskResult.Retry
-        }
+    private fun TaskResult<Any>.toResult(
+        registration: TaskRegistry.TaskRegistration<Any, Any, Any>
+    ) = when (this) {
+        TaskResult.Failure -> TaskEvaluatorResult.Failure
+        TaskResult.Retry -> TaskEvaluatorResult.Retry
+        is TaskResult.Success -> TaskEvaluatorResult.Success(
+            outputData = outputData,
+            bytes = registration.outputSerializer.encodeToBytes(outputData)
+        )
     }
 
 

@@ -130,7 +130,7 @@ class FakeRepository : Repository {
         TODO("Not yet implemented")
     }
 
-    override fun tasksByState(states: List<State>): Flow<List<Task>> {
+    override fun schedulableTasks(states: List<State>): Flow<List<Task>> {
         return tasks.map {
             it.filter { it.state in states }
         }

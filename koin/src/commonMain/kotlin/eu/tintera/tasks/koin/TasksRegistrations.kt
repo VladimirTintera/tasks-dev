@@ -2,8 +2,15 @@ package eu.tintera.tasks.koin
 
 import eu.tintera.tasks.TaskHandler
 import eu.tintera.tasks.TaskManager
+import eu.tintera.tasks.TaskManagerBootstrapper
 import eu.tintera.tasks.migrations.Migration
 import eu.tintera.tasks.serialization.TaskDataSerializer
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import org.koin.core.Koin
 import org.koin.core.definition.Definition
 import org.koin.core.module.Module
@@ -12,11 +19,14 @@ import org.koin.core.qualifier.Qualifier
 
 internal class TasksRegistrations(
     koin: Koin,
-    taskManager: TaskManager,
     registrations: List<TaskHandlerRegistration<*, *, *, *>>
 ) {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     init {
-        registrations.forEach { register(taskManager, koin, it) }
+        scope.launch {
+            val taskManager = TaskManagerBootstrapper.taskManager.filterNotNull().first()
+            registrations.forEach { register(taskManager, koin, it) }
+        }
     }
 
     private fun <I : Any, O : Any, P : Any, T : TaskHandler<I, O, P>> register(
