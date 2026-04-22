@@ -1,13 +1,7 @@
 package eu.tintera.tasks.core
 
 import eu.tintera.guard.ExecutionContextObserver
-import eu.tintera.tasks.core.cleanup.DatabaseCleanupPolicy
-import eu.tintera.tasks.core.preconditions.InitialDelayTaskPrecondition
-import eu.tintera.tasks.core.preconditions.NetworkStateTaskPrecondition
-import eu.tintera.tasks.core.preconditions.ParentsTaskPrecondition
-import eu.tintera.tasks.core.preconditions.ProcessTimePrecondition
-import eu.tintera.tasks.core.preconditions.TaskPrecondition
-import eu.tintera.tasks.core.preconditions.TaskPreconditionController
+import eu.tintera.tasks.core.preconditions.*
 import org.koin.core.module.dsl.createdAtStart
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
@@ -15,11 +9,10 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 
 fun engineModule(
-    databaseCleanupPolicy: DatabaseCleanupPolicy
 ) = module {
 
     includes(
-        coreModule(databaseCleanupPolicy)
+        coreModule()
     )
 
     factoryOf(::TaskProcessorImpl) bind TaskProcessor::class

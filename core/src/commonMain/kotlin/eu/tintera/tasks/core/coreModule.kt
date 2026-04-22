@@ -1,7 +1,6 @@
 package eu.tintera.tasks.core
 
 import eu.tintera.tasks.core.cleanup.DatabaseCleaner
-import eu.tintera.tasks.core.cleanup.DatabaseCleanupPolicy
 import eu.tintera.tasks.core.cleanup.DatabaseCleanupTaskHandler
 import eu.tintera.tasks.core.migrations.TaskMigrator
 import kotlinx.coroutines.SupervisorJob
@@ -11,9 +10,7 @@ import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.bind
 import org.koin.dsl.module
 
-fun coreModule(
-    databaseCleanupPolicy: DatabaseCleanupPolicy
-) = module {
+fun coreModule() = module {
     singleOf<AppDispatchers>(::RealDispatchers)
     single { ApplicationScope(SupervisorJob()) }
     factoryOf(::TaskResultProcessorImpl) bind TaskResultProcessor::class
@@ -25,7 +22,6 @@ fun coreModule(
     factoryOf(::DatabaseCleanupTaskHandler)
     factoryOf(::TaskMigrator)
     factoryOf(::TaskScopeFactory)
-    single { databaseCleanupPolicy }
     factory {
         CompositeTaskLifecycleObserver(getAll())
     }

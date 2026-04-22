@@ -388,14 +388,7 @@ internal class WorkManagerCoreTaskManager(
 
         return TaskInfo(
             id = id.toKotlinUuid(),
-            state = when (state) {
-                WorkInfo.State.BLOCKED -> State.Blocked
-                WorkInfo.State.ENQUEUED -> State.Enqueued
-                WorkInfo.State.RUNNING -> State.Running
-                WorkInfo.State.SUCCEEDED -> State.Succeeded
-                WorkInfo.State.CANCELLED -> State.Cancelled
-                WorkInfo.State.FAILED -> State.Failed
-            },
+            state = state.toState(),
             tags = tags.filterNot { tag ->
                 tag == TaskWorker::class.java.name
             }.toSet(),

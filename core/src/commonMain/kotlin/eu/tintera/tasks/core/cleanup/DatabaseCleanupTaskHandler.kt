@@ -7,11 +7,11 @@ import eu.tintera.tasks.core.terminalStates
 
 internal class DatabaseCleanupTaskHandler(
     private val repository: Repository,
-    private val cleanupPolicy: DatabaseCleanupPolicy
+    private val cleanupService: DatabaseCleanupService
 ) : SimpleTaskHandler {
 
     override suspend fun run(): TaskResult<Unit> {
-        // TODO: odstranit nevalidne zaplanovane requesty z workmanagera state == Enqueued AND runAttemptCount == 0 AND (now > createdAt + initialDelay + 30.days)
+        cleanupService.cleanup()
         repository.cleanOld(
             terminalStates = terminalStates
         )

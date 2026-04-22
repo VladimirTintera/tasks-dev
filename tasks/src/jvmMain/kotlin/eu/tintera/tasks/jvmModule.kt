@@ -3,11 +3,10 @@ package eu.tintera.tasks
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import eu.tintera.guard.ExecutionEnvironmentConfig
-import eu.tintera.guard.ExecutionContextProvider
 import eu.tintera.guard.PlatformContext
 import eu.tintera.guard.TokenProvider
 import eu.tintera.tasks.core.*
-import eu.tintera.tasks.core.cleanup.DatabaseCleanupPolicy
+import eu.tintera.tasks.core.cleanup.DatabaseCleanupService
 import eu.tintera.tasks.core.guard.guardInit
 import eu.tintera.tasks.db.DatabaseConfiguration
 import eu.tintera.tasks.db.JvmDatabaseConfiguration
@@ -22,7 +21,9 @@ internal fun jvmModule(
     config: JvmTasksManagerConfiguration
 ): Module = module {
 
-    includes(engineModule(DatabaseCleanupPolicy.DISABLED_GHOST_TASKS_POLICY))
+    single {
+        DatabaseCleanupService {}
+    } bind DatabaseCleanupService::class
 
     factoryOf(::RepositoryCoreTaskManager) bind CoreTaskManager::class
 

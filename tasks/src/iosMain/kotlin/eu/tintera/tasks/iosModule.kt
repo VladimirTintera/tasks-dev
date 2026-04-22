@@ -2,14 +2,15 @@ package eu.tintera.tasks
 
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import eu.tintera.guard.*
+import eu.tintera.guard.ExecutionContextObserver
+import eu.tintera.guard.ExecutionEnvironmentConfig
+import eu.tintera.guard.PlatformContext
+import eu.tintera.guard.TokenProducer
 import eu.tintera.tasks.core.*
-import eu.tintera.tasks.core.cleanup.DatabaseCleanupPolicy
+import eu.tintera.tasks.core.cleanup.DatabaseCleanupService
 import eu.tintera.tasks.core.guard.guardInit
 import eu.tintera.tasks.core.preconditions.TaskPrecondition
 import eu.tintera.tasks.db.DatabaseConfiguration
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.plus
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.createdAtStart
 import org.koin.core.module.dsl.factoryOf
@@ -23,7 +24,7 @@ internal fun iosModule(
 ): Module = module {
 
     includes(
-        engineModule(DatabaseCleanupPolicy.DISABLED_GHOST_TASKS_POLICY)
+        engineModule()
     )
 
     single {
@@ -39,6 +40,10 @@ internal fun iosModule(
             releaseDebounce = config.executionContextReleaseDebounce
         )
     )
+
+    single {
+        DatabaseCleanupService {}
+    } bind DatabaseCleanupService::class
 
     single<SQLiteDriver> { config.sqLiteDriver ?: BundledSQLiteDriver() }
 
@@ -100,6 +105,7 @@ class DebugObserver : ExecutionContextObserver {
     override fun onStarted() {
         EventBus.send(TAG, "onStarted")
     }
+
     companion object {
         private const val TAG = "DebugObserver"
     }
