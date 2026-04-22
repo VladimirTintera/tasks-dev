@@ -11,9 +11,9 @@ class MainApplication : Application() {
             androidContext(this@MainApplication)
         }
 
-        TaskManagerInitializer.initialize(
-            context = this,
+        TasksInitializer.initialize(
             config = AndroidTasksConfiguration(
+                context = this,
                 compatTransformation = {
                     it.toByteArray()
                 }

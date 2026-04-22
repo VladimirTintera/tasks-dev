@@ -186,8 +186,6 @@ internal class WorkManagerCoreTaskManager(
             )
         }
 
-        // Propojíme ve WorkManageru a rekurzivně zavoláme další krok,
-        // kam už posíláme aktuální IDčka jako nové rodiče.
         return then(nextRequests.map { it.second })
             .appendAndSave(taskContinuation.next, parentIds = currentLevelIds)
     }
@@ -255,7 +253,6 @@ internal class WorkManagerCoreTaskManager(
                 request
             ).await()
 
-            // Pro Replace, Append, nebo když Keep nic neblokoval, vracíme ID nového requestu
             id
         }
     }
@@ -310,7 +307,6 @@ internal class WorkManagerCoreTaskManager(
                 initialValue = emptyList()
             )
 
-        // 2. Pomalý stream (reaguje jen na změnu ID)
         val dbTasksFlow = sharedWorkInfosFlow
             .map { list -> list.map { it.id.toKotlinUuid() }.toSet() }
             .distinctUntilChanged()

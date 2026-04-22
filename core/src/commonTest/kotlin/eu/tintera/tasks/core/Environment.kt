@@ -1,6 +1,6 @@
 package eu.tintera.tasks.core
 
-import eu.tintera.guard.ExecutionContextConfig
+import eu.tintera.guard.ExecutionEnvironmentConfig
 import eu.tintera.guard.SharedExecutionContextProvider
 import eu.tintera.guard.TokenProvider
 import kotlinx.coroutines.SupervisorJob
@@ -25,6 +25,6 @@ fun TestScope.executionContextProvider(
         tokenProvider = tokenProvider,
         scope = ApplicationScope(SupervisorJob()),
         dispatcher = it.default,
-        config = ExecutionContextConfig(releaseDebounce)
+        config = ExecutionEnvironmentConfig(releaseDebounce)
     )
 }

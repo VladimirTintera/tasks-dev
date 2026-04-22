@@ -1,14 +1,5 @@
 package eu.tintera.tasks
 
-import eu.tintera.tasks.koin.startTasksKoin
-
-object TasksInitializer {
-
-    fun initialize(
-        config: JvmTasksManagerConfiguration
-    ) {
-        startTasksKoin {
-            modules(jvmModule(config))
-        }
-    }
+object TasksInitializer : TasksInitializerBase<JvmTasksManagerConfiguration>() {
+    override fun module(config: JvmTasksManagerConfiguration) = jvmModule(config)
 }

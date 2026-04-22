@@ -4,7 +4,7 @@ import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.work.WorkManager
 import eu.tintera.tasks.core.WorkManagerCoreTaskManager
-import eu.tintera.guard.ExecutionContextConfig
+import eu.tintera.guard.ExecutionEnvironmentConfig
 import eu.tintera.tasks.core.CoreTaskManager
 import eu.tintera.tasks.core.cleanup.DatabaseCleanupPolicy
 import eu.tintera.tasks.core.coreModule
@@ -33,7 +33,7 @@ internal fun androidModule(
     factoryOf(::WorkManagerCoreTaskManager) bind CoreTaskManager::class
 
     single {
-        ExecutionContextConfig(
+        ExecutionEnvironmentConfig(
             releaseDebounce = config.executionContextReleaseDebounce
         )
     }

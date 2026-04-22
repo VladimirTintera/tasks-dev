@@ -103,7 +103,6 @@ fun App() {
                             info = it
                         ) {
                             if (it.state == State.Running || it.state == State.Enqueued || it.state == State.Blocked) {
-                                Spacer(modifier = Modifier.width(8.dp))
                                 FlowRow {
                                     TextButton(onClick = { viewModel.cancelTaskGyId(it.id) }) {
                                         Text(

@@ -1,5 +1,6 @@
 package eu.tintera.tasks
 
+import eu.tintera.guard.ExecutionEnvironment
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -7,8 +8,10 @@ data class JvmTasksManagerConfiguration(
     val databasePath: String,
     val databaseName: String = "",
     val maxConcurrentTasks: Int = 10,
-    val executionContextReleaseDebounce: Duration = 1.5.seconds
+    val executionContextReleaseDebounce: Duration = 1.5.seconds,
+    val executionEnvironment: ExecutionEnvironment? = null
 ) {
+
     init {
         require(maxConcurrentTasks > 0) { "maxConcurrentTasks must be > 0" }
         require(!executionContextReleaseDebounce.isNegative()) { "executionContextReleaseDebounce must be >= 0" }

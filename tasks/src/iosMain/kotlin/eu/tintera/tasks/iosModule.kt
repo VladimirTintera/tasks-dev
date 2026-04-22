@@ -5,6 +5,7 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import eu.tintera.guard.*
 import eu.tintera.tasks.core.*
 import eu.tintera.tasks.core.cleanup.DatabaseCleanupPolicy
+import eu.tintera.tasks.core.guard.guardInit
 import eu.tintera.tasks.core.preconditions.TaskPrecondition
 import eu.tintera.tasks.db.DatabaseConfiguration
 import kotlinx.coroutines.Dispatchers
@@ -30,11 +31,14 @@ internal fun iosModule(
             maxConcurrentTasks = config.maxConcurrentTasks
         )
     }
-    single {
-        ExecutionContextConfig(
+
+    guardInit(
+        executionEnvironment = config.executionEnvironment,
+        platformContext = PlatformContext(),
+        config = ExecutionEnvironmentConfig(
             releaseDebounce = config.executionContextReleaseDebounce
         )
-    }
+    )
 
     single<SQLiteDriver> { config.sqLiteDriver ?: BundledSQLiteDriver() }
 
@@ -74,30 +78,7 @@ internal fun iosModule(
         } binds arrayOf(TokenProducer::class, ExecutionContextObserver::class)
     }
 
-    single {
-        config.executionEnvironment ?: ExecutionEnvironmentFactory.create(
-            context = PlatformContext(),
-            scope = get<ApplicationScope>() + Dispatchers.Default,
-            config = get(),
-            additionalTokenProviders = getAll(),
-            observers = getAll()
-        )
-    } binds arrayOf(
-        ExecutionContextProvider::class,
-        ExecutionContextObserverRegistry::class,
-        TokenProducerRegistry::class
-    )
 
-    config.executionEnvironment?.also {
-        single(createdAtStart = true) {
-            ExecutionContextBootstrapper(
-                observerRegistry = get(),
-                tokenProducerRegistry = get(),
-                observers = getAll(),
-                tokenProducers = getAll()
-            )
-        }
-    }
 
 
     singleOf(::AppLifecycleObserver) {

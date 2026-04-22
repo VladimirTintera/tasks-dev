@@ -8,10 +8,10 @@ class TaskManagerStartupInitializer : Initializer<Unit> {
     override fun create(
         context: Context
     ) {
-
-        TaskManagerInitializer.initialize(
-            context = context,
-            config = AndroidTasksConfiguration()
+        TasksInitializer.initialize(
+            config = AndroidTasksConfiguration(
+                context = context
+            )
         )
     }
 

@@ -2,11 +2,13 @@ package eu.tintera.tasks
 
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import eu.tintera.guard.ExecutionContextConfig
+import eu.tintera.guard.ExecutionEnvironmentConfig
 import eu.tintera.guard.ExecutionContextProvider
+import eu.tintera.guard.PlatformContext
 import eu.tintera.guard.TokenProvider
 import eu.tintera.tasks.core.*
 import eu.tintera.tasks.core.cleanup.DatabaseCleanupPolicy
+import eu.tintera.tasks.core.guard.guardInit
 import eu.tintera.tasks.db.DatabaseConfiguration
 import eu.tintera.tasks.db.JvmDatabaseConfiguration
 import org.koin.core.module.Module
@@ -26,20 +28,23 @@ internal fun jvmModule(
 
     singleOf<NetworkState>(::JvmNetworkState)
 
-    singleOf(::JvmExecutionContextProvider) bind ExecutionContextProvider::class
-
     singleOf(::JvmTokenProvider) bind TokenProvider::class
+
+    singleOf(::JvmAppStateObserver) bind AppStateObserver::class
 
     single {
         TaskProcessorConfig(
             maxConcurrentTasks = config.maxConcurrentTasks
         )
     }
-    single {
-        ExecutionContextConfig(
+
+    guardInit(
+        executionEnvironment = config.executionEnvironment,
+        platformContext = PlatformContext(),
+        config = ExecutionEnvironmentConfig(
             releaseDebounce = config.executionContextReleaseDebounce
         )
-    }
+    )
 
     single<SQLiteDriver> { BundledSQLiteDriver() }
 
