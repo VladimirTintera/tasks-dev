@@ -24,7 +24,7 @@ sqlite = "2.6.2"
 ksp = "2.3.6"
 datetime ="0.7.1"
 androidx-work = "2.11.1"
-serialization="1.10.0"
+serialization="1.11.0"
 
 [libraries]
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycleProcess" }
@@ -65,6 +65,8 @@ kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.
 androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
 androidx-sqlite = { module = "androidx.sqlite:sqlite", version.ref = "sqlite" }
 
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref="serialization" }
 kotlinx-serialization-protobuf = {module = "org.jetbrains.kotlinx:kotlinx-serialization-protobuf", version.ref = "serialization"}
 androidx-work-runtime-ktx = {module = "androidx.work:work-runtime-ktx", version.ref = "androidx-work"}
 

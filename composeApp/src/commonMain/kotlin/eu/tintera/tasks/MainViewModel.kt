@@ -3,11 +3,15 @@ package eu.tintera.tasks
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import eu.tintera.tasks.handlers.TestHandler
+import eu.tintera.tasks.handlers.scheduleTestHandler
+import eu.tintera.tasks.handlers.testTaskRequest
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
@@ -27,7 +31,9 @@ class MainViewModel(
 
         TaskState(
             finished = finished.sortedByDescending { it.finishedAt },
-            ongoing = (it - finished.toSet()).sortedBy { it.nextScheduledTime ?: Instant.DISTANT_PAST }
+            ongoing = (it - finished.toSet()).sortedWith(
+                compareBy({it.state != State.Running}, { it.nextScheduledTime ?: Instant.DISTANT_PAST })
+            )
         )
     }.stateIn(
         scope = viewModelScope,
@@ -36,13 +42,17 @@ class MainViewModel(
     )
 
     fun enqueueTask() = viewModelScope.launch {
-        taskManager.enqueueTask(
-            taskRequest<TestHandler>(
-                tags = setOf(DEFAULT_TAG),
-                constraints = Constraints(
-                    requiresDeviceIdle = false,
-                    requiresNetwork = true
-                )
+        taskManager.scheduleTestHandler(count = 10, initialDelay = 5.seconds)
+    }
+
+    fun enqueueContinuation() = viewModelScope.launch {
+        taskManager.enqueueContinuation(
+            listOf(
+                testTaskRequest(20, "task 1 A"),
+                testTaskRequest(10, "task 1 B")
+            ) then testTaskRequest(30, "task 2 A") then listOf(
+                testTaskRequest(40, "task 3 A"),
+                testTaskRequest(10, "task 3 B")
             )
         )
     }
@@ -56,6 +66,6 @@ class MainViewModel(
     }
 
     companion object {
-        private const val DEFAULT_TAG = "TestTask"
+        const val DEFAULT_TAG = "TestTask"
     }
 }

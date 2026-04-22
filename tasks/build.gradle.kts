@@ -9,8 +9,7 @@ kotlin {
 
     compilerOptions {
         freeCompilerArgs.addAll(
-            "-Xexpect-actual-classes",
-            "-Xexplicit-backing-fields"
+            "-Xexpect-actual-classes"
         )
         optIn.addAll(
             "kotlin.uuid.ExperimentalUuidApi",
@@ -41,6 +40,7 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
+
         }
 
         androidMain.dependencies {
@@ -51,10 +51,12 @@ kotlin {
 
         iosMain.dependencies {
             implementation(libs.androidx.sqlite.bundled)
+            implementation(projects.engine)
         }
 
         jvmMain.dependencies {
             implementation(libs.androidx.sqlite.bundled)
+            implementation(projects.engine)
         }
     }
 }

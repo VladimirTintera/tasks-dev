@@ -1,28 +1,28 @@
 package eu.tintera.tasks
 
-import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 
-data class TaskRequest(
+data class TaskRequest<I: Any>(
     val identifier: String,
     val initialDelay: Duration = Duration.ZERO,
-    val data: Data = Data.EMPTY,
+    val data: I,
     val constraints: Constraints = Constraints.EMPTY,
     val tags: Set<String> = emptySet(),
     val backoffCriteria: BackoffCriteria? = null,
     val keepResultsForAtLeast: Duration = 24.hours
 )
 
-inline fun <reified T : TaskHandler> taskRequest(
+inline fun <reified T : TaskHandler<I, *, *>, I: Any> taskRequest(
+    data: I,
+    identifier: String = T::class.fullName,
     initialDelay: Duration = Duration.ZERO,
-    data: Data = Data.EMPTY,
     constraints: Constraints = Constraints.EMPTY,
     tags: Set<String> = emptySet(),
     backoffCriteria: BackoffCriteria? = null,
     keepResultsForAtLeast: Duration = 24.hours
-) = TaskRequest(
-    identifier = T::class.fullName,
+): TaskRequest<I> = TaskRequest(
+    identifier = identifier,
     initialDelay = initialDelay,
     data = data,
     constraints = constraints,
@@ -30,3 +30,4 @@ inline fun <reified T : TaskHandler> taskRequest(
     backoffCriteria = backoffCriteria,
     keepResultsForAtLeast = keepResultsForAtLeast
 )
+

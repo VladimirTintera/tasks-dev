@@ -5,20 +5,15 @@ import androidx.work.*
 import eu.tintera.tasks.*
 import eu.tintera.tasks.BackoffPolicy
 import eu.tintera.tasks.Constraints
-import eu.tintera.tasks.Data
+import eu.tintera.tasks.core.data.ExecutableTask
+import eu.tintera.tasks.core.data.Info
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
+import eu.tintera.tasks.core.migrations.TaskMigrator
+import eu.tintera.tasks.serialization.TaskDataSerializer
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 import kotlin.time.Clock
@@ -32,14 +27,15 @@ import kotlin.uuid.toKotlinUuid
 internal class WorkManagerCoreTaskManager(
     private val workManager: WorkManager,
     private val repository: Repository,
+    private val taskRegistry: TaskRegistry,
+    private val taskMigrator: TaskMigrator
 ) : CoreTaskManager {
 
-    private fun TaskRequest.oneTimeWorkRequest() =
+    private fun <T : Any> TaskRequest<T>.oneTimeWorkRequest() =
         OneTimeWorkRequestBuilder<TaskWorker>().apply {
             set(
                 identifier = identifier,
                 initialDelay = initialDelay,
-                data = data,
                 constraints = constraints,
                 tags = tags + identifier,
                 backoffCriteria = backoffCriteria,
@@ -47,9 +43,8 @@ internal class WorkManagerCoreTaskManager(
             )
         }.build()
 
-
-    override suspend fun enqueueUniqueTask(
-        task: TaskRequest,
+    override suspend fun <T : Any> enqueueUniqueTask(
+        task: TaskRequest<T>,
         uniqueName: String,
         existingTaskPolicy: ExistingTaskPolicy,
     ): Uuid {
@@ -68,7 +63,9 @@ internal class WorkManagerCoreTaskManager(
             saveTask(
                 id = id,
                 task = task,
-                uniqueName = uniqueName
+                uniqueName = uniqueName,
+                repeatInterval = null,
+                parentIds = emptySet()
             )
             workManager.enqueueUniqueWork(
                 uniqueName,
@@ -80,56 +77,95 @@ internal class WorkManagerCoreTaskManager(
         }
     }
 
-    override suspend fun enqueueTask(
-        task: TaskRequest,
+    override suspend fun <T : Any> enqueueTask(
+        task: TaskRequest<T>,
     ): Uuid {
         val request = task.oneTimeWorkRequest()
         val id = request.id.toKotlinUuid()
         return withContext(NonCancellable) {
-            saveTask(id = id, task = task, uniqueName = "")
+            saveTask(
+                id = id,
+                task = task,
+                uniqueName = "",
+                repeatInterval = null,
+                parentIds = emptySet()
+            )
             workManager.enqueue(request).await()
             id
         }
     }
 
+    @SuppressLint("EnqueueWork")
     override suspend fun enqueueContinuation(continuation: TaskContinuation) {
+
         val roots = continuation.tasks.map { it to it.oneTimeWorkRequest() }
+        val rootIds = roots.map { it.second.id.toKotlinUuid() }.toSet()
+        val result = withContext(NonCancellable) {
 
-        withContext(NonCancellable) {
+            repository.withTransaction {
 
-            roots.forEach { (task, work) ->
-                saveTask(id = work.id.toKotlinUuid(), task = task, uniqueName = "")
+                roots.forEach { (task, work) ->
+                    saveTask(
+                        id = work.id.toKotlinUuid(),
+                        task = task,
+                        uniqueName = "",
+                        repeatInterval = null,
+                        parentIds = emptySet() // Kořeny nemají rodiče
+                    )
+                }
+
+                workManager.beginWith(
+                    roots.map { (_, work) -> work }
+                ).appendAndSave(
+                    taskContinuation = continuation.next,
+                    parentIds = rootIds // KOŘENY SE STÁVAJÍ RODIČI PRO NEXT!
+                )
             }
-
-            workManager.beginWith(
-                roots.map { (_, work) -> work }
-            ).appendAndSave(continuation.next).enqueue().await()
         }
+
+        result.enqueue().await()
     }
 
+    @SuppressLint("EnqueueWork")
     override suspend fun enqueueUniqueContinuation(
         continuation: TaskContinuation,
         uniqueName: String,
         existingTaskPolicy: ExistingTaskPolicy,
     ) {
         val roots = continuation.tasks.map { it to it.oneTimeWorkRequest() }
+        val rootIds = roots.map { it.second.id.toKotlinUuid() }.toSet()
+
         withContext(NonCancellable) {
 
-            roots.forEach { (task, work) ->
-                saveTask(id = work.id.toKotlinUuid(), task = task, uniqueName = uniqueName)
+            val result = repository.withTransaction {
+                roots.forEach { (task, work) ->
+                    saveTask(
+                        id = work.id.toKotlinUuid(),
+                        task = task,
+                        uniqueName = uniqueName,
+                        repeatInterval = null,
+                        parentIds = emptySet() // Kořeny nemají rodiče
+                    )
+                }
+
+                workManager.beginUniqueWork(
+                    uniqueName,
+                    existingTaskPolicy.toWorkPolicy(),
+                    roots.map { (_, work) -> work }
+                ).appendAndSave(
+                    taskContinuation = continuation.next,
+                    parentIds = rootIds // KOŘENY SE STÁVAJÍ RODIČI PRO NEXT!
+                )
             }
 
-            workManager.beginUniqueWork(
-                uniqueName,
-                existingTaskPolicy.toWorkPolicy(),
-                roots.map { (_, work) -> work }
-            ).appendAndSave(continuation.next).enqueue().await()
+            result.enqueue().await()
         }
     }
 
     @SuppressLint("EnqueueWork")
     private suspend fun WorkContinuation.appendAndSave(
         taskContinuation: TaskContinuation?,
+        parentIds: Set<Uuid> // TADY PŘIJÍMÁME ID RODIČŮ Z PŘEDCHOZÍHO KROKU
     ): WorkContinuation {
         if (taskContinuation == null || taskContinuation.tasks.isEmpty()) {
             return this
@@ -137,15 +173,23 @@ internal class WorkManagerCoreTaskManager(
 
         val nextRequests = taskContinuation.tasks.map { it to it.oneTimeWorkRequest() }
 
+        // Získáme IDčka aktuální vrstvy (to budou rodiče pro další krok)
+        val currentLevelIds = nextRequests.map { it.second.id.toKotlinUuid() }.toSet()
+
         nextRequests.forEach { (task, request) ->
             saveTask(
                 id = request.id.toKotlinUuid(),
                 task = task,
-                uniqueName = ""
+                uniqueName = "",
+                repeatInterval = null,
+                parentIds = parentIds // PŘIŘADÍME IDČKA RODIČŮ DO DATABÁZE!
             )
         }
 
-        return then(nextRequests.map { it.second }).appendAndSave(taskContinuation.next)
+        // Propojíme ve WorkManageru a rekurzivně zavoláme další krok,
+        // kam už posíláme aktuální IDčka jako nové rodiče.
+        return then(nextRequests.map { it.second })
+            .appendAndSave(taskContinuation.next, parentIds = currentLevelIds)
     }
 
     private suspend fun findExistingId(
@@ -161,8 +205,8 @@ internal class WorkManagerCoreTaskManager(
         return uncompletedExisting?.id?.toKotlinUuid()
     }
 
-    override suspend fun enqueuePeriodicUniqueTask(
-        task: TaskRequest,
+    override suspend fun <T : Any> enqueuePeriodicUniqueTask(
+        task: TaskRequest<T>,
         repeatInterval: Duration,
         uniqueName: String,
         existingTaskPolicy: ExistingPeriodicTaskPolicy,
@@ -182,7 +226,6 @@ internal class WorkManagerCoreTaskManager(
             set(
                 identifier = task.identifier,
                 initialDelay = task.initialDelay,
-                data = task.data,
                 constraints = task.constraints,
                 tags = task.tags + uniqueName + task.identifier,
                 backoffCriteria = task.backoffCriteria,
@@ -194,7 +237,15 @@ internal class WorkManagerCoreTaskManager(
         val id = request.id.toKotlinUuid()
 
         return withContext(NonCancellable) {
-            saveTask(id = id, task = task, uniqueName = uniqueName)
+
+            saveTask(
+                id = id,
+                task = task,
+                uniqueName = uniqueName,
+                repeatInterval = repeatInterval,
+                parentIds = emptySet()
+            )
+
             workManager.enqueueUniquePeriodicWork(
                 uniqueName,
                 when (existingTaskPolicy) {
@@ -212,15 +263,13 @@ internal class WorkManagerCoreTaskManager(
     private fun <B : WorkRequest.Builder<B, *>, W : WorkRequest> WorkRequest.Builder<B, W>.set(
         identifier: String,
         initialDelay: Duration,
-        data: Data,
+
         constraints: Constraints,
         tags: Set<String>,
         backoffCriteria: BackoffCriteria?,
         keepResultsForAtLeast: Duration
     ) {
-        val inputData =
-            androidx.work.Data.Builder().putString(TaskWorker.TASK_IDENTIFIER, identifier)
-                .putAll(data.map).build()
+        val inputData = Data.Builder().putString(TaskWorker.TASK_IDENTIFIER, identifier).build()
         setInputData(inputData)
         if (constraints.requiresNetwork || constraints.requiresDeviceIdle)
             setConstraints(
@@ -269,19 +318,23 @@ internal class WorkManagerCoreTaskManager(
                 if (ids.isEmpty()) {
                     flowOf(emptyList())
                 } else {
-                    repository.tasksByIds(ids)
+                    repository.taskInfoByIds(ids)
                 }
             }
 
-        // 3. Spojíme je a pošleme ven z channelFlow
         combine(sharedWorkInfosFlow, dbTasksFlow) { workInfos, dbTasks ->
-            val taskMap = dbTasks.associateBy { it.id }
+            val taskMap = dbTasks.associateBy { it.id }.mapValues { (_, task) ->
+                task to taskRegistry.resolve<Any, Any, Any>(task.identifier)
+            }
 
             workInfos.map { workInfo ->
-                workInfo.toTaskInfo(taskMap[workInfo.id.toKotlinUuid()])
+                val pair = taskMap[workInfo.id.toKotlinUuid()]
+                workInfo.toTaskInfo(
+                    info = pair?.first,
+                    registration = pair?.second,
+                )
             }
         }.collect {
-            // Všechno, co vyjde z combine, přepošleme do výstupu našeho channelFlow
             send(it)
         }
     }
@@ -289,21 +342,54 @@ internal class WorkManagerCoreTaskManager(
     override fun taskInfoById(
         id: Uuid
     ) = combine(
-        repository.taskById(id),
+        repository.taskInfoById(id),
         workManager.getWorkInfoByIdFlow(id.toJavaUuid())
     ) { task, workInfo ->
-        workInfo?.toTaskInfo(task?.task)
+        workInfo?.toTaskInfo(
+            info = task,
+            registration = task?.identifier?.let {
+                taskRegistry.resolve(it)
+            }
+        )
     }
 
     override suspend fun cancelTaskById(id: Uuid) {
-        workManager.cancelWorkById(id.toJavaUuid()).await()
+        withContext(NonCancellable) {
+            repository.updateTerminatingState(
+                id = id,
+                state = State.Cancelled,
+                finishedAt = Clock.System.now(),
+                outputData = null
+            )
+            workManager.cancelWorkById(id.toJavaUuid()).await()
+        }
     }
 
     override suspend fun cancelTasksByTag(tag: String) {
         workManager.cancelAllWorkByTag(tag).await()
     }
 
-    private fun WorkInfo.toTaskInfo(task: Task?): TaskInfo {
+    private fun WorkInfo.toTaskInfo(
+        info: Info?,
+        registration: TaskRegistry.TaskRegistration<Any, Any, Any>?
+    ): TaskInfo {
+
+        val migrationResult = info?.let { task ->
+            registration?.let { registration ->
+                taskMigrator.migrate(
+                    data = ExecutableTask(
+                        identifier = task.identifier,
+                        runAttemptCount = task.runAttemptCount,
+                        version = task.version,
+                        inputData = task.inputData,
+                        outputData = task.outputData,
+                        progressData = task.progressData
+                    ),
+                    registration = registration
+                )
+            }
+        }
+
         return TaskInfo(
             id = id.toKotlinUuid(),
             state = when (state) {
@@ -318,21 +404,31 @@ internal class WorkManagerCoreTaskManager(
                 tag == TaskWorker::class.java.name
             }.toSet(),
             runAttemptCount = runAttemptCount,
-            outputData = outputData.toData(),
+            outputData = info?.outputData?.let {
+                migrationResult?.output ?: registration?.outputSerializer?.decodeFromBytesOrNull(it)
+            },
             nextScheduledTime = Instant.fromEpochMilliseconds(nextScheduleTimeMillis).takeIf {
                 it < Instant.DISTANT_FUTURE
             },
-            progress = progress.toData(),
-            finishedAt = task?.finishedAt,
-            createdAt = task?.createdAt ?: Instant.DISTANT_PAST
+            progress = info?.progressData?.takeIf {
+                state != WorkInfo.State.FAILED && state != WorkInfo.State.CANCELLED
+            }?.let {
+                migrationResult?.progress ?: registration?.progressSerializer?.decodeFromBytesOrNull(it)
+            },
+            finishedAt = info?.finishedAt,
+            createdAt = info?.createdAt ?: Instant.DISTANT_PAST,
+            identifier = info?.identifier ?: ""
         )
     }
 
-    private suspend fun saveTask(
+    private suspend fun <T : Any> saveTask(
         id: Uuid,
-        task: TaskRequest,
+        task: TaskRequest<T>,
         uniqueName: String,
+        repeatInterval: Duration?,
+        parentIds: Set<Uuid>
     ) {
+        val registration = taskRegistry.resolve<T, Any, Any>(task.identifier) ?: error("Task registry not found")
         val t = Task(
             id = id,
             identifier = task.identifier,
@@ -340,19 +436,26 @@ internal class WorkManagerCoreTaskManager(
             runAttemptCount = 0,
             state = State.Enqueued,
             processTime = Clock.System.now(),
-            inputData = task.data,
-            outputData = Data.EMPTY,
+            inputData = registration.inputSerializer.encodeToBytes(task.data),
+            outputData = null,
             networkRequired = task.constraints.requiresNetwork,
             createdAt = Clock.System.now(),
             finishedAt = null,
-            repeatInterval = null,
+            repeatInterval = repeatInterval,
             initialDelay = task.initialDelay,
             backoffCriteria = task.backoffCriteria ?: BackoffCriteria.DEFAULT,
-            progressData = Data.EMPTY,
+            progressData = null,
             retentionDelay = task.keepResultsForAtLeast,
-            requiresDeviceIdle = task.constraints.requiresDeviceIdle
+            requiresDeviceIdle = task.constraints.requiresDeviceIdle,
+            version = registration.currentVersion
         )
 
-        repository.insert(task = t, tags = emptySet(), parentIds = emptySet())
+        repository.insert(task = t, tags = emptySet(), parentIds = parentIds)
     }
+}
+
+private fun <T> TaskDataSerializer<T>.decodeFromBytesOrNull(data: ByteArray) = try {
+    decodeFromBytes(data)
+} catch (_: Exception) {
+    null
 }

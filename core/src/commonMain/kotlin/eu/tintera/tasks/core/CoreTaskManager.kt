@@ -5,20 +5,19 @@ import eu.tintera.tasks.ExistingTaskPolicy
 import eu.tintera.tasks.TaskContinuation
 import eu.tintera.tasks.TaskInfo
 import eu.tintera.tasks.TaskRequest
-import eu.tintera.tasks.fullName
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Duration
 import kotlin.uuid.Uuid
 
 interface CoreTaskManager {
-    suspend fun enqueueUniqueTask(
-        task: TaskRequest,
+    suspend fun <T: Any> enqueueUniqueTask(
+        task: TaskRequest<T>,
         uniqueName: String = task.identifier,
         existingTaskPolicy: ExistingTaskPolicy = ExistingTaskPolicy.Keep
     ) : Uuid
 
-    suspend fun enqueueTask(
-        task: TaskRequest
+    suspend fun <T: Any> enqueueTask(
+        task: TaskRequest<T>
     ) : Uuid
 
     suspend fun enqueueContinuation(
@@ -31,8 +30,8 @@ interface CoreTaskManager {
         existingTaskPolicy: ExistingTaskPolicy = ExistingTaskPolicy.Keep
     )
 
-    suspend fun enqueuePeriodicUniqueTask(
-        task: TaskRequest,
+    suspend fun <T: Any> enqueuePeriodicUniqueTask(
+        task: TaskRequest<T>,
         repeatInterval: Duration,
         uniqueName: String = task.identifier,
         existingTaskPolicy: ExistingPeriodicTaskPolicy = ExistingPeriodicTaskPolicy.Keep

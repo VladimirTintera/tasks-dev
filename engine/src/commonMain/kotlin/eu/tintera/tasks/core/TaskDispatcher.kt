@@ -1,0 +1,81 @@
+package eu.tintera.tasks.core
+
+import eu.tintera.guard.EventBus
+import eu.tintera.tasks.core.data.Repository
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import kotlin.uuid.Uuid
+
+internal class TaskDispatcher(
+    private val taskProcessor: TaskProcessor,
+    private val repository: Repository,
+    private val scope: ApplicationScope,
+    private val dispatchers: AppDispatchers,
+    private val activeTaskTracker: ActiveTaskTracker,
+) {
+    private val runningJobs = MutableStateFlow<Map<Uuid, Job>>(emptyMap())
+    private val jobFinishedEvent = MutableSharedFlow<Unit>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_LATEST
+    )
+
+    private fun tasks() = combine(
+        repository.dispatchableTasks(runningStates).distinctUntilChanged(),
+        jobFinishedEvent.onStart { emit(Unit) },
+    ) { tasks, _ -> tasks }
+
+    init {
+
+        // Init blok necháváme čistý a logiku přesouváme do privátních funkcí
+        scope.launch(dispatchers.io) {
+            collectAndDispatchTasks()
+        }
+    }
+
+    private suspend fun collectAndDispatchTasks() {
+        tasks().collect { tasks ->
+
+            val currentExecutionKeys = tasks.map { it.id }.toSet()
+
+            val currentJobsMap = runningJobs.value
+
+            currentJobsMap.forEach { (key, job) ->
+                if (key !in currentExecutionKeys) {
+                    job.cancel()
+                }
+            }
+
+            // 3. Najdeme tasky, pro které ještě nemáme Job
+            val newTasks = tasks.filter { !currentJobsMap.containsKey(it.id) }
+
+            if (newTasks.isNotEmpty()) {
+                newTasks.forEach { task ->
+
+                    val job = scope.launch(context = dispatchers.io, start = CoroutineStart.LAZY) {
+                        EventBus.send(TAG, "Task started '${task.id}'")
+                        taskProcessor.run(task.id)
+                    }
+
+                    runningJobs.update { it + (task.id to job) }
+                    activeTaskTracker.track(task.id)
+
+                    job.invokeOnCompletion {
+                        runningJobs.update { it - task.id }
+                        activeTaskTracker.untrack(task.id)
+                        jobFinishedEvent.tryEmit(Unit)
+                        EventBus.send(TAG, "Task invokeOnCompletion '${task.id}'")
+                    }
+
+                    job.start()
+                }
+            }
+        }
+    }
+
+    companion object {
+        private const val TAG = "TaskDispatcher"
+    }
+}

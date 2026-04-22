@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
+    alias(libs.plugins.serialization)
 }
 
 kotlin {
@@ -18,8 +19,7 @@ kotlin {
 
     compilerOptions {
         freeCompilerArgs.addAll(
-            "-Xexpect-actual-classes",
-            "-Xexplicit-backing-fields"
+            "-Xexpect-actual-classes"
         )
         optIn.addAll(
             "kotlin.uuid.ExperimentalUuidApi",
@@ -57,6 +57,7 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.koin.android)
+
         }
 
         commonMain.dependencies {
@@ -77,8 +78,9 @@ kotlin {
             implementation(libs.koin.compose.viewmodel)
 
             implementation(projects.tasks)
-            implementation(projects.koin)
-
+            implementation(projects.koinJson)
+            implementation(projects.serializationCompat)
+            implementation(projects.serializationJson)
 
         }
         commonTest.dependencies {

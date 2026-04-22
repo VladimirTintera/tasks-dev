@@ -6,6 +6,7 @@ import eu.tintera.guard.ExecutionContextConfig
 import eu.tintera.guard.ExecutionContextProvider
 import eu.tintera.guard.TokenProvider
 import eu.tintera.tasks.core.*
+import eu.tintera.tasks.core.cleanup.DatabaseCleanupPolicy
 import eu.tintera.tasks.db.DatabaseConfiguration
 import eu.tintera.tasks.db.JvmDatabaseConfiguration
 import org.koin.core.module.Module
@@ -19,9 +20,7 @@ internal fun jvmModule(
     config: JvmTasksManagerConfiguration
 ): Module = module {
 
-    includes(engineModule)
-
-    factoryOf(::RepositoryTaskScopeFactory) bind TaskScopeFactory::class
+    includes(engineModule(DatabaseCleanupPolicy.DISABLED_GHOST_TASKS_POLICY))
 
     factoryOf(::RepositoryCoreTaskManager) bind CoreTaskManager::class
 

@@ -1,7 +1,6 @@
 package eu.tintera.tasks.core
 
 import eu.tintera.tasks.BackoffCriteria
-import eu.tintera.tasks.Data
 import eu.tintera.tasks.State
 import eu.tintera.tasks.core.data.Task
 import kotlin.time.Clock
@@ -18,7 +17,11 @@ fun createTask(
     initialDelay: Duration = Duration.ZERO,
     processTime: Instant = Clock.System.now(),
     runAttemptCount: Int = 0,
-    requiresDeviceIdle: Boolean = false
+    requiresDeviceIdle: Boolean = false,
+    inputData: ByteArray? = null,
+    outputData: ByteArray? = null,
+    progressData: ByteArray? = null,
+    version: Int = 1
 ): Task = Task(
     id = id,
     state = state,
@@ -27,14 +30,15 @@ fun createTask(
     runAttemptCount = runAttemptCount,
     initialDelay = initialDelay,
     processTime = processTime,
-    inputData = Data.EMPTY,
-    outputData = Data.EMPTY,
+    inputData = inputData,
+    outputData = outputData,
     networkRequired = networkRequired,
     createdAt = Clock.System.now(),
     finishedAt = if (state.terminal()) Clock.System.now() else null,
     repeatInterval = null,
     backoffCriteria = BackoffCriteria.DEFAULT,
-    progressData = null,
+    progressData = progressData,
     retentionDelay = 24.hours,
-    requiresDeviceIdle = requiresDeviceIdle
+    requiresDeviceIdle = requiresDeviceIdle,
+    version = version
 )

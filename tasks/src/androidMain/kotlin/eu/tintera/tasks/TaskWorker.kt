@@ -7,18 +7,21 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
-import androidx.work.Data
 import androidx.work.WorkerParameters
 import eu.tintera.tasks.core.ExecutionResult
 import eu.tintera.tasks.core.TaskEvaluator
 import eu.tintera.tasks.core.TaskResultProcessor
+import eu.tintera.tasks.core.data.ExecutableTask
 import eu.tintera.tasks.core.data.Repository
+import eu.tintera.tasks.core.data.Task
+import eu.tintera.tasks.core.data.TaskProcessResult
 import eu.tintera.tasks.core.nonTerminalStates
 import eu.tintera.tasks.koin.TasksKoinComponent
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.flow.first
 import org.koin.core.component.inject
-import kotlin.uuid.Uuid
+import kotlin.time.Clock
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.hours
 import kotlin.uuid.toKotlinUuid
 
 internal class TaskWorker(
@@ -34,6 +37,8 @@ internal class TaskWorker(
     private val repository: Repository by inject()
     private val taskResultProcessor: TaskResultProcessor by inject()
 
+    private val workManagerConfiguration: WorkManagerConfiguration by inject()
+
     override suspend fun doWork(): Result {
 
         val taskIdentifier = inputData.getString(
@@ -42,38 +47,84 @@ internal class TaskWorker(
             it.isNotBlank()
         } ?: return Result.failure()
 
-        EventBus.send("TaskWorker", "Task started '$taskIdentifier', data = ${inputData.toData()}")
+        EventBus.send("TaskWorker", "Task started '$taskIdentifier'")
 
         val taskId = id.toKotlinUuid()
 
-        repository.updateState(
+        val task = repository.task(taskId)?.also {
+            repository.updateState(
+                id = taskId,
+                state = State.Running,
+                allowedSourceStates = nonTerminalStates.toSet(),
+                resetProcessTime = true,
+                runAttemptCount = runAttemptCount + 1
+            )
+        } ?: run {
+            // ADOPCE STARÉHO ÚKOLU:
+            // Vytáhneme všechna data z WorkManageru a zabalíme je do starého formátu (Verze 1)
+
+            val sourceData = inputData.keyValueMap.mapNotNull { (key, value) ->
+                key.takeIf { it != TASK_IDENTIFIER }?.let {
+                    key to value
+                }
+            }.toMap()
+
+            workManagerConfiguration.compatTransformation(sourceData)?.let { byteArray ->
+                Task(
+                    id = taskId,
+                    identifier = taskIdentifier,
+                    inputData = byteArray,
+                    outputData = null,
+                    progressData = null,
+                    version = 1, // IMPORTANT: Old task is always version 1
+                    state = State.Running,
+                    runAttemptCount = runAttemptCount + 1,
+                    uniqueName = "",
+                    initialDelay = Duration.ZERO,
+                    processTime = null,
+                    networkRequired = false,
+                    createdAt = Clock.System.now(),
+                    finishedAt = null,
+                    repeatInterval = null,
+                    backoffCriteria = null,
+                    retentionDelay = 24.hours,
+                    requiresDeviceIdle = false
+                ).also {
+                    repository.insert(it, emptySet(), emptySet())
+                }
+            }
+        }
+
+        if (task == null) return Result.failure()
+
+        val result = taskEvaluator.handle(
             id = taskId,
-            state = State.Running,
-            allowedSourceStates = nonTerminalStates.toSet(),
-            resetProcessTime = true
+            task = ExecutableTask(
+                identifier = task.identifier,
+                runAttemptCount = task.runAttemptCount,
+                version = task.version,
+                inputData = task.inputData,
+                outputData = task.outputData,
+                progressData = task.progressData
+            ),
+            onForegroundInfo = ::internalSetForegroundInfo
         )
 
-        val result = with(taskEvaluator) {
-            with(taskScope()) {
-                handle(taskIdentifier = taskIdentifier)
-            }
-        } ?: TaskResult.failure()
+        taskResultProcessor.handleResult(
+            TaskProcessResult(
+                id = taskId,
+                executionResult = ExecutionResult.Finished(result),
+                repeatInterval = task.repeatInterval,
+                backoffCriteria = task.backoffCriteria,
+                retryCount = task.runAttemptCount
+            )
+        )
 
-        EventBus.send("TaskWorker", "Task finished '${taskIdentifier}', result = $result")
-
-        val workResult = when (result) {
+        return when (result) {
             TaskResult.Failure -> Result.failure()
             TaskResult.Retry -> Result.retry()
-            is TaskResult.Success -> Result.success(
-                Data.Builder().putAll(result.outputData.map).build()
-            )
+            is TaskResult.Success -> Result.success()
         }
-        repository.task(taskId).first()?.also {
-            taskResultProcessor.handleResult(it, ExecutionResult.Finished(result))
-        }
-
-
-        return workResult
     }
 
     private suspend fun internalSetForegroundInfo(
@@ -88,16 +139,13 @@ internal class TaskWorker(
     }
 
     private fun ForegroundInfo.createForegroundInfo(): androidx.work.ForegroundInfo {
-
         createChannel(channelId, channelName)
-
-        val notification =
-            NotificationCompat.Builder(applicationContext, channelId)
-                .setContentTitle(notificationTitle)
-                .setTicker(notificationTitle)
-                .setOngoing(true)
-                .setSmallIcon(notificationIcon)
-                .build()
+        val notification = NotificationCompat.Builder(applicationContext, channelId)
+            .setContentTitle(notificationTitle)
+            .setTicker(notificationTitle)
+            .setOngoing(true)
+            .setSmallIcon(notificationIcon)
+            .build()
 
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
             androidx.work.ForegroundInfo(
@@ -121,23 +169,8 @@ internal class TaskWorker(
         )
     }
 
-    // Implementace TaskScope jako vnitřní objekt
-    private fun taskScope() = object : TaskScope {
-        override val taskId: Uuid = id.toKotlinUuid()
-        override val data: eu.tintera.tasks.Data = inputData.toData()
-        override val retryCount: Int
-            get() = this@TaskWorker.runAttemptCount
-
-        override suspend fun setForegroundInfo(
-            foregroundInfo: ForegroundInfo
-        ): Boolean = this@TaskWorker.internalSetForegroundInfo(foregroundInfo)
-
-        override suspend fun setProgress(data: eu.tintera.tasks.Data) {
-            this@TaskWorker.setProgress(Data.Builder().putAll(data.map).build())
-        }
-    }
-
     companion object {
         const val TASK_IDENTIFIER = "task_identifier"
     }
+
 }

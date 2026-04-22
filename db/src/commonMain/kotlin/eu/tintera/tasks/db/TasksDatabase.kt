@@ -18,7 +18,7 @@ internal expect object TasksDatabaseConstructor : RoomDatabaseConstructor<TasksD
         TaskTag::class
     ],
     exportSchema = true,
-    version = 8,
+    version = 10,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
@@ -27,6 +27,7 @@ internal expect object TasksDatabaseConstructor : RoomDatabaseConstructor<TasksD
         AutoMigration(from = 5, to = 6, spec = AutoMigration5to6Spec::class),
         AutoMigration(from = 6, to = 7),
         AutoMigration(from = 7, to = 8),
+        AutoMigration(from = 8, to = 9),
     ]
 )
 @ConstructedBy(TasksDatabaseConstructor::class)

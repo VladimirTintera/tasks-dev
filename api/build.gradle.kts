@@ -11,7 +11,6 @@ kotlin {
     compilerOptions {
         freeCompilerArgs.addAll(
             "-Xexpect-actual-classes",
-            "-Xexplicit-backing-fields"
         )
 
         optIn.addAll("kotlin.uuid.ExperimentalUuidApi")
@@ -25,10 +24,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(libs.kotlinx.coroutines.core)
-        }
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.core)
         }
     }
 }

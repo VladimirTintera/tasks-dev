@@ -2,11 +2,8 @@ package eu.tintera.tasks.db
 
 import androidx.room.immediateTransaction
 import androidx.room.useWriterConnection
-import eu.tintera.tasks.Data
 import eu.tintera.tasks.State
-import eu.tintera.tasks.core.data.FullTask
-import eu.tintera.tasks.core.data.Repository
-import eu.tintera.tasks.core.data.Task
+import eu.tintera.tasks.core.data.*
 import eu.tintera.tasks.db.entities.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -21,22 +18,72 @@ internal class DatabaseRepository(
     private val taskTagDao: TaskTagDao,
     private val taskParentTaskDao: TaskParentTaskDao
 ) : Repository {
-
-    override fun parentsFor(id: Uuid) = taskDao.parentsFor(id).map { list ->
-        list.map { it.toTask() }
+    override fun dispatchableTasks(states: List<State>): Flow<List<DispatchableTask>> = taskDao.dispatchableTasks(
+        states = states.map { it.toEntityState() }
+    ).distinctUntilChanged().map {
+        it.map { task ->
+            DispatchableTask(
+                id = task.id,
+                state = task.state.toTaskState()
+            )
+        }
     }
+
+    override fun processableTask(
+        id: Uuid
+    ) = taskDao.processableTask(id).distinctUntilChanged().map {
+        it?.let {
+            ProcessableTask(
+                id = id,
+                state = it.state.toTaskState(),
+                initialDelay = it.initialDelay,
+                runAttemptCount = it.runAttemptCount,
+                networkRequired = it.networkRequired,
+                requiresDeviceIdle = it.requiresDeviceIdle,
+                repeatInterval = it.repeatInterval,
+                backoffCriteria = it.backoffCriteria?.toTaskBackoffCriteria(),
+                processTime = it.processTime
+            )
+        }
+    }
+
+    override suspend fun executableTask(id: Uuid): ExecutableTask? = taskDao.executableTask(id)?.let {
+        ExecutableTask(
+            identifier = it.identifier,
+            runAttemptCount = it.runAttemptCount,
+            version = it.version,
+            inputData = it.inputData,
+            outputData = it.outputData,
+            progressData = it.progressData
+        )
+    }
+
+
+    override suspend fun parentsDataFor(id: Uuid) = taskDao.parentsDataFor(id).map {
+        ParentData(
+            id = it.id,
+            identifier = it.identifier,
+            outputData = it.outputData,
+            finishedAt = it.finishedAt ?: Instant.DISTANT_PAST,
+            version = it.version
+        )
+    }
+
+    override fun parentStatesForTask(id: Uuid) = taskDao.parentStatesForTask(id).map { list ->
+        list.map { it.toTaskState() }
+    }.distinctUntilChanged()
 
     override suspend fun updateNextRun(
         id: Uuid,
         processTime: Instant,
         state: State,
-        progressData: Data,
+        progressData: ByteArray?,
         runAttemptCount: Int?
     ) = taskDao.updateRetry(
         id = id,
         processTime = processTime,
         state = state.toEntityState(),
-        progress = progressData.toSerializableTaskData(),
+        progress = progressData,
         runAttemptCount = runAttemptCount
     )
 
@@ -52,23 +99,17 @@ internal class DatabaseRepository(
         id: Uuid,
         state: State,
         finishedAt: Instant,
-        outputData: Data
+        outputData: ByteArray?
     ) = taskDao.updateTerminatingState(
         id = id,
         state = state.toEntityState(),
         finishedAt = finishedAt,
-        outputData = outputData.toSerializableTaskData()
+        outputData = outputData
     )
 
-    override suspend fun taskState(
+    override suspend fun task(
         id: Uuid
-    ): State? = taskDao.taskState(id)?.toTaskState()
-
-    override fun task(
-        id: Uuid
-    ) = taskDao.task(id).map {
-        it?.toTask()
-    }
+    ) = taskDao.task(id)?.toTask()
 
     override suspend fun allByUniqueName(
         uniqueName: String
@@ -105,31 +146,39 @@ internal class DatabaseRepository(
     }
 
     override suspend fun cleanOld(
-        states: Set<State>
-    ) = taskDao.cleanOld(Clock.System.now().toEpochMilliseconds(), states.map { it.toEntityState() })
+        terminalStates: Set<State>
+    ) = taskDao.cleanOld(Clock.System.now().toEpochMilliseconds(), terminalStates.map { it.toEntityState() })
 
-    override fun tasksByTag(
+    private fun InfoEntity.toInfo(tags: Set<String>) = Info(
+        id = id,
+        identifier = identifier,
+        runAttemptCount = runAttemptCount,
+        state = state.toTaskState(),
+        tags = tags,
+        outputData = outputData,
+        processTime = processTime,
+        progressData = progressData,
+        finishedAt = finishedAt,
+        createdAt = createdAt ?: Instant.DISTANT_PAST,
+        version = version
+    )
+
+    override fun taskInfosByTag(
         name: String
-    ): Flow<List<FullTask>> = taskDao.taskInfoByTag(name).distinctUntilChanged().map { map ->
+    ): Flow<List<Info>> = taskDao.taskInfoByTag(name).distinctUntilChanged().map { map ->
         map.map { (value, tags) ->
-            FullTask(
-                task = value.toTask(),
-                tags = tags.map { it.name }.toSet()
-            )
+            value.toInfo(tags.map { it.name }.toSet())
         }
     }
 
-    override fun taskById(id: Uuid): Flow<FullTask?> = taskDao.taskInfoById(id).distinctUntilChanged().map { map ->
+    override fun taskInfoById(id: Uuid): Flow<Info?> = taskDao.taskInfoById(id).distinctUntilChanged().map { map ->
         map.map { (value, tags) ->
-            FullTask(
-                task = value.toTask(),
-                tags = tags.map { it.name }.toSet()
-            )
+            value.toInfo(tags.map { it.name }.toSet())
         }.firstOrNull()
     }
 
-    override fun tasksByIds(ids: Set<Uuid>)= taskDao.tasks(ids).distinctUntilChanged().map { tasks ->
-        tasks.map { it.toTask() }
+    override fun taskInfoByIds(ids: Set<Uuid>) = taskDao.taskInfoByIds(ids).distinctUntilChanged().map { tasks ->
+        tasks.map { it.toInfo(emptySet()) }
     }
 
     override fun tasksByState(states: List<State>): Flow<List<Task>> = taskDao.tasksByState(
@@ -139,16 +188,14 @@ internal class DatabaseRepository(
     }
 
     override suspend fun childrenForTask(id: Uuid): List<Uuid> = taskParentTaskDao.childrenForTask(id)
-    override suspend fun tasksByTagAndState(
+
+    override suspend fun taskIdsByTagAndState(
         states: List<State>,
         tag: String
-    ): List<Task> = taskDao.tasksByTagAndState(
+    ): List<Uuid> = taskDao.taskIdsByTagAndState(
         states = states.map { it.toEntityState() },
         tag = tag
-    ).map {
-        it.toTask()
-    }
-
+    )
 
     override suspend fun resetState(
         from: State,
@@ -167,31 +214,50 @@ internal class DatabaseRepository(
 
     override suspend fun updateProgressData(
         id: Uuid,
-        progressData: Data
-    ) = taskDao.updateProgressData(id, progressData.toSerializableTaskData())
+        progressData: ByteArray?
+    ) = taskDao.updateProgressData(id, progressData)
+
 
     override suspend fun updateState(
         id: Uuid,
         state: State,
         allowedSourceStates: Set<State>,
-        resetProcessTime: Boolean
+        resetProcessTime: Boolean,
+        runAttemptCount: Int?
     ) {
         taskDao.updateState(
             id = id,
             state = state.toEntityState(),
             allowedSourceStates = allowedSourceStates.map { it.toEntityState() },
-            resetProcessTime = resetProcessTime
+            resetProcessTime = resetProcessTime,
+            runAttemptCount = runAttemptCount
         )
     }
 
-    override suspend fun updateStateWithDescendants(
+    override suspend fun updateTerminatingStateWithDescendants(
         id: Uuid,
         state: State,
-        allowedSourceStates: Set<State>
-    ) = taskDao.updateStateTaskAndAllDescendants(
+        allowedSourceStates: Set<State>,
+        finishedAt: Instant
+    ) = taskDao.updateTerminatingStateWithAllDescendants(
         taskId = id,
         state = state.toEntityState(),
-        allowedSourceStates = allowedSourceStates.map { it.toEntityState() }
+        allowedSourceStates = allowedSourceStates.map { it.toEntityState() },
+        finishedAt = finishedAt
+    )
+
+    override suspend fun upgradeData(
+        id: Uuid,
+        input: ByteArray?,
+        output: ByteArray?,
+        progress: ByteArray?,
+        version: Int
+    ) = taskDao.upgradeData(
+        taskId = id,
+        input = input,
+        output = output,
+        progress = progress,
+        version = version
     )
 
     override suspend fun <T> withTransaction(

@@ -1,8 +1,10 @@
 package eu.tintera.tasks.core.fakes
 
-import eu.tintera.tasks.Data
 import eu.tintera.tasks.State
+import eu.tintera.tasks.core.data.DispatchableTask
+import eu.tintera.tasks.core.data.ExecutableTask
 import eu.tintera.tasks.core.data.FullTask
+import eu.tintera.tasks.core.data.ProcessableTask
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import kotlinx.coroutines.flow.Flow
@@ -16,12 +18,27 @@ class FakeRepository : Repository {
 
     private val tasks = MutableStateFlow<List<Task>>(emptyList())
     private val parentMap = mutableMapOf<Uuid, Set<Uuid>>() // childId -> parentIds
+    override fun dispatchableTasks(states: List<State>): Flow<List<DispatchableTask>> {
+        TODO("Not yet implemented")
+    }
 
-    override fun parentsFor(id: Uuid): Flow<List<Task>> {
+    override fun processableTask(id: Uuid): Flow<ProcessableTask?> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun executableTask(id: Uuid): ExecutableTask? {
+        TODO("Not yet implemented")
+    }
+
+    override fun parentsDataFor(id: Uuid): Flow<List<Task>> {
         val parentIds = parentMap[id] ?: emptySet()
         return tasks.map { allTasks ->
             allTasks.filter { it.id in parentIds }
         }
+    }
+
+    override fun parentStatesForTask(id: Uuid): Flow<List<State>> {
+        TODO("Not yet implemented")
     }
 
     override suspend fun updateRunAttemptCount(
@@ -45,7 +62,7 @@ class FakeRepository : Repository {
         id: Uuid,
         processTime: Instant,
         state: State,
-        progressData: Data,
+        progressData: ByteArray?,
         runAttemptCount: Int?
     ) {
         tasks.update { currentTasks ->
@@ -68,7 +85,7 @@ class FakeRepository : Repository {
         id: Uuid,
         state: State,
         finishedAt: Instant,
-        outputData: Data
+        outputData: ByteArray?
     ) {
         tasks.update { currentTasks ->
             currentTasks.map {
@@ -117,16 +134,20 @@ class FakeRepository : Repository {
     }
 
     override suspend fun cleanOld(
-        states: Set<State>,
+        terminalStates: Set<State>,
     ) {
         TODO("Not yet implemented")
     }
 
-    override fun tasksByTag(name: String): Flow<List<FullTask>> {
+    override fun taskInfosByTag(name: String): Flow<List<FullTask>> {
         TODO("Not yet implemented")
     }
 
-    override fun taskById(id: Uuid): Flow<FullTask?> {
+    override fun taskInfoById(id: Uuid): Flow<FullTask?> {
+        TODO("Not yet implemented")
+    }
+
+    override fun taskInfoByIds(ids: Set<Uuid>): Flow<List<Task>> {
         TODO("Not yet implemented")
     }
 
@@ -140,7 +161,7 @@ class FakeRepository : Repository {
         TODO("Not yet implemented")
     }
 
-    override suspend fun tasksByTagAndState(
+    override suspend fun taskIdsByTagAndState(
         states: List<State>,
         tag: String
     ): List<Task> {
@@ -157,7 +178,7 @@ class FakeRepository : Repository {
 
     override suspend fun updateProgressData(
         id: Uuid,
-        progressData: Data
+        progressData: ByteArray?
     ) {
         TODO("Not yet implemented")
     }
@@ -165,7 +186,9 @@ class FakeRepository : Repository {
     override suspend fun updateState(
         id: Uuid,
         state: State,
-        allowedSourceStates: Set<State>
+        allowedSourceStates: Set<State>,
+        resetProcessTime: Boolean,
+        runAttemptCount: Int?
     ) {
         tasks.update {
             it.map {
@@ -178,10 +201,20 @@ class FakeRepository : Repository {
         }
     }
 
-    override suspend fun updateStateWithDescendants(
+    override suspend fun terminateWithDescendants(
         id: Uuid,
         state: State,
         allowedSourceStates: Set<State>
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun upgradeData(
+        id: Uuid,
+        input: ByteArray?,
+        output: ByteArray?,
+        progress: ByteArray?,
+        version: Int
     ) {
         TODO("Not yet implemented")
     }

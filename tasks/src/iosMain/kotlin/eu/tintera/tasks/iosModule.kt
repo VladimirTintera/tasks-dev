@@ -4,6 +4,8 @@ import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import eu.tintera.guard.*
 import eu.tintera.tasks.core.*
+import eu.tintera.tasks.core.cleanup.DatabaseCleanupPolicy
+import eu.tintera.tasks.core.preconditions.TaskPrecondition
 import eu.tintera.tasks.db.DatabaseConfiguration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.plus
@@ -19,7 +21,9 @@ internal fun iosModule(
     config: IosTasksManagerConfiguration
 ): Module = module {
 
-    includes(engineModule)
+    includes(
+        engineModule(DatabaseCleanupPolicy.DISABLED_GHOST_TASKS_POLICY)
+    )
 
     single {
         TaskProcessorConfig(
@@ -39,8 +43,6 @@ internal fun iosModule(
             override val databaseName: String = config.databaseName
         }
     }
-
-    factoryOf(::RepositoryTaskScopeFactory) bind TaskScopeFactory::class
 
     factoryOf(::RepositoryCoreTaskManager) bind CoreTaskManager::class
 
@@ -101,4 +103,23 @@ internal fun iosModule(
     singleOf(::AppLifecycleObserver) {
         createdAtStart()
     } bind AppStateObserver::class
+
+    singleOf(::DebugObserver) bind ExecutionContextObserver::class
+}
+
+class DebugObserver : ExecutionContextObserver {
+    override fun onPreCancel() {
+        EventBus.send(TAG, "nnPreCancel")
+    }
+
+    override suspend fun onPreRelease() {
+        EventBus.send(TAG, "onPreRelease")
+    }
+
+    override fun onStarted() {
+        EventBus.send(TAG, "onStarted")
+    }
+    companion object {
+        private const val TAG = "DebugObserver"
+    }
 }

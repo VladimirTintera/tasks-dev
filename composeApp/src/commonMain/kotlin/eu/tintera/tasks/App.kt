@@ -20,6 +20,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import taskmanager.composeapp.generated.resources.Res
 import taskmanager.composeapp.generated.resources.cancel_24dp_1f1f1f_fill0_wght400_grad0_opsz24
 import taskmanager.composeapp.generated.resources.close_24dp_1f1f1f_fill0_wght400_grad0_opsz24
+import taskmanager.composeapp.generated.resources.schedule_24dp_1f1f1f_fill0_wght400_grad0_opsz24
 import kotlin.uuid.Uuid
 
 
@@ -53,13 +54,17 @@ fun App() {
                 modifier = Modifier.fillMaxSize().padding(paddingValues).consumeWindowInsets(paddingValues),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Row(
+                FlowRow(
                     modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Button(
                         onClick = viewModel::enqueueTask
                     ) { Text("Enqueue task") }
+
+                    Button(
+                        onClick = viewModel::enqueueContinuation
+                    ) { Text("Enqueue continuation") }
                 }
 
                 val listState = rememberLazyListState()
@@ -99,23 +104,32 @@ fun App() {
                         ) {
                             if (it.state == State.Running || it.state == State.Enqueued || it.state == State.Blocked) {
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Column {
-                                    IconButton(onClick = { viewModel.cancelTaskGyId(it.id) }) {
-                                        Icon(
-                                            painter = painterResource(Res.drawable.close_24dp_1f1f1f_fill0_wght400_grad0_opsz24),
-                                            contentDescription = "Cancel Task",
-                                            tint = MaterialTheme.colorScheme.error
+                                FlowRow {
+                                    TextButton(onClick = { viewModel.cancelTaskGyId(it.id) }) {
+                                        Text(
+                                            text = "Cancel",
+                                            color = MaterialTheme.colorScheme.error
                                         )
                                     }
 
                                     AnimatedVisibility(it.state == State.Running) {
-                                        IconButton(onClick = {
-                                            TestHandler.interrupt(it.id)
+                                        TextButton(onClick = {
+                                            TestHandler.retry(it.id)
                                         }) {
-                                            Icon(
-                                                painter = painterResource(Res.drawable.cancel_24dp_1f1f1f_fill0_wght400_grad0_opsz24),
-                                                contentDescription = "Retry Task",
-                                                tint = MaterialTheme.colorScheme.error
+                                            Text(
+                                                text = "Retry",
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
+
+                                    AnimatedVisibility(it.state == State.Running) {
+                                        TextButton(onClick = {
+                                            TestHandler.fail(it.id)
+                                        }) {
+                                            Text(
+                                                text = "Fail",
+                                                color = MaterialTheme.colorScheme.error
                                             )
                                         }
                                     }

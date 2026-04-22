@@ -35,9 +35,20 @@ plugins {
 include(":composeApp")
 include(":tasks")
 include(":core")
+include(":engine")
 include(":db")
 include(":api")
+
+include(":compat")
+
 include(":koin")
+include(":koin-json")
+include(":koin-protobuf")
+include(":koin-compat")
+
+include(":serialization-json")
+include(":serialization-protobuf")
+include(":serialization-compat")
 
 includeBuild("external/guard") {
     dependencySubstitution {

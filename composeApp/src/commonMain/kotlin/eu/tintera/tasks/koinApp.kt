@@ -1,9 +1,12 @@
 package eu.tintera.tasks
 
 import co.touchlab.kermit.Logger
-import eu.tintera.koin.taskHandlerOf
-import eu.tintera.koin.tasksKoinModule
 import eu.tintera.tasks.handlers.TestHandler
+import eu.tintera.tasks.handlers.TestHandlerData
+import eu.tintera.tasks.handlers.TestHandlerProgress
+import eu.tintera.tasks.koin.json.taskHandlerOf
+import eu.tintera.tasks.koin.tasksKoinModule
+import eu.tintera.tasks.migrations.migration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -15,21 +18,45 @@ import org.koin.dsl.module
 
 fun koinApp(
     appDeclaration: KoinAppDeclaration
-)  = startKoin {
+) = startKoin {
     appDeclaration()
     modules(
         tasksKoinModule(),
         module {
-            taskHandlerOf(::TestHandler)
+            taskHandlerOf(
+                ::TestHandler,
+                currentVersion = 2,
+                migrations = listOf(
+                    migration(1, 2) {
+                        migrateInput<Data, TestHandlerData>(legacySerializer(), jsonSerializer()) {
+                            TestHandlerData(
+                                count = it.getInt("count") ?: 20
+                            )
+                        }
+                        migrateProgress<Data, TestHandlerProgress>(legacySerializer(), jsonSerializer()) {
+                            TestHandlerProgress(
+                                totalCount = it.getInt("totalCount") ?: 20,
+                                progress = it.getInt("progress") ?: 0
+                            )
+                        }
+                        migrateOutput<Data, TestHandlerData>(legacySerializer(), jsonSerializer()) {
+                            TestHandlerData(
+                                count = it.getInt("count") ?: 20
+                            )
+                        }
+                    }
+                )
+            )
             viewModelOf(::MainViewModel)
 
             single(createdAtStart = true) {
                 object {
                     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
                     init {
                         scope.launch {
                             EventBus.events.collect {
-                                when(it) {
+                                when (it) {
                                     is TaskEvent.Custom -> Logger.i(tag = it.tag) { it.message }
                                 }
 
