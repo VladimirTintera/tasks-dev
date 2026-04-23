@@ -2,7 +2,7 @@ package eu.tintera.tasks.core.migrations
 
 import eu.tintera.tasks.migrations.Migration
 
-internal fun List<Migration>.findMigrationPath(
+fun List<Migration>.findMigrationPath(
     startVersion: Int,
     targetVersion: Int,
 ): List<Migration> {

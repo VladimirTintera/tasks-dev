@@ -1,16 +1,11 @@
 package eu.tintera.tasks
 
-import eu.tintera.tasks.migrations.Migration
-import eu.tintera.tasks.serialization.Serializer
 import kotlinx.coroutines.flow.Flow
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.uuid.Uuid
 
 interface TaskManager {
-    fun <Input : Any, Output : Any, Progress : Any> register(
-        registration: TaskRegistration<Input, Output, Progress>,
-    )
 
     suspend fun <T : Any> enqueueUniqueTask(
         task: TaskRequest<T>,
@@ -49,43 +44,6 @@ interface TaskManager {
 
     companion object
 }
-
-inline fun <reified T : TaskHandler<I, O, P>, reified I : Any, reified O : Any, reified P : Any> TaskManager.register(
-    identifier: String,
-    currentVersion: Int = 1,
-    inputSerializer: Serializer<I>,
-    outputSerializer: Serializer<O>,
-    progressSerializer: Serializer<P>,
-    migrations: List<Migration> = emptyList(),
-    noinline factory: () -> T
-) = register(
-    TaskRegistration(
-        identifier = identifier,
-        currentVersion = currentVersion,
-        factory = factory,
-        inputSerializer = inputSerializer,
-        outputSerializer = outputSerializer,
-        progressSerializer = progressSerializer,
-        migrations = migrations
-    )
-)
-
-inline fun <reified T : TaskHandler<I, O, P>, reified I : Any, reified O : Any, reified P : Any> TaskManager.register(
-    currentVersion: Int = 1,
-    inputSerializer: Serializer<I>,
-    outputSerializer: Serializer<O>,
-    progressSerializer: Serializer<P>,
-    migrations: List<Migration> = emptyList(),
-    noinline factory: () -> T
-) = register(
-    identifier = T::class.fullName,
-    currentVersion = currentVersion,
-    factory = factory,
-    inputSerializer = inputSerializer,
-    outputSerializer = outputSerializer,
-    progressSerializer = progressSerializer,
-    migrations = migrations,
-)
 
 
 suspend inline fun <reified T : TaskHandler<Any, Any, Any>> TaskManager.cancelTask() = cancelTask(T::class)

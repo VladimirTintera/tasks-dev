@@ -3,19 +3,13 @@ package eu.tintera.tasks
 import eu.tintera.tasks.koin.TasksKoinContext
 import eu.tintera.tasks.koin.mainModule
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.getAndUpdate
 import org.koin.core.KoinApplication
 import org.koin.dsl.bind
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
 
-object TaskManagerBootstrapper {
-    // Reaktivní stav inicializace. Výchozí je null (spíme).
-    private val _taskManager = MutableStateFlow<TaskManager?>(null)
-
-    // Vystavíme ven pouze pro čtení
-    val taskManager = _taskManager.asStateFlow()
+internal object TaskManagerBootstrapper {
 
     private val initialized = MutableStateFlow(false)
 
@@ -29,8 +23,6 @@ object TaskManagerBootstrapper {
             taskLifecycleObservers = taskLifecycleObservers,
             koinAppInitialization = koinAppInitialization
         )
-
-        _taskManager.value = TaskManager.getInstance()
     }
 
     private fun startTasksKoin(

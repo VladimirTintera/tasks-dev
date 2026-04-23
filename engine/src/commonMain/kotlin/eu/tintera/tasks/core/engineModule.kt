@@ -1,6 +1,7 @@
 package eu.tintera.tasks.core
 
 import eu.tintera.guard.ExecutionContextObserver
+import eu.tintera.tasks.TaskManager
 import eu.tintera.tasks.core.preconditions.*
 import org.koin.core.module.dsl.createdAtStart
 import org.koin.core.module.dsl.factoryOf
@@ -36,4 +37,5 @@ fun engineModule(
     } bind ExecutionContextObserver::class
 
 
+    factoryOf(::RepositoryCoreTaskManager) bind TaskManager::class
 }

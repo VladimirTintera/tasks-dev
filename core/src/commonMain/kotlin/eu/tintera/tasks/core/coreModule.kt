@@ -15,7 +15,6 @@ fun coreModule() = module {
     single { ApplicationScope(SupervisorJob()) }
     factoryOf(::TaskResultProcessorImpl) bind TaskResultProcessor::class
     factoryOf(::TaskEvaluatorImpl) bind TaskEvaluator::class
-    singleOf(::TaskRegistry)
     singleOf(::DatabaseCleaner) {
         createdAtStart()
     }

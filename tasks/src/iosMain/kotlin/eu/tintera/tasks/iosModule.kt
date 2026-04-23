@@ -13,7 +13,6 @@ import eu.tintera.tasks.core.preconditions.TaskPrecondition
 import eu.tintera.tasks.db.DatabaseConfiguration
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.createdAtStart
-import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.bind
 import org.koin.dsl.binds
@@ -52,9 +51,6 @@ internal fun iosModule(
             override val databaseName: String = config.databaseName
         }
     }
-
-    factoryOf(::RepositoryCoreTaskManager) bind CoreTaskManager::class
-
 
     singleOf<NetworkState>(::IosNetworkState)
 

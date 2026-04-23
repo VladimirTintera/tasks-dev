@@ -2,7 +2,7 @@ package eu.tintera.tasks
 
 import eu.tintera.tasks.migrations.Migration
 
-inline fun <reified Input : Any, reified Output : Any, reified Progress : Any> TaskManager.register(
+inline fun <reified Input : Any, reified Output : Any, reified Progress : Any> Registry.register(
     identifier: String,
     currentVersion: Int = 1,
     migrations: List<Migration> = emptyList(),
@@ -19,7 +19,7 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any> T
     )
 }
 
-inline fun <reified Input : Any, reified Output : Any, reified Progress : Any> TaskManager.register(
+inline fun <reified Input : Any, reified Output : Any, reified Progress : Any> Registry.register(
     currentVersion: Int = 1,
     migrations: List<Migration> = emptyList(),
     noinline factory: () -> TaskHandler<Input, Output, Progress>

@@ -19,6 +19,7 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     noinline definition: Module.() -> KoinDefinition<R>
 ) {
     definition()
+
     single(named<R>()) {
         TaskRegistration(
             currentVersion = currentVersion,
@@ -29,5 +30,9 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
             progressSerializer = progressSerializer,
             factory = { get<R>() }
         )
+    }
+
+    single(named<R>(), createdAtStart = true) {
+        TaskRegistrationInstaller(get(named<R>()))
     }
 }

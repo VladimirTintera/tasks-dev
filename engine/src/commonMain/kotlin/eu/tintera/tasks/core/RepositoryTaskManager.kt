@@ -14,9 +14,9 @@ import kotlin.uuid.Uuid
 
 class RepositoryCoreTaskManager(
     private val repository: Repository,
-    private val taskRegistry: TaskRegistry,
+    private val taskRegistry: RegistryResolver,
     private val taskMigrator: TaskMigrator
-) : CoreTaskManager {
+) : TaskManager {
 
     override suspend fun <T : Any> enqueueUniqueTask(
         task: TaskRequest<T>,
@@ -112,7 +112,7 @@ class RepositoryCoreTaskManager(
     private fun <T : Any> TaskRequest<T>.toTask(
         uniqueName: String,
         state: State,
-        registration: TaskRegistry.TaskRegistration<T, *, *>,
+        registration: TaskRegistration<T, *, *>,
         repeatInterval: Duration?
     ): Task {
         val now = Clock.System.now()

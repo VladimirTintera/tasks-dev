@@ -1,10 +1,6 @@
 package eu.tintera.tasks.core
 
-import eu.tintera.tasks.EventBus
-import eu.tintera.tasks.ForegroundInfo
-import eu.tintera.tasks.ParentData
-import eu.tintera.tasks.TaskRegistration
-import eu.tintera.tasks.TaskResult
+import eu.tintera.tasks.*
 import eu.tintera.tasks.core.data.ExecutableTask
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.migrations.TaskMigrator
@@ -35,7 +31,7 @@ interface TaskEvaluator {
 
 @Suppress("UNCHECKED_CAST")
 class TaskEvaluatorImpl(
-    private val taskRegistry: TaskRegistry,
+    private val taskRegistry: RegistryResolver,
     private val repository: Repository,
     private val taskMigrator: TaskMigrator,
     private val taskScopeFactory: TaskScopeFactory,

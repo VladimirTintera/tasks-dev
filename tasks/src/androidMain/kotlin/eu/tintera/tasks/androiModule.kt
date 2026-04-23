@@ -3,9 +3,8 @@ package eu.tintera.tasks
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.work.WorkManager
-import eu.tintera.tasks.core.WorkManagerCoreTaskManager
+import eu.tintera.tasks.core.WorkManagerTaskManager
 import eu.tintera.guard.ExecutionEnvironmentConfig
-import eu.tintera.tasks.core.CoreTaskManager
 import eu.tintera.tasks.core.cleanup.DatabaseCleanupService
 import eu.tintera.tasks.core.coreModule
 import eu.tintera.tasks.db.DatabaseConfiguration
@@ -22,7 +21,7 @@ internal fun androidModule(
     factoryOf(::WorkManagerDatabaseCleanupService) bind DatabaseCleanupService::class
 
     factory<WorkManager> { WorkManager.getInstance(get()) }
-    factoryOf(::WorkManagerCoreTaskManager) bind CoreTaskManager::class
+    factoryOf(::WorkManagerTaskManager) bind TaskManager::class
 
     single {
         ExecutionEnvironmentConfig(

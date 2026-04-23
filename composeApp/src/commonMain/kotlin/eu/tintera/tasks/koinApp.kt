@@ -5,7 +5,6 @@ import eu.tintera.tasks.handlers.TestHandler
 import eu.tintera.tasks.handlers.TestHandlerData
 import eu.tintera.tasks.handlers.TestHandlerProgress
 import eu.tintera.tasks.koin.json.taskHandlerOf
-import eu.tintera.tasks.koin.tasksKoinModule
 import eu.tintera.tasks.migrations.migration
 import eu.tintera.tasks.migrations.migrations
 import kotlinx.coroutines.CoroutineScope
@@ -24,10 +23,10 @@ fun koinApp(
 ) = startKoin {
     appDeclaration()
     modules(
-        tasksKoinModule(),
         module {
+
             single {
-                TaskManager.getInstance()
+                Tasks.taskManager
             }
 
             factoryOf(::TasksObserver) bind TaskLifecycleObserver::class

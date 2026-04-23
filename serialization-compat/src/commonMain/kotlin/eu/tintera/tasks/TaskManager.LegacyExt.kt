@@ -1,6 +1,6 @@
 package eu.tintera.tasks
 
-fun TaskManager.register(
+fun Registry.register(
     identifier: String,
     factory: () -> LegacyTaskHandler
 ) {
@@ -14,7 +14,7 @@ fun TaskManager.register(
     )
 }
 
-inline fun <reified T : LegacyTaskHandler> TaskManager.register(
+inline fun <reified T : LegacyTaskHandler> Registry.register(
     noinline factory: () -> T
 ) = register(
     identifier = T::class.fullName,

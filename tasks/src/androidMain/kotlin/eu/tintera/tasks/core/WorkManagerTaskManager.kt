@@ -24,12 +24,12 @@ import kotlin.uuid.Uuid
 import kotlin.uuid.toJavaUuid
 import kotlin.uuid.toKotlinUuid
 
-internal class WorkManagerCoreTaskManager(
+internal class WorkManagerTaskManager(
     private val workManager: WorkManager,
     private val repository: Repository,
     private val taskRegistry: TaskRegistry,
     private val taskMigrator: TaskMigrator
-) : CoreTaskManager {
+) : TaskManager {
 
     private fun <T : Any> TaskRequest<T>.oneTimeWorkRequest() =
         OneTimeWorkRequestBuilder<TaskWorker>().apply {
