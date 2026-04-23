@@ -50,7 +50,7 @@ class TaskScopeImpl<Input: Any, Progress: Any>(
     scope: CoroutineScope,
     private val repository: Repository,
     private val progressSerializer: Serializer<Progress>
-) : TaskScope<Input, Progress> {
+) : TaskScope<Input, Progress>, AutoCloseable {
 
     private val progress = MutableStateFlow<Progress?>(null)
     @OptIn(FlowPreview::class)
@@ -81,7 +81,7 @@ class TaskScopeImpl<Input: Any, Progress: Any>(
         }
     }
 
-    fun close() {
+    override fun close() {
         job.cancel()
     }
 }

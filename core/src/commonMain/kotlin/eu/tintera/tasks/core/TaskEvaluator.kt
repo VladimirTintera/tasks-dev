@@ -84,7 +84,7 @@ class TaskEvaluatorImpl(
             }
         }
 
-        val scope = taskScopeFactory.createForTask(
+        return taskScopeFactory.createForTask(
             taskId = id,
             data = typedInput,
             retryCount = task.runAttemptCount - 1,
@@ -92,23 +92,21 @@ class TaskEvaluatorImpl(
             onForegroundInfoProvided = onForegroundInfo,
             progressSerializer = registration.progressSerializer,
             scope = applicationScope + dispatchers.default
-        )
-
-        return try {
-            with(registration.factory()) {
-                scope.run()
-            }.also {
-                scope.flushProgress()
-            }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            e.printStackTrace()
-            EventBus.send(TAG, "Task execution failed with error '${e.message}'")
-            TaskResult.Failure
-        } finally {
-            scope.close()
-        }.toResult(registration)
+        ).use { scope ->
+            try {
+                with(registration.factory()) {
+                    scope.run()
+                }.also {
+                    scope.flushProgress()
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                e.printStackTrace()
+                EventBus.send(TAG, "Task execution failed with error '${e.message}'")
+                TaskResult.Failure
+            }.toResult(registration)
+        }
     }
 
     private fun TaskResult<Any>.toResult(
