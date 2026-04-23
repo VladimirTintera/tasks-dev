@@ -1,5 +1,6 @@
 package eu.tintera.tasks.runtime
 
+import eu.tintera.tasks.InternalTasksApi
 import eu.tintera.tasks.TaskLifecycleObserver
 import eu.tintera.tasks.di.TasksKoinContext
 import eu.tintera.tasks.koin.mainModule
@@ -26,6 +27,7 @@ internal object TaskManagerBootstrapper {
         )
     }
 
+    @OptIn(InternalTasksApi::class)
     private fun startTasksKoin(
         taskLifecycleObservers: List<TaskLifecycleObserver>,
         koinAppInitialization: KoinApplication.() -> Unit = {}

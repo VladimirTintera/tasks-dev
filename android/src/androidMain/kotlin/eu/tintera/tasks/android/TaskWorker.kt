@@ -11,6 +11,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import eu.tintera.tasks.EventBus
 import eu.tintera.tasks.ForegroundInfo
+import eu.tintera.tasks.InternalTasksApi
 import eu.tintera.tasks.State
 import eu.tintera.tasks.TaskResult
 import eu.tintera.tasks.core.*
@@ -26,6 +27,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.uuid.toKotlinUuid
 
+@OptIn(InternalTasksApi::class)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 open class TaskWorker(
     context: Context,
