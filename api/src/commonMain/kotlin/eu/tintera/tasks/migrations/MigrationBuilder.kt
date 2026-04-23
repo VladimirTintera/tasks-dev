@@ -1,56 +1,55 @@
 package eu.tintera.tasks.migrations
 
-import eu.tintera.tasks.serialization.TaskDataSerializer
+import eu.tintera.tasks.serialization.Serializer
 
-class MigrationBuilder(private val startVersion: Int, private val endVersion: Int) {
+@DslMarker
+annotation class MigrationDsl
+
+@MigrationDsl
+class MigrationBuilder(
+    private val startVersion: Int,
+    private val endVersion: Int
+) {
 
     @PublishedApi
-    internal var inputMigrator: FieldMigrator<Any?, Any?>? = null
+    internal var inputMigrator: Migrator<Any, Any>? = null
 
     @PublishedApi
-    internal var outputMigrator: FieldMigrator<Any?, Any?>? = null
+    internal var outputMigrator: Migrator<Any, Any>? = null
 
     @PublishedApi
-    internal var progressMigrator: FieldMigrator<Any?, Any?>? = null
+    internal var progressMigrator: Migrator<Any, Any>? = null
 
-    inline fun <reified From, reified To> migrateInput(
-        fromSerializer: TaskDataSerializer<From>,
-        toSerializer: TaskDataSerializer<To>,
-        noinline block: (From) -> To
+    fun <From : Any, To : Any> input(
+        fromSerializer: Serializer<From>,
+        block: (From) -> To
     ) {
-        @Suppress("UNCHECKED_CAST")
-        inputMigrator = FieldMigrator(
-            fromSerializer = fromSerializer,
-            toSerializer = toSerializer,
-            migrationBlock = block
-        ) as FieldMigrator<Any?, Any?>
+        inputMigrator = migrator(fromSerializer, block)
     }
 
-    inline fun <reified From, reified To> migrateOutput(
-        fromSerializer: TaskDataSerializer<From>,
-        toSerializer: TaskDataSerializer<To>,
-        noinline block: (From) -> To
+    fun <From : Any, To : Any> output(
+        fromSerializer: Serializer<From>,
+        block: (From) -> To
     ) {
-        @Suppress("UNCHECKED_CAST")
-        outputMigrator = FieldMigrator(
-            fromSerializer = fromSerializer,
-            toSerializer = toSerializer,
-            migrationBlock = block
-        ) as FieldMigrator<Any?, Any?>
+        outputMigrator = migrator(fromSerializer, block)
     }
 
-    inline fun <reified From, reified To> migrateProgress(
-        fromSerializer: TaskDataSerializer<From>,
-        toSerializer: TaskDataSerializer<To>,
-        noinline block: (From) -> To
+    fun <From : Any, To : Any> progress(
+        fromSerializer: Serializer<From>,
+        block: (From) -> To
     ) {
-        @Suppress("UNCHECKED_CAST")
-        progressMigrator = FieldMigrator(
-            fromSerializer = fromSerializer,
-            toSerializer = toSerializer,
-            migrationBlock = block
-        ) as FieldMigrator<Any?, Any?>
+        progressMigrator = migrator(fromSerializer, block)
     }
+
+    @PublishedApi
+    @Suppress("UNCHECKED_CAST")
+    internal fun <From : Any, To : Any> migrator(
+        fromSerializer: Serializer<From>,
+        block: (From) -> To
+    ) = Migrator(
+        fromSerializer = fromSerializer,
+        migrationBlock = block
+    ) as Migrator<Any, Any>
 
     @PublishedApi
     internal fun build(): Migration {
@@ -68,7 +67,30 @@ inline fun migration(
     startVersion: Int,
     endVersion: Int,
     block: MigrationBuilder.() -> Unit
-): Migration {
-    // Vytvoříme builder, aplikujeme na něj uživatelův blok a rovnou ho zamkneme (build)
-    return MigrationBuilder(startVersion, endVersion).apply(block).build()
+): Migration = MigrationBuilder(startVersion, endVersion).apply(block).build()
+
+@MigrationDsl
+class MigrationsBuilder {
+
+    private var migrations = mutableListOf<Migration>()
+
+    @PublishedApi
+    internal fun add(migration: Migration) {
+        migrations.add(migration)
+    }
+
+    fun build(): List<Migration> = migrations.toList()
 }
+
+inline fun MigrationsBuilder.migration(
+    startVersion: Int,
+    endVersion: Int,
+    block: MigrationBuilder.() -> Unit
+) {
+    add(MigrationBuilder(startVersion, endVersion).apply(block).build())
+}
+
+
+fun migrations(
+    block: MigrationsBuilder.() -> Unit
+): List<Migration> = MigrationsBuilder().apply { block() }.build()

@@ -1,7 +1,7 @@
 package eu.tintera.tasks
 
 import eu.tintera.tasks.migrations.Migration
-import eu.tintera.tasks.serialization.TaskDataSerializer
+import eu.tintera.tasks.serialization.Serializer
 import kotlinx.coroutines.flow.Flow
 import kotlin.reflect.KClass
 import kotlin.time.Duration
@@ -12,9 +12,9 @@ interface TaskManager {
         identifier: String,
         currentVersion: Int = 1,
         factory: () -> TaskHandler<Input, Output, Progress>,
-        inputSerializer: TaskDataSerializer<Input>,
-        outputSerializer: TaskDataSerializer<Output>,
-        progressSerializer: TaskDataSerializer<Progress>,
+        inputSerializer: Serializer<Input>,
+        outputSerializer: Serializer<Output>,
+        progressSerializer: Serializer<Progress>,
         migrations: List<Migration> = emptyList()
     )
 
@@ -59,9 +59,9 @@ interface TaskManager {
 inline fun <reified T : TaskHandler<I, O, P>, reified I : Any, reified O : Any, reified P : Any> TaskManager.register(
     identifier: String,
     currentVersion: Int = 1,
-    inputSerializer: TaskDataSerializer<I>,
-    outputSerializer: TaskDataSerializer<O>,
-    progressSerializer: TaskDataSerializer<P>,
+    inputSerializer: Serializer<I>,
+    outputSerializer: Serializer<O>,
+    progressSerializer: Serializer<P>,
     migrations: List<Migration> = emptyList(),
     noinline factory: () -> T
 ) = register(
@@ -76,9 +76,9 @@ inline fun <reified T : TaskHandler<I, O, P>, reified I : Any, reified O : Any, 
 
 inline fun <reified T : TaskHandler<I, O, P>, reified I : Any, reified O : Any, reified P : Any> TaskManager.register(
     currentVersion: Int = 1,
-    inputSerializer: TaskDataSerializer<I>,
-    outputSerializer: TaskDataSerializer<O>,
-    progressSerializer: TaskDataSerializer<P>,
+    inputSerializer: Serializer<I>,
+    outputSerializer: Serializer<O>,
+    progressSerializer: Serializer<P>,
     migrations: List<Migration> = emptyList(),
     noinline factory: () -> T
 ) = register(

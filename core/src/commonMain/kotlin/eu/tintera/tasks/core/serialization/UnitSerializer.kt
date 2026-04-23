@@ -1,8 +1,8 @@
 package eu.tintera.tasks.core.serialization
 
-import eu.tintera.tasks.serialization.TaskDataSerializer
+import eu.tintera.tasks.serialization.Serializer
 
-object UnitTaskDataSerializer : TaskDataSerializer<Unit> {
+object UnitSerializer : Serializer<Unit> {
     override fun encodeToBytes(value: Unit): ByteArray {
         return byteArrayOf()
     }

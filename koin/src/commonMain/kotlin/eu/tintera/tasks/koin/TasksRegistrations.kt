@@ -4,7 +4,7 @@ import eu.tintera.tasks.TaskHandler
 import eu.tintera.tasks.TaskManager
 import eu.tintera.tasks.TaskManagerBootstrapper
 import eu.tintera.tasks.migrations.Migration
-import eu.tintera.tasks.serialization.TaskDataSerializer
+import eu.tintera.tasks.serialization.Serializer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -50,9 +50,9 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     crossinline constructor: () -> R,
     identifier: String = "",
     currentVersion: Int = 1,
-    inputSerializer: TaskDataSerializer<Input>,
-    outputSerializer: TaskDataSerializer<Output>,
-    progressSerializer: TaskDataSerializer<Progress>,
+    inputSerializer: Serializer<Input>,
+    outputSerializer: Serializer<Output>,
+    progressSerializer: Serializer<Progress>,
     migrations: List<Migration> = emptyList(),
 ) = taskHandlerRegistration(
     identifier = identifier,
@@ -69,9 +69,9 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     crossinline constructor: (T1) -> R,
     identifier: String = "",
     currentVersion: Int = 1,
-    inputSerializer: TaskDataSerializer<Input>,
-    outputSerializer: TaskDataSerializer<Output>,
-    progressSerializer: TaskDataSerializer<Progress>,
+    inputSerializer: Serializer<Input>,
+    outputSerializer: Serializer<Output>,
+    progressSerializer: Serializer<Progress>,
     migrations: List<Migration> = emptyList(),
 ) = taskHandlerRegistration(
     identifier = identifier,
@@ -88,9 +88,9 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     crossinline constructor: (T1, T2) -> R,
     identifier: String = "",
     currentVersion: Int = 1,
-    inputSerializer: TaskDataSerializer<Input>,
-    outputSerializer: TaskDataSerializer<Output>,
-    progressSerializer: TaskDataSerializer<Progress>,
+    inputSerializer: Serializer<Input>,
+    outputSerializer: Serializer<Output>,
+    progressSerializer: Serializer<Progress>,
     migrations: List<Migration> = emptyList(),
 ) = taskHandlerRegistration(
     identifier = identifier,
@@ -107,9 +107,9 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     crossinline constructor: (T1, T2, T3) -> R,
     identifier: String = "",
     currentVersion: Int = 1,
-    inputSerializer: TaskDataSerializer<Input>,
-    outputSerializer: TaskDataSerializer<Output>,
-    progressSerializer: TaskDataSerializer<Progress>,
+    inputSerializer: Serializer<Input>,
+    outputSerializer: Serializer<Output>,
+    progressSerializer: Serializer<Progress>,
     migrations: List<Migration> = emptyList(),
 ) = taskHandlerRegistration(
     identifier = identifier,
@@ -126,9 +126,9 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     crossinline constructor: (T1, T2, T3, T4) -> R,
     identifier: String = "",
     currentVersion: Int = 1,
-    inputSerializer: TaskDataSerializer<Input>,
-    outputSerializer: TaskDataSerializer<Output>,
-    progressSerializer: TaskDataSerializer<Progress>,
+    inputSerializer: Serializer<Input>,
+    outputSerializer: Serializer<Output>,
+    progressSerializer: Serializer<Progress>,
     migrations: List<Migration> = emptyList(),
 ) = taskHandlerRegistration(
     identifier = identifier,
@@ -145,9 +145,9 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     crossinline constructor: (T1, T2, T3, T4, T5) -> R,
     identifier: String = "",
     currentVersion: Int = 1,
-    inputSerializer: TaskDataSerializer<Input>,
-    outputSerializer: TaskDataSerializer<Output>,
-    progressSerializer: TaskDataSerializer<Progress>,
+    inputSerializer: Serializer<Input>,
+    outputSerializer: Serializer<Output>,
+    progressSerializer: Serializer<Progress>,
     migrations: List<Migration> = emptyList(),
 ) = taskHandlerRegistration(
     identifier = identifier,
@@ -164,9 +164,9 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     crossinline constructor: (T1, T2, T3, T4, T5, T6) -> R,
     identifier: String = "",
     currentVersion: Int = 1,
-    inputSerializer: TaskDataSerializer<Input>,
-    outputSerializer: TaskDataSerializer<Output>,
-    progressSerializer: TaskDataSerializer<Progress>,
+    inputSerializer: Serializer<Input>,
+    outputSerializer: Serializer<Output>,
+    progressSerializer: Serializer<Progress>,
     migrations: List<Migration> = emptyList(),
 ) = taskHandlerRegistration(
     identifier = identifier,
@@ -184,9 +184,9 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     currentVersion: Int = 1,
     migrations: List<Migration> = emptyList(),
     qualifier: Qualifier? = null,
-    inputSerializer: TaskDataSerializer<Input>,
-    outputSerializer: TaskDataSerializer<Output>,
-    progressSerializer: TaskDataSerializer<Progress>,
+    inputSerializer: Serializer<Input>,
+    outputSerializer: Serializer<Output>,
+    progressSerializer: Serializer<Progress>,
     noinline definition: Definition<R>,
 ) = taskHandlerRegistration(
     identifier = identifier,

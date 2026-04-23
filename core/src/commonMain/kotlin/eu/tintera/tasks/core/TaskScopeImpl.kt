@@ -4,7 +4,7 @@ import eu.tintera.tasks.ForegroundInfo
 import eu.tintera.tasks.ParentData
 import eu.tintera.tasks.TaskScope
 import eu.tintera.tasks.core.data.Repository
-import eu.tintera.tasks.serialization.TaskDataSerializer
+import eu.tintera.tasks.serialization.Serializer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.NonCancellable
@@ -27,7 +27,7 @@ class TaskScopeFactory(
         retryCount: Int,
         parentData: List<ParentData>,
         onForegroundInfoProvided: suspend (ForegroundInfo) -> Boolean,
-        progressSerializer: TaskDataSerializer<Progress>,
+        progressSerializer: Serializer<Progress>,
         scope: CoroutineScope
     ) = TaskScopeImpl(
         repository = repository,
@@ -49,7 +49,7 @@ class TaskScopeImpl<Input: Any, Progress: Any>(
     private val onForegroundInfoProvided: suspend (ForegroundInfo) -> Boolean,
     scope: CoroutineScope,
     private val repository: Repository,
-    private val progressSerializer: TaskDataSerializer<Progress>
+    private val progressSerializer: Serializer<Progress>
 ) : TaskScope<Input, Progress> {
 
     private val progress = MutableStateFlow<Progress?>(null)

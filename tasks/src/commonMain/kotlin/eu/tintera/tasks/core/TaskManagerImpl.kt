@@ -2,7 +2,7 @@ package eu.tintera.tasks.core
 
 import eu.tintera.tasks.*
 import eu.tintera.tasks.migrations.Migration
-import eu.tintera.tasks.serialization.TaskDataSerializer
+import eu.tintera.tasks.serialization.Serializer
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Duration
 import kotlin.uuid.Uuid
@@ -16,9 +16,9 @@ class TaskManagerImpl(
         identifier: String,
         currentVersion: Int,
         factory: () -> TaskHandler<Input, Output, Progress>,
-        inputSerializer: TaskDataSerializer<Input>,
-        outputSerializer: TaskDataSerializer<Output>,
-        progressSerializer: TaskDataSerializer<Progress>,
+        inputSerializer: Serializer<Input>,
+        outputSerializer: Serializer<Output>,
+        progressSerializer: Serializer<Progress>,
         migrations: List<Migration>
     ) = taskRegistry.register(
         identifier = identifier,

@@ -3,12 +3,11 @@ package eu.tintera.tasks.koin
 import eu.tintera.tasks.TaskHandler
 import eu.tintera.tasks.fullName
 import eu.tintera.tasks.migrations.Migration
-import eu.tintera.tasks.serialization.TaskDataSerializer
+import eu.tintera.tasks.serialization.Serializer
 import org.koin.core.Koin
 import org.koin.core.definition.KoinDefinition
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
-import kotlin.reflect.KClass
 
 
 @PublishedApi
@@ -16,9 +15,9 @@ internal class TaskHandlerRegistration<Input : Any, Output : Any, Progress : Any
     val koinFactory: (Koin) -> TaskHandler<Input, Output, Progress>,
     val identifier: String,
     val currentVersion: Int,
-    val inputSerializer: TaskDataSerializer<Input>,
-    val outputSerializer: TaskDataSerializer<Output>,
-    val progressSerializer: TaskDataSerializer<Progress>,
+    val inputSerializer: Serializer<Input>,
+    val outputSerializer: Serializer<Output>,
+    val progressSerializer: Serializer<Progress>,
     val migrations: List<Migration>
 )
 
@@ -26,9 +25,9 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     currentVersion: Int,
     identifier: String,
     migrations: List<Migration>,
-    inputSerializer: TaskDataSerializer<Input>,
-    outputSerializer: TaskDataSerializer<Output>,
-    progressSerializer: TaskDataSerializer<Progress>,
+    inputSerializer: Serializer<Input>,
+    outputSerializer: Serializer<Output>,
+    progressSerializer: Serializer<Progress>,
     noinline definition: Module.() -> KoinDefinition<R>
 ) {
     definition()

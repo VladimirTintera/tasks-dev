@@ -1,15 +1,15 @@
 package eu.tintera.tasks
 
-import eu.tintera.tasks.serialization.TaskDataSerializer
+import eu.tintera.tasks.serialization.Serializer
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.protobuf.ProtoBuf
 import kotlinx.serialization.serializer
 
 private val protoBuf: ProtoBuf = ProtoBuf { encodeDefaults = true }
 
-private class ProtobufTaskDataSerializer<T : Any>(
+private class ProtobufSerializer<T : Any>(
     private val kSerializer: KSerializer<T>
-) : TaskDataSerializer<T> {
+) : Serializer<T> {
 
     override fun encodeToBytes(value: T): ByteArray {
         return protoBuf.encodeToByteArray(kSerializer, value)
@@ -20,7 +20,7 @@ private class ProtobufTaskDataSerializer<T : Any>(
     }
 }
 
-fun <T : Any> protobufSerializer(serializer: KSerializer<T>): TaskDataSerializer<T> =
-    ProtobufTaskDataSerializer(serializer)
+fun <T : Any> protobufSerializer(serializer: KSerializer<T>): Serializer<T> =
+    ProtobufSerializer(serializer)
 
-inline fun <reified T : Any> protobufSerializer(): TaskDataSerializer<T> = protobufSerializer(serializer<T>())
+inline fun <reified T : Any> protobufSerializer(): Serializer<T> = protobufSerializer(serializer<T>())

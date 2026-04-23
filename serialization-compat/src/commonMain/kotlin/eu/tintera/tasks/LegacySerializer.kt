@@ -1,11 +1,11 @@
 package eu.tintera.tasks
 
-import eu.tintera.tasks.serialization.TaskDataSerializer
+import eu.tintera.tasks.serialization.Serializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoBuf
 import kotlinx.serialization.protobuf.ProtoNumber
 
-private object LegacyTaskDataSerializer : TaskDataSerializer<Data> {
+private object LegacySerializer : Serializer<Data> {
 
     private val protoBuf: ProtoBuf = ProtoBuf { encodeDefaults = true }
 
@@ -20,7 +20,7 @@ private object LegacyTaskDataSerializer : TaskDataSerializer<Data> {
     }
 }
 
-fun legacySerializer(): TaskDataSerializer<Data> = LegacyTaskDataSerializer
+fun legacySerializer(): Serializer<Data> = LegacySerializer
 
 private fun SerializableTaskData.toByteArray() = taskDataOf(
     *values.flatMap { value ->

@@ -7,6 +7,7 @@ import eu.tintera.tasks.handlers.TestHandlerProgress
 import eu.tintera.tasks.koin.json.taskHandlerOf
 import eu.tintera.tasks.koin.tasksKoinModule
 import eu.tintera.tasks.migrations.migration
+import eu.tintera.tasks.migrations.migrations
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -34,26 +35,26 @@ fun koinApp(
             taskHandlerOf(
                 ::TestHandler,
                 currentVersion = 2,
-                migrations = listOf(
+                migrations = migrations {
                     migration(1, 2) {
-                        migrateInput<Data, TestHandlerData>(legacySerializer(), jsonSerializer()) {
+                        input(legacySerializer()) {
                             TestHandlerData(
                                 count = it.getInt("count") ?: 20
                             )
                         }
-                        migrateProgress<Data, TestHandlerProgress>(legacySerializer(), jsonSerializer()) {
+                        progress(legacySerializer()) {
                             TestHandlerProgress(
                                 totalCount = it.getInt("totalCount") ?: 20,
                                 progress = it.getInt("progress") ?: 0
                             )
                         }
-                        migrateOutput<Data, TestHandlerData>(legacySerializer(), jsonSerializer()) {
+                        output(legacySerializer()) {
                             TestHandlerData(
                                 count = it.getInt("count") ?: 20
                             )
                         }
                     }
-                )
+                }
             )
             viewModelOf(::MainViewModel)
 

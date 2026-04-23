@@ -3,7 +3,7 @@ package eu.tintera.tasks.core
 import eu.tintera.tasks.TaskHandler
 import eu.tintera.tasks.core.migrations.findMigrationPath
 import eu.tintera.tasks.migrations.Migration
-import eu.tintera.tasks.serialization.TaskDataSerializer
+import eu.tintera.tasks.serialization.Serializer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
@@ -15,9 +15,9 @@ class TaskRegistry {
     class TaskRegistration<Input : Any, Output : Any, Progress : Any>(
         val currentVersion: Int,
         val factory: () -> TaskHandler<Input, Output, Progress>,
-        val inputSerializer: TaskDataSerializer<Input>,
-        val outputSerializer: TaskDataSerializer<Output>,
-        val progressSerializer: TaskDataSerializer<Progress>,
+        val inputSerializer: Serializer<Input>,
+        val outputSerializer: Serializer<Output>,
+        val progressSerializer: Serializer<Progress>,
         val migrations: List<Migration>
     ) {
         init {

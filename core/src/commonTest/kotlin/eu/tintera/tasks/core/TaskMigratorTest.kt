@@ -1,14 +1,5 @@
 package eu.tintera.tasks.core
 
-import eu.tintera.tasks.core.fakes.FakeStringSerializer
-import eu.tintera.tasks.core.migrations.TaskMigrator
-import eu.tintera.tasks.migrations.Migration
-import eu.tintera.tasks.migrations.migration
-import eu.tintera.tasks.serialization.TaskDataSerializer
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 /*
 class TaskMigratorTest {
 

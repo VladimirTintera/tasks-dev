@@ -10,7 +10,7 @@ import eu.tintera.tasks.core.data.Info
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.core.migrations.TaskMigrator
-import eu.tintera.tasks.serialization.TaskDataSerializer
+import eu.tintera.tasks.serialization.Serializer
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.*
@@ -443,7 +443,7 @@ internal class WorkManagerCoreTaskManager(
     }
 }
 
-private fun <T> TaskDataSerializer<T>.decodeFromBytesOrNull(data: ByteArray) = try {
+private fun <T> Serializer<T>.decodeFromBytesOrNull(data: ByteArray) = try {
     decodeFromBytes(data)
 } catch (_: Exception) {
     null
