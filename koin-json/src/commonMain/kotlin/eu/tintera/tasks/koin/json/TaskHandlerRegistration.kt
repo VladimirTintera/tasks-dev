@@ -2,7 +2,7 @@ package eu.tintera.tasks.koin.json
 
 import eu.tintera.tasks.TaskHandler
 import eu.tintera.tasks.jsonSerializer
-import eu.tintera.tasks.koin.taskHandlerRegistration
+import eu.tintera.tasks.koin.taskRegistration
 import eu.tintera.tasks.migrations.Migration
 import org.koin.core.definition.KoinDefinition
 import org.koin.core.module.Module
@@ -14,7 +14,7 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     identifier: String = "",
     currentVersion: Int = 1,
     migrations: List<Migration> = emptyList(),
-) = taskHandlerRegistration(
+) = taskRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
     migrations = migrations,
@@ -27,7 +27,7 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     identifier: String = "",
     currentVersion: Int = 1,
     migrations: List<Migration> = emptyList(),
-) = taskHandlerRegistration(
+) = taskRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
     migrations = migrations
@@ -40,7 +40,7 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     identifier: String = "",
     currentVersion: Int = 1,
     migrations: List<Migration> = emptyList(),
-) = taskHandlerRegistration(
+) = taskRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
     migrations = migrations
@@ -53,7 +53,7 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     identifier: String = "",
     currentVersion: Int = 1,
     migrations: List<Migration> = emptyList(),
-) = taskHandlerRegistration(
+) = taskRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
     migrations = migrations
@@ -66,7 +66,7 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     identifier: String = "",
     currentVersion: Int = 1,
     migrations: List<Migration> = emptyList(),
-) = taskHandlerRegistration(
+) = taskRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
     migrations = migrations
@@ -79,7 +79,7 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     identifier: String = "",
     currentVersion: Int = 1,
     migrations: List<Migration> = emptyList(),
-) = taskHandlerRegistration(
+) = taskRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
     migrations = migrations
@@ -92,7 +92,7 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     identifier: String = "",
     currentVersion: Int = 1,
     migrations: List<Migration> = emptyList(),
-) = taskHandlerRegistration(
+) = taskRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
     migrations = migrations
@@ -100,12 +100,12 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     factoryOf(constructor)
 }
 
-inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>> Module.taskHandlerRegistration(
+inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>> Module.taskRegistration(
     identifier: String = "",
     currentVersion: Int = 1,
     migrations: List<Migration> = emptyList(),
     noinline definition: Module.() -> KoinDefinition<R>
-) = taskHandlerRegistration(
+) = taskRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
     inputSerializer = jsonSerializer<Input>(),

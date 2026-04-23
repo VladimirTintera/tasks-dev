@@ -1,9 +1,7 @@
 package eu.tintera.tasks.core
 
-import eu.tintera.tasks.TaskHandler
+import eu.tintera.tasks.TaskRegistration
 import eu.tintera.tasks.core.migrations.findMigrationPath
-import eu.tintera.tasks.migrations.Migration
-import eu.tintera.tasks.serialization.Serializer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
@@ -12,46 +10,28 @@ import kotlin.time.Duration.Companion.seconds
 
 class TaskRegistry {
 
-    class TaskRegistration<Input : Any, Output : Any, Progress : Any>(
-        val currentVersion: Int,
-        val factory: () -> TaskHandler<Input, Output, Progress>,
-        val inputSerializer: Serializer<Input>,
-        val outputSerializer: Serializer<Output>,
-        val progressSerializer: Serializer<Progress>,
-        val migrations: List<Migration>
-    ) {
-        init {
-            // FAIL-FAST VALIDACE MIGRACÍ
-            if (currentVersion > 1) {
-                // Zkusíme nasimulovat cestu z každé historické verze (od 1 až po currentVersion - 1)
-                for (startVer in 1 until currentVersion) {
-                    try {
-                        migrations.findMigrationPath(
-                            startVersion = startVer,
-                            targetVersion = currentVersion,
-                        )
-                    } catch (e: IllegalStateException) {
-                        // Algoritmus cestu nenašel! Aplikaci okamžitě a nekompromisně shodíme
-                        // s krásnou chybovou hláškou, která vývojáři přesně řekne, co udělal špatně.
-                        throw IllegalArgumentException(
-                            "🚨 Fatální chyba registrace úkolu!\n" +
-                                    "Handler vyžaduje verzi $currentVersion, ale framework nenašel " +
-                                    "migrační cestu z historické verze $startVer.\n" +
-                                    "Doplň chybějící `migration(...)` do registrace, jinak by staré úkoly v databázi selhaly.",
-                            e
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    private val registry = MutableStateFlow<Map<String, TaskRegistration<*, *, *>>>(emptyMap())
+    private val registry = MutableStateFlow<Map<String, TaskRegistration<out Any, out Any, out Any>>>(emptyMap())
 
     fun <Input : Any, Output : Any, Progress : Any> register(
         identifier: String,
         registration: TaskRegistration<Input, Output, Progress>
     ) {
+        if (registration.currentVersion > 1) {
+            // Zkusíme nasimulovat cestu z každé historické verze (od 1 až po currentVersion - 1)
+            for (startVer in 1 until registration.currentVersion) {
+                try {
+                    registration.migrations.findMigrationPath(
+                        startVersion = startVer,
+                        targetVersion = registration.currentVersion,
+                    )
+                } catch (e: IllegalStateException) {
+                    throw IllegalArgumentException(
+                        "Fatal registration exception! Handler '${registration.identifier}' requires version $registration.currentVersion, but no migration path from $startVer found",
+                        e
+                    )
+                }
+            }
+        }
         registry.update { currentMap ->
             if (identifier in currentMap) {
                 throw IllegalArgumentException("Handler for '$identifier' is already registered.")

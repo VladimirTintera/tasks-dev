@@ -1,12 +1,12 @@
 package eu.tintera.tasks.core.migrations
 
-import eu.tintera.tasks.core.TaskRegistry
+import eu.tintera.tasks.TaskRegistration
 
 class TaskMigrator {
 
-    fun <Input: Any, Output: Any, Progress: Any> migrate(
+    fun <Input : Any, Output : Any, Progress : Any> migrate(
         data: MigratableData,
-        registration: TaskRegistry.TaskRegistration<Input, Output, Progress>
+        registration: TaskRegistration<Input, Output, Progress>
     ): MigrationResult? {
 
         if (data.version == registration.currentVersion) return null

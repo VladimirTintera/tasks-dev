@@ -3,6 +3,7 @@ package eu.tintera.tasks.core
 import eu.tintera.tasks.EventBus
 import eu.tintera.tasks.ForegroundInfo
 import eu.tintera.tasks.ParentData
+import eu.tintera.tasks.TaskRegistration
 import eu.tintera.tasks.TaskResult
 import eu.tintera.tasks.core.data.ExecutableTask
 import eu.tintera.tasks.core.data.Repository
@@ -113,7 +114,7 @@ class TaskEvaluatorImpl(
     }
 
     private fun TaskResult<Any>.toResult(
-        registration: TaskRegistry.TaskRegistration<Any, Any, Any>
+        registration: TaskRegistration<Any, Any, Any>
     ) = when (this) {
         TaskResult.Failure -> TaskEvaluatorResult.Failure
         TaskResult.Retry -> TaskEvaluatorResult.Retry

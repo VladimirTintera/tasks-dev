@@ -1,6 +1,6 @@
 package eu.tintera.tasks
 
-import eu.tintera.tasks.koin.taskHandlerRegistration
+import eu.tintera.tasks.koin.taskRegistration
 import eu.tintera.tasks.migrations.Migration
 import org.koin.core.definition.KoinDefinition
 import org.koin.core.module.Module
@@ -12,7 +12,7 @@ inline fun <reified R : TaskHandler<Data, Data, Data>> Module.taskHandlerOf(
     identifier: String = "",
     currentVersion: Int = 1,
     migrations: List<Migration> = emptyList(),
-) = taskHandlerRegistration(
+) = taskRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
     migrations = migrations,
@@ -25,7 +25,7 @@ inline fun <reified R : TaskHandler<Data, Data, Data>, reified T1> Module.taskHa
     identifier: String = "",
     currentVersion: Int = 1,
     migrations: List<Migration> = emptyList(),
-) = taskHandlerRegistration(
+) = taskRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
     migrations = migrations
@@ -38,7 +38,7 @@ inline fun <reified R : TaskHandler<Data, Data, Data>, reified T1, reified T2> M
     identifier: String = "",
     currentVersion: Int = 1,
     migrations: List<Migration> = emptyList(),
-) = taskHandlerRegistration(
+) = taskRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
     migrations = migrations
@@ -51,7 +51,7 @@ inline fun <reified R : TaskHandler<Data, Data, Data>, reified T1, reified T2, r
     identifier: String = "",
     currentVersion: Int = 1,
     migrations: List<Migration> = emptyList(),
-) = taskHandlerRegistration(
+) = taskRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
     migrations = migrations
@@ -64,7 +64,7 @@ inline fun <reified R : TaskHandler<Data, Data, Data>, reified T1, reified T2, r
     identifier: String = "",
     currentVersion: Int = 1,
     migrations: List<Migration> = emptyList(),
-) = taskHandlerRegistration(
+) = taskRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
     migrations = migrations
@@ -77,7 +77,7 @@ inline fun <reified R : TaskHandler<Data, Data, Data>, reified T1, reified T2, r
     identifier: String = "",
     currentVersion: Int = 1,
     migrations: List<Migration> = emptyList(),
-) = taskHandlerRegistration(
+) = taskRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
     migrations = migrations
@@ -90,7 +90,7 @@ inline fun <reified R : TaskHandler<Data, Data, Data>, reified T1, reified T2, r
     identifier: String = "",
     currentVersion: Int = 1,
     migrations: List<Migration> = emptyList(),
-) = taskHandlerRegistration(
+) = taskRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
     migrations = migrations
@@ -98,12 +98,12 @@ inline fun <reified R : TaskHandler<Data, Data, Data>, reified T1, reified T2, r
     factoryOf(constructor)
 }
 
-inline fun <reified R : TaskHandler<Data, Data, Data>> Module.taskHandlerRegistration(
+inline fun <reified R : TaskHandler<Data, Data, Data>> Module.taskRegistration(
     identifier: String = "",
     currentVersion: Int = 1,
     migrations: List<Migration> = emptyList(),
     noinline definition: Module.() -> KoinDefinition<R>
-) = taskHandlerRegistration(
+) = taskRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
     inputSerializer = legacySerializer(),

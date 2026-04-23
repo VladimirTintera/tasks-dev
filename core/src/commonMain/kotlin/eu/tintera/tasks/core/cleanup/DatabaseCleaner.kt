@@ -1,12 +1,9 @@
 package eu.tintera.tasks.core.cleanup
 
-import eu.tintera.tasks.Constraints
-import eu.tintera.tasks.ExistingPeriodicTaskPolicy
-import eu.tintera.tasks.TaskManager
+import eu.tintera.tasks.*
 import eu.tintera.tasks.core.AppDispatchers
 import eu.tintera.tasks.core.ApplicationScope
 import eu.tintera.tasks.core.serialization.UnitSerializer
-import eu.tintera.tasks.taskRequest
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.hours
 
@@ -18,11 +15,15 @@ internal class DatabaseCleaner(
 ) {
     init {
         taskManager.register(
-            identifier = IDENTIFIER,
-            inputSerializer = UnitSerializer,
-            outputSerializer = UnitSerializer,
-            progressSerializer = UnitSerializer,
-            factory = { handler },
+            TaskRegistration(
+                identifier = IDENTIFIER,
+                inputSerializer = UnitSerializer,
+                outputSerializer = UnitSerializer,
+                progressSerializer = UnitSerializer,
+                factory = { handler },
+                currentVersion = 1,
+                migrations = emptyList()
+            )
         )
 
         scope.launch(dispatchers.io) {

@@ -9,13 +9,7 @@ import kotlin.uuid.Uuid
 
 interface TaskManager {
     fun <Input : Any, Output : Any, Progress : Any> register(
-        identifier: String,
-        currentVersion: Int = 1,
-        factory: () -> TaskHandler<Input, Output, Progress>,
-        inputSerializer: Serializer<Input>,
-        outputSerializer: Serializer<Output>,
-        progressSerializer: Serializer<Progress>,
-        migrations: List<Migration> = emptyList()
+        registration: TaskRegistration<Input, Output, Progress>,
     )
 
     suspend fun <T : Any> enqueueUniqueTask(
@@ -65,13 +59,15 @@ inline fun <reified T : TaskHandler<I, O, P>, reified I : Any, reified O : Any, 
     migrations: List<Migration> = emptyList(),
     noinline factory: () -> T
 ) = register(
-    identifier = identifier,
-    currentVersion = currentVersion,
-    factory = factory,
-    inputSerializer = inputSerializer,
-    outputSerializer = outputSerializer,
-    progressSerializer = progressSerializer,
-    migrations = migrations,
+    TaskRegistration(
+        identifier = identifier,
+        currentVersion = currentVersion,
+        factory = factory,
+        inputSerializer = inputSerializer,
+        outputSerializer = outputSerializer,
+        progressSerializer = progressSerializer,
+        migrations = migrations
+    )
 )
 
 inline fun <reified T : TaskHandler<I, O, P>, reified I : Any, reified O : Any, reified P : Any> TaskManager.register(

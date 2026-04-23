@@ -1,8 +1,6 @@
 package eu.tintera.tasks.core
 
 import eu.tintera.tasks.*
-import eu.tintera.tasks.migrations.Migration
-import eu.tintera.tasks.serialization.Serializer
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Duration
 import kotlin.uuid.Uuid
@@ -12,27 +10,14 @@ class TaskManagerImpl(
     private val coreTaskManager: CoreTaskManager,
 ) : TaskManager {
 
-    override fun <Input: Any, Output: Any, Progress: Any> register(
-        identifier: String,
-        currentVersion: Int,
-        factory: () -> TaskHandler<Input, Output, Progress>,
-        inputSerializer: Serializer<Input>,
-        outputSerializer: Serializer<Output>,
-        progressSerializer: Serializer<Progress>,
-        migrations: List<Migration>
+    override fun <Input : Any, Output : Any, Progress : Any> register(
+        registration: TaskRegistration<Input, Output, Progress>,
     ) = taskRegistry.register(
-        identifier = identifier,
-        registration = TaskRegistry.TaskRegistration(
-            currentVersion = currentVersion,
-            factory = factory,
-            inputSerializer = inputSerializer,
-            outputSerializer = outputSerializer,
-            progressSerializer = progressSerializer,
-            migrations = migrations
-        )
+        identifier = registration.identifier,
+        registration = registration
     )
 
-    override suspend fun <T: Any> enqueueUniqueTask(
+    override suspend fun <T : Any> enqueueUniqueTask(
         task: TaskRequest<T>,
         uniqueName: String,
         existingTaskPolicy: ExistingTaskPolicy,
@@ -42,7 +27,7 @@ class TaskManagerImpl(
         existingTaskPolicy = existingTaskPolicy
     )
 
-    override suspend fun <T: Any> enqueueTask(task: TaskRequest<T>) = coreTaskManager.enqueueTask(task)
+    override suspend fun <T : Any> enqueueTask(task: TaskRequest<T>) = coreTaskManager.enqueueTask(task)
 
     override suspend fun enqueueContinuation(
         continuation: TaskContinuation,
@@ -58,7 +43,7 @@ class TaskManagerImpl(
         existingTaskPolicy = existingTaskPolicy
     )
 
-    override suspend fun <T: Any> enqueuePeriodicUniqueTask(
+    override suspend fun <T : Any> enqueuePeriodicUniqueTask(
         task: TaskRequest<T>,
         repeatInterval: Duration,
         uniqueName: String,

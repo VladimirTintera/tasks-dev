@@ -367,7 +367,7 @@ internal class WorkManagerCoreTaskManager(
 
     private fun WorkInfo.toTaskInfo(
         info: Info?,
-        registration: TaskRegistry.TaskRegistration<Any, Any, Any>?
+        registration: TaskRegistration<Any, Any, Any>?
     ): TaskInfo {
 
         val migrationResult = info?.let { task ->
