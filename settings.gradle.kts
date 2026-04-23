@@ -33,11 +33,14 @@ plugins {
 }
 
 include(":composeApp")
-include(":tasks")
+
+include(":runtime")
 include(":core")
 include(":engine")
 include(":db")
 include(":api")
+include(":android")
+include(":di")
 
 include(":compat")
 

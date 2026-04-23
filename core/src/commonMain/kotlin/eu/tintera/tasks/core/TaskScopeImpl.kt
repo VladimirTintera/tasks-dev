@@ -73,14 +73,15 @@ class TaskScopeImpl<Input: Any, Progress: Any>(
         progress.update { data }
     }
 
-    suspend fun flushProgressAndClose() {
-
-        job.cancel()
-
+    suspend fun flushProgress() {
         withContext(NonCancellable) {
             progress.value?.also {
                 repository.updateProgressData(taskId, progressSerializer.encodeToBytes(it))
             }
         }
+    }
+
+    fun close() {
+        job.cancel()
     }
 }

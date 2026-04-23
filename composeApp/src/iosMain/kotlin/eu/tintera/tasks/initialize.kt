@@ -2,12 +2,12 @@ package eu.tintera.tasks
 
 import platform.Foundation.NSBundle
 
-fun initialize() {
+fun initialize() : TaskManager {
     val app = koinApp {
 
     }
 
-    TasksInitializer.initialize(
+    return TasksInitializer.initialize(
         config = IosTasksManagerConfiguration(
             bgProcessingTaskIdentifier = (NSBundle.mainBundle.bundleIdentifier + ".BgProcessingTask"),
             appRefreshTaskIdentifier = (NSBundle.mainBundle.bundleIdentifier + ".AppRefreshTask")

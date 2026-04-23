@@ -97,6 +97,8 @@ class TaskEvaluatorImpl(
         return try {
             with(registration.factory()) {
                 scope.run()
+            }.also {
+                scope.flushProgress()
             }
         } catch (e: CancellationException) {
             throw e
@@ -105,7 +107,7 @@ class TaskEvaluatorImpl(
             EventBus.send(TAG, "Task execution failed with error '${e.message}'")
             TaskResult.Failure
         } finally {
-            scope.flushProgressAndClose()
+            scope.close()
         }.toResult(registration)
     }
 

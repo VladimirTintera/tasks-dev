@@ -26,6 +26,10 @@ kotlin {
     jvm()
 
     sourceSets {
+        androidMain.dependencies {
+            implementation(projects.android)
+            implementation(libs.androidx.work.runtime.ktx)
+        }
         commonMain.dependencies {
             api(projects.api)
             implementation(libs.kotlinx.serialization.protobuf)

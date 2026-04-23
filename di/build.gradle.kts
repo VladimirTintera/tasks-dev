@@ -3,17 +3,18 @@ plugins {
     alias(libs.plugins.androidLibrary)
 }
 kotlin {
-
     jvmToolchain(11)
 
     androidTarget()
 
     compilerOptions {
         freeCompilerArgs.addAll(
-            "-Xexpect-actual-classes",
+            "-Xexpect-actual-classes"
         )
-
-        optIn.addAll("kotlin.uuid.ExperimentalUuidApi")
+        optIn.addAll(
+            "kotlin.uuid.ExperimentalUuidApi",
+            "kotlin.concurrent.atomics.ExperimentalAtomicApi"
+        )
     }
 
     iosX64()
@@ -26,21 +27,26 @@ kotlin {
         commonMain.dependencies {
             api(project.dependencies.platform(libs.koin.bom))
             api(libs.koin.core)
-            implementation(projects.runtime)
-            api(projects.api)
-        }
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
         }
     }
 }
 
 android {
-    namespace = "eu.tintera.tasks.koin"
+    namespace = "eu.tintera.tasks.di"
     sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
+
+    }
+
+    buildTypes {
+        release {
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
     }
 
     compileOptions {
@@ -48,3 +54,4 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 }
+
