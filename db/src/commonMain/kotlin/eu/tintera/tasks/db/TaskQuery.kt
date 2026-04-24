@@ -3,17 +3,15 @@ package eu.tintera.tasks.db
 import androidx.room.RoomRawQuery
 import kotlin.uuid.Uuid
 
-internal class TaskQuery private constructor(
+internal class TaskQuery(
     val ids: List<Uuid>,
     val states: List<State>,
-    val tags: List<String>
+    val tags: List<String>,
+    val uniqueNames: List<String>
 ) {
-    companion object {
-        fun builder() = Builder()
-    }
 
     fun toRoomRawQuery(): RoomRawQuery {
-        val query = StringBuilder("SELECT * FROM tasks WHERE 1=1")
+        val query = StringBuilder("SELECT t.id, t.identifier, t.runAttemptCount, t.state, t.outputData, t.processTime, t.progressData, t.finishedAt, t.createdAt, t.version, tt.taskId, tt.name FROM task t LEFT JOIN TaskTag tt ON t.id = tt.taskId WHERE 1=1")
 
         // Seznam akcí, které nabindují konkrétní hodnotu na správný index.
         // V KMP se binduje na objekt SQLiteStatement.
@@ -49,6 +47,15 @@ internal class TaskQuery private constructor(
             }
         }
 
+        if (uniqueNames.isNotEmpty()) {
+            query.append(" AND uniqueName IN (${uniqueNames.joinToString(",") { "?" }})")
+            uniqueNames.forEach { uniqueName ->
+                bindings.add { statement, index -> statement.bindText(index, uniqueName) }
+            }
+        }
+
+        println("Bindings: ${bindings.size}, ${bindings.first()}")
+
         return RoomRawQuery(
             sql = query.toString(),
             onBindStatement = { statement ->
@@ -58,18 +65,5 @@ internal class TaskQuery private constructor(
                 }
             }
         )
-    }
-
-    // Klasický Builder pattern pro pohodlné použití zvenčí
-    class Builder {
-        private var ids = emptyList<Uuid>()
-        private var states = emptyList<State>()
-        private var tags = emptyList<String>()
-
-        fun fromIds(ids: List<Uuid>) = apply { this.ids = ids }
-        fun fromStates(states: List<State>) = apply { this.states = states }
-        fun fromTags(tags: List<String>) = apply { this.tags = tags }
-
-        fun build() = TaskQuery(ids, states, tags)
     }
 }

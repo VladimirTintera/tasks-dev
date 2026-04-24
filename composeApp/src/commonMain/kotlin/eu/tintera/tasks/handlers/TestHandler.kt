@@ -82,7 +82,7 @@ fun testTaskRequest(
     tags = setOf(DEFAULT_TAG),
     constraints = Constraints(
         requiresDeviceIdle = false,
-        requiresNetwork = true
+        requiresNetwork = false
     ),
     initialDelay = initialDelay
 )

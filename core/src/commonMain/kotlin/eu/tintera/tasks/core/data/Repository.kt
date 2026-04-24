@@ -1,6 +1,7 @@
 package eu.tintera.tasks.core.data
 
 import eu.tintera.tasks.State
+import eu.tintera.tasks.TaskInfoQuery
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
@@ -39,6 +40,7 @@ interface Repository {
     suspend fun cleanOld(terminalStates: Set<State>)
 
     fun taskInfosByTag(name: String): Flow<List<Info>>
+    fun taskInfos(query: TaskInfoQuery): Flow<List<Info>>
     fun taskInfoById(id: Uuid): Flow<Info?>
 
     fun taskInfoByIds(ids: Set<Uuid>): Flow<List<Info>>

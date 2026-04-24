@@ -12,6 +12,7 @@ import eu.tintera.tasks.core.data.ExecutableTask
 import eu.tintera.tasks.core.data.Info
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
+import eu.tintera.tasks.core.isEmpty
 import eu.tintera.tasks.core.migrations.TaskMigrator
 import eu.tintera.tasks.serialization.Serializer
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -302,41 +303,9 @@ internal class WorkManagerTaskManager(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override fun taskInfosByTag(tag: String) = channelFlow {
-        val sharedWorkInfosFlow = workManager.getWorkInfosByTagFlow(tag)
-            .stateIn(
-                scope = this,
-                started = SharingStarted.Eagerly, // Můžeme Eagerly, protože hned pod tím to konzumujeme
-                initialValue = emptyList()
-            )
-
-        val dbTasksFlow = sharedWorkInfosFlow
-            .map { list -> list.map { it.id.toKotlinUuid() }.toSet() }
-            .distinctUntilChanged()
-            .flatMapLatest { ids ->
-                if (ids.isEmpty()) {
-                    flowOf(emptyList())
-                } else {
-                    repository.taskInfoByIds(ids)
-                }
-            }
-
-        combine(sharedWorkInfosFlow, dbTasksFlow) { workInfos, dbTasks ->
-            val taskMap = dbTasks.associateBy { it.id }.mapValues { (_, task) ->
-                task to taskRegistry.resolve<Any, Any, Any>(task.identifier)
-            }
-
-            workInfos.map { workInfo ->
-                val pair = taskMap[workInfo.id.toKotlinUuid()]
-                workInfo.toTaskInfo(
-                    info = pair?.first,
-                    registration = pair?.second,
-                )
-            }
-        }.collect {
-            send(it)
-        }
-    }
+    override fun taskInfosByTag(
+        tag: String
+    ) = workManager.getWorkInfosByTagFlow(tag).toTaskInfos()
 
     override fun taskInfoById(
         id: Uuid
@@ -366,6 +335,58 @@ internal class WorkManagerTaskManager(
 
     override suspend fun cancelTasksByTag(tag: String) {
         workManager.cancelAllWorkByTag(tag).await()
+    }
+
+    override fun taskInfos(
+        query: TaskInfoQuery
+    ) = query.takeIf { !it.isEmpty() }?.let {
+        workManager.getWorkInfosFlow(
+            WorkQuery.Builder
+                .fromTags(query.tags.toList())
+                .addIds(query.ids.map { it.toJavaUuid() })
+                .addStates(query.states.map { it.toWorkState() })
+                .addUniqueWorkNames(query.uniqueNames.toList()).build()
+        ).map {
+            println(it)
+            it
+        }.toTaskInfos()
+    } ?: emptyFlow()
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun Flow<List<WorkInfo>>.toTaskInfos() = channelFlow {
+
+        val sharedWorkInfosFlow = stateIn(
+            scope = this,
+            started = SharingStarted.Eagerly, // Můžeme Eagerly, protože hned pod tím to konzumujeme
+            initialValue = emptyList()
+        )
+
+        val dbTasksFlow = sharedWorkInfosFlow
+            .map { list -> list.map { it.id.toKotlinUuid() }.toSet() }
+            .distinctUntilChanged()
+            .flatMapLatest { ids ->
+                if (ids.isEmpty()) {
+                    flowOf(emptyList())
+                } else {
+                    repository.taskInfoByIds(ids)
+                }
+            }
+
+        combine(sharedWorkInfosFlow, dbTasksFlow) { workInfos, dbTasks ->
+            val taskMap = dbTasks.associateBy { it.id }.mapValues { (_, task) ->
+                task to taskRegistry.resolve<Any, Any, Any>(task.identifier)
+            }
+
+            workInfos.map { workInfo ->
+                val pair = taskMap[workInfo.id.toKotlinUuid()]
+                workInfo.toTaskInfo(
+                    info = pair?.first,
+                    registration = pair?.second,
+                )
+            }
+        }.collect {
+            send(it)
+        }
     }
 
     private fun WorkInfo.toTaskInfo(

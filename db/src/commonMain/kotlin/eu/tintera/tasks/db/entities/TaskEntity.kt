@@ -1,6 +1,7 @@
 package eu.tintera.tasks.db.entities
 
 import androidx.room.*
+import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.db.BackoffCriteria
 import eu.tintera.tasks.db.State
 import kotlinx.coroutines.flow.Flow
@@ -142,6 +143,9 @@ internal interface TaskDao {
     @Query("SELECT Task.id, Task.identifier, Task.runAttemptCount, Task.state, Task.outputData, Task.processTime, Task.progressData, Task.finishedAt, Task.createdAt, Task.version, TaskTag.taskId, TaskTag.name FROM Task LEFT JOIN TaskTag ON TaskTag.taskId = Task.id WHERE EXISTS(SELECT 1 FROM TaskTag tag WHERE tag.name = :name AND tag.taskId = Task.id)")
     fun taskInfoByTag(name: String): Flow<Map<InfoEntity, List<TaskTag>>>
 
+    @RawQuery(observedEntities = [TaskEntity::class, TaskTag::class])
+    fun taskInfoByRawQuery(query: RoomRawQuery) : Flow<Map<InfoEntity, List<TaskTag>>>
+
     @Query(
         "SELECT id FROM Task WHERE state IN (:states) AND EXISTS(SELECT * FROM TaskTag WHERE TaskTag.taskId = Task.id AND TaskTag.name = :tag)"
     )
@@ -228,7 +232,7 @@ internal interface TaskDao {
     )
 
     @Query("SELECT id, state FROM Task WHERE state IN (:states)")
-    fun dispatchableTasks(states: List<State>): Flow<List<DispatchableTaskEntity>>
+    fun getDispatchableTasksByStates(states: List<State>): Flow<List<GetDispatchableTaskByStates>>
 
     @Query("SELECT state, initialDelay, runAttemptCount, networkRequired, requiresDeviceIdle, repeatInterval, backoffCriteria, processTime from Task where id = :id")
     fun processableTask(id: Uuid): Flow<ProcessableTaskEntity?>

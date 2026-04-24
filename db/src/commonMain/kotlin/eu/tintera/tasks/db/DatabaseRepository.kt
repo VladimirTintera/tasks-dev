@@ -3,6 +3,7 @@ package eu.tintera.tasks.db
 import androidx.room.immediateTransaction
 import androidx.room.useWriterConnection
 import eu.tintera.tasks.State
+import eu.tintera.tasks.TaskInfoQuery
 import eu.tintera.tasks.core.data.*
 import eu.tintera.tasks.db.entities.*
 import kotlinx.coroutines.flow.Flow
@@ -18,16 +19,17 @@ internal class DatabaseRepository(
     private val taskTagDao: TaskTagDao,
     private val taskParentTaskDao: TaskParentTaskDao
 ) : Repository {
-    override fun dispatchableTasks(states: List<State>): Flow<List<DispatchableTask>> = taskDao.dispatchableTasks(
-        states = states.map { it.toEntityState() }
-    ).distinctUntilChanged().map {
-        it.map { task ->
-            DispatchableTask(
-                id = task.id,
-                state = task.state.toTaskState()
-            )
+    override fun dispatchableTasks(states: List<State>): Flow<List<DispatchableTask>> =
+        taskDao.getDispatchableTasksByStates(
+            states = states.map { it.toEntityState() }
+        ).distinctUntilChanged().map {
+            it.map { task ->
+                DispatchableTask(
+                    id = task.id,
+                    state = task.state.toTaskState()
+                )
+            }
         }
-    }
 
     override fun processableTask(
         id: Uuid
@@ -47,17 +49,18 @@ internal class DatabaseRepository(
         }
     }
 
-    override suspend fun executableTask(id: Uuid): ExecutableTask? = taskDao.getExecutableTasksById(id)?.map { (task, tags) ->
-        ExecutableTask(
-            identifier = task.identifier,
-            runAttemptCount = task.runAttemptCount,
-            version = task.version,
-            inputData = task.inputData,
-            outputData = task.outputData,
-            progressData = task.progressData,
-            tags = tags.map { it.name }.toSet()
-        )
-    }?.firstOrNull()
+    override suspend fun executableTask(id: Uuid): ExecutableTask? =
+        taskDao.getExecutableTasksById(id)?.map { (task, tags) ->
+            ExecutableTask(
+                identifier = task.identifier,
+                runAttemptCount = task.runAttemptCount,
+                version = task.version,
+                inputData = task.inputData,
+                outputData = task.outputData,
+                progressData = task.progressData,
+                tags = tags.map { it.name }.toSet()
+            )
+        }?.firstOrNull()
 
 
     override suspend fun parentsDataFor(id: Uuid) = taskDao.parentsDataFor(id).map {
@@ -167,6 +170,21 @@ internal class DatabaseRepository(
     override fun taskInfosByTag(
         name: String
     ): Flow<List<Info>> = taskDao.taskInfoByTag(name).distinctUntilChanged().map { map ->
+        map.map { (value, tags) ->
+            value.toInfo(tags.map { it.name }.toSet())
+        }
+    }
+
+    override fun taskInfos(
+        query: TaskInfoQuery
+    ): Flow<List<Info>> = taskDao.taskInfoByRawQuery(
+        query = TaskQuery(
+            ids = query.ids.toList(),
+            tags = query.tags.toList(),
+            states = query.states.map { it.toEntityState() },
+            uniqueNames = query.uniqueNames.toList(),
+        ).toRoomRawQuery()
+    ).distinctUntilChanged().map { map ->
         map.map { (value, tags) ->
             value.toInfo(tags.map { it.name }.toSet())
         }

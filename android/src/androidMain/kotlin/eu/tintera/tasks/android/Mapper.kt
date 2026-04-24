@@ -12,10 +12,19 @@ internal fun ExistingTaskPolicy.toWorkPolicy() = when (this) {
 }
 
 internal fun WorkInfo.State.toState() = when (this) {
-    WorkInfo.State.BLOCKED -> eu.tintera.tasks.State.Blocked
-    WorkInfo.State.ENQUEUED -> eu.tintera.tasks.State.Enqueued
-    WorkInfo.State.RUNNING -> eu.tintera.tasks.State.Running
-    WorkInfo.State.SUCCEEDED -> eu.tintera.tasks.State.Succeeded
-    WorkInfo.State.CANCELLED -> eu.tintera.tasks.State.Cancelled
+    WorkInfo.State.BLOCKED -> State.Blocked
+    WorkInfo.State.ENQUEUED -> State.Enqueued
+    WorkInfo.State.RUNNING -> State.Running
+    WorkInfo.State.SUCCEEDED -> State.Succeeded
+    WorkInfo.State.CANCELLED -> State.Cancelled
     WorkInfo.State.FAILED -> State.Failed
+}
+
+internal fun State.toWorkState() = when (this) {
+    State.Enqueued -> WorkInfo.State.ENQUEUED
+    State.Blocked -> WorkInfo.State.BLOCKED
+    State.Running -> WorkInfo.State.RUNNING
+    State.Cancelled -> WorkInfo.State.CANCELLED
+    State.Succeeded -> WorkInfo.State.SUCCEEDED
+    State.Failed -> WorkInfo.State.FAILED
 }

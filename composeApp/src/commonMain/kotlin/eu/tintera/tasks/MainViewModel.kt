@@ -20,8 +20,11 @@ class MainViewModel(
 ) : ViewModel() {
 
     val tasks = combine(
-        taskManager.taskInfosByTag(DEFAULT_TAG),
-        taskManager.taskInfosByTag("sys:task_manager_cleanup")
+        //taskManager.taskInfosByTag(DEFAULT_TAG),
+        //taskManager.taskInfosByTag("sys:task_manager_cleanup"),
+        taskManager.taskInfos {
+            addStates(State.Running)
+        }
     ) {
         it.flatMap { it }
     }.map {
