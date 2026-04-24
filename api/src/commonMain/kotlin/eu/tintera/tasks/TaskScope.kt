@@ -18,6 +18,8 @@ interface InputTaskScope<T: Any> {
 
     val parents: List<ParentData>
 
+    val tags: Set<String>
+
     suspend fun setForegroundInfo(foregroundInfo: ForegroundInfo): Boolean
 }
 

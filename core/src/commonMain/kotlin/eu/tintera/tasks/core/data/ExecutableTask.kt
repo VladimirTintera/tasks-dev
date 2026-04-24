@@ -8,7 +8,8 @@ data class ExecutableTask(
     override val version: Int,
     override val inputData: ByteArray?,
     override val outputData: ByteArray?,
-    override val progressData: ByteArray?
+    override val progressData: ByteArray?,
+    val tags: Set<String>
 ) : MigratableData {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -22,6 +23,7 @@ data class ExecutableTask(
         if (!inputData.contentEquals(other.inputData)) return false
         if (!outputData.contentEquals(other.outputData)) return false
         if (!progressData.contentEquals(other.progressData)) return false
+        if (tags != other.tags) return false
 
         return true
     }
@@ -33,6 +35,7 @@ data class ExecutableTask(
         result = 31 * result + (inputData?.contentHashCode() ?: 0)
         result = 31 * result + (outputData?.contentHashCode() ?: 0)
         result = 31 * result + (progressData?.contentHashCode() ?: 0)
+        result = 31 * result + tags.hashCode()
         return result
     }
 }

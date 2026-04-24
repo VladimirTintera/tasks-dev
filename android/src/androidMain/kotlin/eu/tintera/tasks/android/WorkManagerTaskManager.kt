@@ -382,7 +382,8 @@ internal class WorkManagerTaskManager(
                         version = task.version,
                         inputData = task.inputData,
                         outputData = task.outputData,
-                        progressData = task.progressData
+                        progressData = task.progressData,
+                        tags = tags
                     ),
                     registration = registration
                 )

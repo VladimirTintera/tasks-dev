@@ -91,7 +91,8 @@ class TaskEvaluatorImpl(
             parentData = parents,
             onForegroundInfoProvided = onForegroundInfo,
             progressSerializer = registration.progressSerializer,
-            scope = applicationScope + dispatchers.default
+            scope = applicationScope + dispatchers.default,
+            tags = task.tags
         ).use { scope ->
             try {
                 with(registration.factory()) {

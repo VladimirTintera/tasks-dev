@@ -37,7 +37,6 @@ open class TaskWorker(
     private val notificationManager by lazy {
         applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     }
-
     private val taskEvaluator: TaskEvaluator by inject()
     private val repository: Repository by inject()
     private val taskResultProcessor: TaskResultProcessor by inject()
@@ -114,7 +113,8 @@ open class TaskWorker(
                     version = task.version,
                     inputData = task.inputData,
                     outputData = task.outputData,
-                    progressData = task.progressData
+                    progressData = task.progressData,
+                    tags = tags
                 ),
                 onForegroundInfo = ::internalSetForegroundInfo
             )

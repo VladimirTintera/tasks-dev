@@ -28,7 +28,8 @@ class TaskScopeFactory(
         parentData: List<ParentData>,
         onForegroundInfoProvided: suspend (ForegroundInfo) -> Boolean,
         progressSerializer: Serializer<Progress>,
-        scope: CoroutineScope
+        scope: CoroutineScope,
+        tags: Set<String>
     ) = TaskScopeImpl(
         repository = repository,
         taskId = taskId,
@@ -37,7 +38,8 @@ class TaskScopeFactory(
         parents = parentData,
         onForegroundInfoProvided = onForegroundInfoProvided,
         progressSerializer = progressSerializer,
-        scope = scope
+        scope = scope,
+        tags = tags
     )
 }
 
@@ -49,7 +51,8 @@ class TaskScopeImpl<Input: Any, Progress: Any>(
     private val onForegroundInfoProvided: suspend (ForegroundInfo) -> Boolean,
     scope: CoroutineScope,
     private val repository: Repository,
-    private val progressSerializer: Serializer<Progress>
+    private val progressSerializer: Serializer<Progress>,
+    override val tags: Set<String>
 ) : TaskScope<Input, Progress>, AutoCloseable {
 
     private val progress = MutableStateFlow<Progress?>(null)

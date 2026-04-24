@@ -233,7 +233,7 @@ internal interface TaskDao {
     @Query("SELECT state, initialDelay, runAttemptCount, networkRequired, requiresDeviceIdle, repeatInterval, backoffCriteria, processTime from Task where id = :id")
     fun processableTask(id: Uuid): Flow<ProcessableTaskEntity?>
 
-    @Query("SELECT identifier, runAttemptCount, version, inputData, outputData, progressData from Task where id = :id")
-    suspend fun executableTask(id: Uuid): ExecutableTaskEntity?
+    @Query("SELECT t.identifier, t.runAttemptCount, t.version, t.inputData, t.outputData, t.progressData, tt.taskId, tt.name from Task t LEFT JOIN TaskTag tt ON tt.taskId = t.id where t.id = :id")
+    suspend fun getExecutableTasksById(id: Uuid): Map<GetExecutableTasksById, List<GetExecutableTaskByIdTag>>?
 
 }

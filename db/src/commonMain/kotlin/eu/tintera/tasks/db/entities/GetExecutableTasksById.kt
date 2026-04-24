@@ -1,6 +1,6 @@
 package eu.tintera.tasks.db.entities
 
-data class ExecutableTaskEntity(
+data class GetExecutableTasksById(
     val identifier: String,
     val runAttemptCount: Int,
     val version: Int,
@@ -12,7 +12,7 @@ data class ExecutableTaskEntity(
         if (this === other) return true
         if (other == null || this::class != other::class) return false
 
-        other as ExecutableTaskEntity
+        other as GetExecutableTasksById
 
         if (runAttemptCount != other.runAttemptCount) return false
         if (version != other.version) return false

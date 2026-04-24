@@ -1,10 +1,6 @@
 package eu.tintera.tasks.db.entities
 
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.ForeignKey
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
+import androidx.room.*
 import kotlin.uuid.Uuid
 
 @Entity(

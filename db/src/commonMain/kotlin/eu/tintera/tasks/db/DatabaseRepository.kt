@@ -47,16 +47,17 @@ internal class DatabaseRepository(
         }
     }
 
-    override suspend fun executableTask(id: Uuid): ExecutableTask? = taskDao.executableTask(id)?.let {
+    override suspend fun executableTask(id: Uuid): ExecutableTask? = taskDao.getExecutableTasksById(id)?.map { (task, tags) ->
         ExecutableTask(
-            identifier = it.identifier,
-            runAttemptCount = it.runAttemptCount,
-            version = it.version,
-            inputData = it.inputData,
-            outputData = it.outputData,
-            progressData = it.progressData
+            identifier = task.identifier,
+            runAttemptCount = task.runAttemptCount,
+            version = task.version,
+            inputData = task.inputData,
+            outputData = task.outputData,
+            progressData = task.progressData,
+            tags = tags.map { it.name }.toSet()
         )
-    }
+    }?.firstOrNull()
 
 
     override suspend fun parentsDataFor(id: Uuid) = taskDao.parentsDataFor(id).map {
