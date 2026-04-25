@@ -2,7 +2,7 @@ package eu.tintera.tasks.runtime
 
 import eu.tintera.tasks.core.AppDispatchers
 import eu.tintera.tasks.core.ApplicationScope
-import eu.tintera.tasks.core.data.ProcessableTask
+import eu.tintera.tasks.core.ProcessableTask
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.SchedulableTask
 import eu.tintera.tasks.core.preconditions.PreconditionResult

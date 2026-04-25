@@ -6,7 +6,7 @@ import eu.tintera.tasks.db.entities.ParentDataEntity
 import kotlin.uuid.Uuid
 
 @Dao
-internal interface TaskEvaluatorDao {
+interface TaskEvaluatorDao {
 
     @Query("SELECT t.id, t.identifier, t.outputData, t.finishedAt, t.version FROM Task t JOIN TaskParentTask p ON p.parentTaskId = t.id WHERE p.taskId = :id")
     suspend fun parentsDataFor(id: Uuid): List<ParentDataEntity>

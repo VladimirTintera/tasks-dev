@@ -3,7 +3,7 @@ package eu.tintera.tasks.db.entities
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
-internal data class ParentDataEntity(
+data class ParentDataEntity(
     val id: Uuid,
     val identifier: String,
     val outputData: ByteArray?,

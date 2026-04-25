@@ -2,6 +2,7 @@ package eu.tintera.tasks.db
 
 import androidx.room.*
 import androidx.room.migration.AutoMigrationSpec
+import eu.tintera.tasks.db.dao.TaskDao
 import eu.tintera.tasks.db.dao.TaskEvaluatorDao
 import eu.tintera.tasks.db.dao.TaskProcessorDao
 import eu.tintera.tasks.db.dao.TaskScopeDao

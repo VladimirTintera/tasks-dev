@@ -54,11 +54,13 @@ kotlin {
         iosMain.dependencies {
             implementation(libs.androidx.sqlite.bundled)
             implementation(projects.engine)
+            implementation(projects.engineDb)
         }
 
         jvmMain.dependencies {
             implementation(libs.androidx.sqlite.bundled)
             implementation(projects.engine)
+            implementation(projects.engineDb)
         }
     }
 }

@@ -4,7 +4,7 @@ import eu.tintera.tasks.db.State
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
-internal data class InfoEntity(
+data class InfoEntity(
     val id: Uuid,
     val identifier: String,
     val runAttemptCount: Int,

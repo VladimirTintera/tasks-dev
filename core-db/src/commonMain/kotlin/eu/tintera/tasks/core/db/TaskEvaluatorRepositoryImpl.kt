@@ -1,4 +1,4 @@
-package eu.tintera.tasks.db
+package eu.tintera.tasks.core.db
 
 import eu.tintera.tasks.core.data.ParentData
 import eu.tintera.tasks.core.data.TaskEvaluatorRepository
@@ -6,7 +6,7 @@ import eu.tintera.tasks.db.dao.TaskEvaluatorDao
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
-internal class TaskEvaluatorRepository(
+internal class TaskEvaluatorRepositoryImpl(
     private val dao: TaskEvaluatorDao,
 ) : TaskEvaluatorRepository {
 

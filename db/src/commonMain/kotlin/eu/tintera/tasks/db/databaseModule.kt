@@ -19,13 +19,13 @@ val databaseModule = module {
 
     factoryOf(::DatabaseFactory)
 
-    factoryOf(::DatabaseRepository) bind Repository::class
+    factoryOf(::RepositoryImpl) bind Repository::class
     single { get<DatabaseFactory>().create() }
     singleOf(::DatabaseTransactionRunner) bind TransactionRunner::class
 
-    factoryOf(::TaskScopeRepository) bind eu.tintera.tasks.core.data.TaskScopeRepository::class
-    factoryOf(::TaskEvaluatorRepository) bind eu.tintera.tasks.core.data.TaskEvaluatorRepository::class
-    factoryOf(::TaskProcessorRepository) bind eu.tintera.tasks.core.data.TaskProcessorRepository::class
+
+
+
 }
 
 internal expect fun Module.platformDb()

@@ -1,7 +1,7 @@
 package eu.tintera.tasks.core.preconditions
 
 import eu.tintera.tasks.core.NetworkState
-import eu.tintera.tasks.core.data.ProcessableTask
+import eu.tintera.tasks.core.ProcessableTask
 import kotlinx.coroutines.flow.map
 
 internal class NetworkStateTaskPrecondition(

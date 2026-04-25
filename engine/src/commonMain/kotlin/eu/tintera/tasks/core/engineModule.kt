@@ -2,6 +2,7 @@ package eu.tintera.tasks.core
 
 import eu.tintera.guard.ExecutionContextObserver
 import eu.tintera.tasks.TaskManager
+import eu.tintera.tasks.core.db.coreDbModule
 import eu.tintera.tasks.core.preconditions.*
 import org.koin.core.module.dsl.createdAtStart
 import org.koin.core.module.dsl.factoryOf
@@ -9,11 +10,11 @@ import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.bind
 import org.koin.dsl.module
 
-fun engineModule(
-) = module {
+val engineModule = module {
 
     includes(
-        coreModule()
+        coreModule,
+        coreDbModule
     )
 
     factoryOf(::TaskProcessorImpl) bind TaskProcessor::class

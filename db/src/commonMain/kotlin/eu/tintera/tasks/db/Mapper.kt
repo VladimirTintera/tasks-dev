@@ -45,7 +45,7 @@ internal fun Task.toTaskEntity() = TaskEntity(
     version = version
 )
 
-internal fun State.toTaskState() = when (this) {
+fun State.toTaskState() = when (this) {
     State.Enqueued -> eu.tintera.tasks.State.Enqueued
     State.Running -> eu.tintera.tasks.State.Running
     State.Succeeded -> eu.tintera.tasks.State.Succeeded
@@ -54,7 +54,7 @@ internal fun State.toTaskState() = when (this) {
     State.Blocked -> eu.tintera.tasks.State.Blocked
 }
 
-internal fun eu.tintera.tasks.State.toEntityState() = when (this) {
+fun eu.tintera.tasks.State.toEntityState() = when (this) {
     eu.tintera.tasks.State.Enqueued -> State.Enqueued
     eu.tintera.tasks.State.Failed -> State.Failed
     eu.tintera.tasks.State.Running -> State.Running
@@ -64,22 +64,22 @@ internal fun eu.tintera.tasks.State.toEntityState() = when (this) {
     eu.tintera.tasks.State.Blocked -> State.Blocked
 }
 
-internal fun BackoffPolicy.toTaskBackoffPolicy() = when (this) {
+fun BackoffPolicy.toTaskBackoffPolicy() = when (this) {
     BackoffPolicy.Linear -> eu.tintera.tasks.BackoffPolicy.Linear
     BackoffPolicy.Exponential -> eu.tintera.tasks.BackoffPolicy.Exponential
 }
 
-internal fun BackoffCriteria.toTaskBackoffCriteria() = eu.tintera.tasks.BackoffCriteria(
+fun BackoffCriteria.toTaskBackoffCriteria() = eu.tintera.tasks.BackoffCriteria(
     backoffPolicy = backoffPolicy.toTaskBackoffPolicy(),
     delay = delay
 )
 
-internal fun eu.tintera.tasks.BackoffPolicy.toEntityBackoffPolicy() = when (this) {
+fun eu.tintera.tasks.BackoffPolicy.toEntityBackoffPolicy() = when (this) {
     eu.tintera.tasks.BackoffPolicy.Linear -> BackoffPolicy.Linear
     eu.tintera.tasks.BackoffPolicy.Exponential -> BackoffPolicy.Exponential
 }
 
-internal fun eu.tintera.tasks.BackoffCriteria.toEntityBackoffCriteria() = BackoffCriteria(
+fun eu.tintera.tasks.BackoffCriteria.toEntityBackoffCriteria() = BackoffCriteria(
     backoffPolicy = backoffPolicy.toEntityBackoffPolicy(),
     delay = delay
 )

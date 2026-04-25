@@ -1,15 +1,18 @@
-package eu.tintera.tasks.db
+package eu.tintera.tasks.engine.db
 
 import eu.tintera.tasks.State
+import eu.tintera.tasks.core.ProcessableTask
+import eu.tintera.tasks.core.TaskProcessorRepository
 import eu.tintera.tasks.core.data.ExecutableTask
-import eu.tintera.tasks.core.data.ProcessableTask
-import eu.tintera.tasks.core.data.TaskProcessorRepository
 import eu.tintera.tasks.db.dao.TaskProcessorDao
+import eu.tintera.tasks.db.toEntityState
+import eu.tintera.tasks.db.toTaskBackoffCriteria
+import eu.tintera.tasks.db.toTaskState
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlin.uuid.Uuid
 
-internal class TaskProcessorRepository(
+internal class TaskProcessorRepositoryImpl(
     private val dao: TaskProcessorDao,
 ) : TaskProcessorRepository {
 

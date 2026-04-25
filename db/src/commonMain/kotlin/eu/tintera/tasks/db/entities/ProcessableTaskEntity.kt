@@ -5,7 +5,7 @@ import eu.tintera.tasks.db.State
 import kotlin.time.Duration
 import kotlin.time.Instant
 
-internal data class ProcessableTaskEntity(
+data class ProcessableTaskEntity(
     val state: State,
     val initialDelay: Duration,
     val runAttemptCount: Int,

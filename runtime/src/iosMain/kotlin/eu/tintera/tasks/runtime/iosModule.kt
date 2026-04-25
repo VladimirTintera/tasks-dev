@@ -13,6 +13,7 @@ import eu.tintera.tasks.core.cleanup.DatabaseCleanupService
 import eu.tintera.tasks.core.guard.guardInit
 import eu.tintera.tasks.core.preconditions.TaskPrecondition
 import eu.tintera.tasks.db.DatabaseConfiguration
+import eu.tintera.tasks.engine.db.engineDbModule
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.createdAtStart
 import org.koin.core.module.dsl.singleOf
@@ -25,7 +26,8 @@ internal fun iosModule(
 ): Module = module {
 
     includes(
-        engineModule()
+        engineModule,
+        engineDbModule
     )
 
     single {

@@ -1,9 +1,8 @@
 package eu.tintera.tasks.core.preconditions
 
 import eu.tintera.tasks.State
-import eu.tintera.tasks.core.data.ProcessableTask
+import eu.tintera.tasks.core.ProcessableTask
 import eu.tintera.tasks.core.data.Repository
-import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.core.terminal
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map

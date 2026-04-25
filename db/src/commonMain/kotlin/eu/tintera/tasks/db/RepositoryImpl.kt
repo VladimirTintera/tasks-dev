@@ -3,6 +3,7 @@ package eu.tintera.tasks.db
 import eu.tintera.tasks.State
 import eu.tintera.tasks.TaskInfoQuery
 import eu.tintera.tasks.core.data.*
+import eu.tintera.tasks.db.dao.TaskDao
 import eu.tintera.tasks.db.entities.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -11,8 +12,7 @@ import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
-internal class DatabaseRepository(
-    private val db: TasksDatabase,
+internal class RepositoryImpl(
     private val taskDao: TaskDao,
     private val taskTagDao: TaskTagDao,
     private val taskParentTaskDao: TaskParentTaskDao,

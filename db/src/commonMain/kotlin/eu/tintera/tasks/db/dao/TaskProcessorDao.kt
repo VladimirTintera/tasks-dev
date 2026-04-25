@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlin.uuid.Uuid
 
 @Dao
-internal interface TaskProcessorDao {
+interface TaskProcessorDao {
     @Query("SELECT state, initialDelay, runAttemptCount, networkRequired, requiresDeviceIdle, repeatInterval, backoffCriteria, processTime from Task where id = :id")
     fun processableTask(id: Uuid): Flow<ProcessableTaskEntity?>
 

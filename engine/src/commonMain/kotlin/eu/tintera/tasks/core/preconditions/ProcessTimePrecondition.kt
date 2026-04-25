@@ -1,7 +1,6 @@
 package eu.tintera.tasks.core.preconditions
 
-import eu.tintera.tasks.core.data.ProcessableTask
-import eu.tintera.tasks.core.data.Task
+import eu.tintera.tasks.core.ProcessableTask
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlin.time.Clock
