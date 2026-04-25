@@ -41,7 +41,7 @@ class TaskProcessorTest {
         // Evaluator, který trvá nesmyslně dlouho (např. 10 minut),
         // takže ho expiration handler určitě přeruší
         val fakeEvaluator = TaskEvaluatorImpl(
-            taskRegistry = fakeTaskRegistry(),
+            registryResolver = fakeTaskRegistry(),
             repository = fakeRepository,
             taskMigrator = TaskMigrator(fakeRepository),
             taskScopeFactory = TaskScopeFactory(fakeRepository),

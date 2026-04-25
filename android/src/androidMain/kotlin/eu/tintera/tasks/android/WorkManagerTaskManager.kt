@@ -5,14 +5,11 @@ import androidx.work.*
 import eu.tintera.tasks.*
 import eu.tintera.tasks.BackoffPolicy
 import eu.tintera.tasks.Constraints
-import eu.tintera.tasks.core.DEFAULT
-import eu.tintera.tasks.core.MINIMAL_REPEAT_INTERVAL
-import eu.tintera.tasks.core.RegistryResolver
+import eu.tintera.tasks.core.*
 import eu.tintera.tasks.core.data.ExecutableTask
 import eu.tintera.tasks.core.data.Info
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
-import eu.tintera.tasks.core.isEmpty
 import eu.tintera.tasks.core.migrations.TaskMigrator
 import eu.tintera.tasks.serialization.Serializer
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -32,20 +29,24 @@ internal class WorkManagerTaskManager(
     private val workManager: WorkManager,
     private val repository: Repository,
     private val taskRegistry: RegistryResolver,
-    private val taskMigrator: TaskMigrator
+    private val taskMigrator: TaskMigrator,
+    private val tagMapper: TagMapper
 ) : TaskManager {
 
-    private fun <T : Any> TaskRequest<T>.oneTimeWorkRequest() =
+    private suspend fun TaskRequest<*>.serializeTags() = tagMapper.serialize(TaskTags(tags, typedTags))
+
+    private suspend fun <T : Any> TaskRequest<T>.oneTimeWorkRequest() =
         OneTimeWorkRequestBuilder<TaskWorker>().apply {
             set(
                 identifier = identifier,
                 initialDelay = initialDelay,
                 constraints = constraints,
-                tags = tags + identifier,
+                tags = serializeTags() + identifier,
                 backoffCriteria = backoffCriteria,
                 keepResultsForAtLeast = keepResultsForAtLeast
             )
         }.build()
+
 
     override suspend fun <T : Any> enqueueUniqueTask(
         task: TaskRequest<T>,
@@ -229,7 +230,7 @@ internal class WorkManagerTaskManager(
                 identifier = task.identifier,
                 initialDelay = task.initialDelay,
                 constraints = task.constraints,
-                tags = task.tags + uniqueName + task.identifier,
+                tags = task.serializeTags() + uniqueName + task.identifier,
                 backoffCriteria = task.backoffCriteria,
                 keepResultsForAtLeast = task.keepResultsForAtLeast
             )
@@ -389,7 +390,7 @@ internal class WorkManagerTaskManager(
         }
     }
 
-    private fun WorkInfo.toTaskInfo(
+    private suspend fun WorkInfo.toTaskInfo(
         info: Info?,
         registration: TaskRegistration<Any, Any, Any>?
     ): TaskInfo {
@@ -411,12 +412,17 @@ internal class WorkManagerTaskManager(
             }
         }
 
+        val parsedTags = tagMapper.parse(
+            tags.filterNot { tag ->
+                tag == TaskWorker::class.java.name
+            }
+        )
+
         return TaskInfo(
             id = id.toKotlinUuid(),
             state = state.toState(),
-            tags = tags.filterNot { tag ->
-                tag == TaskWorker::class.java.name
-            }.toSet(),
+            tags = parsedTags.tags,
+            typedTags = parsedTags.typedTags,
             runAttemptCount = runAttemptCount,
             outputData = info?.outputData?.let {
                 migrationResult?.output ?: registration?.outputSerializer?.decodeFromBytesOrNull(it)

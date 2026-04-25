@@ -4,7 +4,9 @@ import co.touchlab.kermit.Logger
 import eu.tintera.tasks.handlers.TestHandler
 import eu.tintera.tasks.handlers.TestHandlerData
 import eu.tintera.tasks.handlers.TestHandlerProgress
+import eu.tintera.tasks.handlers.TestTypedTag
 import eu.tintera.tasks.koin.json.taskHandlerOf
+import eu.tintera.tasks.koin.taskTag
 import eu.tintera.tasks.migrations.migration
 import eu.tintera.tasks.migrations.migrations
 import kotlinx.coroutines.CoroutineScope
@@ -31,6 +33,7 @@ fun koinApp(
 
             factoryOf(::TasksObserver) bind TaskLifecycleObserver::class
 
+            taskTag<TestTypedTag>(serializer = TestTypedTag.serializer)
             taskHandlerOf(
                 ::TestHandler,
                 currentVersion = 2,

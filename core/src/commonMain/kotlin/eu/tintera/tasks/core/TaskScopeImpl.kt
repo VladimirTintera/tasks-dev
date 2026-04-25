@@ -2,18 +2,15 @@ package eu.tintera.tasks.core
 
 import eu.tintera.tasks.ForegroundInfo
 import eu.tintera.tasks.ParentData
+import eu.tintera.tasks.Tag
 import eu.tintera.tasks.TaskScope
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.serialization.Serializer
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.Uuid
 
@@ -21,7 +18,7 @@ import kotlin.uuid.Uuid
 class TaskScopeFactory(
     private val repository: Repository
 ) {
-    fun <Input: Any, Progress: Any> createForTask(
+    fun <Input : Any, Progress : Any> createForTask(
         taskId: Uuid,
         data: Input,
         retryCount: Int,
@@ -29,7 +26,9 @@ class TaskScopeFactory(
         onForegroundInfoProvided: suspend (ForegroundInfo) -> Boolean,
         progressSerializer: Serializer<Progress>,
         scope: CoroutineScope,
-        tags: Set<String>
+        tags: Set<String>,
+        typedTags: Set<Tag>,
+        saveDispatcher: CoroutineDispatcher
     ) = TaskScopeImpl(
         repository = repository,
         taskId = taskId,
@@ -39,11 +38,13 @@ class TaskScopeFactory(
         onForegroundInfoProvided = onForegroundInfoProvided,
         progressSerializer = progressSerializer,
         scope = scope,
-        tags = tags
+        tags = tags,
+        typedTags = typedTags,
+        saveDispatcher = saveDispatcher
     )
 }
 
-class TaskScopeImpl<Input: Any, Progress: Any>(
+class TaskScopeImpl<Input : Any, Progress : Any>(
     override val taskId: Uuid,
     override val data: Input,
     override val retryCount: Int,
@@ -52,23 +53,23 @@ class TaskScopeImpl<Input: Any, Progress: Any>(
     scope: CoroutineScope,
     private val repository: Repository,
     private val progressSerializer: Serializer<Progress>,
-    override val tags: Set<String>
+    override val tags: Set<String>,
+    override val typedTags: Set<Tag>,
+    private val saveDispatcher: CoroutineDispatcher
 ) : TaskScope<Input, Progress>, AutoCloseable {
 
     private val progress = MutableStateFlow<Progress?>(null)
+
     @OptIn(FlowPreview::class)
     private val job = scope.launch {
         progress.filterNotNull().sample(300.milliseconds).collect {
-            repository.updateProgressData(
-                id = taskId,
-                progressData = progressSerializer.encodeToBytes(it)
-            )
+            trySave(it)
         }
     }
 
     override suspend fun setForegroundInfo(
         foregroundInfo: ForegroundInfo
-    ) : Boolean {
+    ): Boolean {
         return onForegroundInfoProvided(foregroundInfo)
     }
 
@@ -79,8 +80,20 @@ class TaskScopeImpl<Input: Any, Progress: Any>(
     suspend fun flushProgress() {
         withContext(NonCancellable) {
             progress.value?.also {
-                repository.updateProgressData(taskId, progressSerializer.encodeToBytes(it))
+                trySave(it)
             }
+        }
+    }
+
+    private suspend fun trySave(progress: Progress) {
+        try {
+            withContext(saveDispatcher) {
+                repository.updateProgressData(taskId, progressSerializer.encodeToBytes(progress))
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 

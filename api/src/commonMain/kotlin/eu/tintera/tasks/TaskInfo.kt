@@ -8,6 +8,7 @@ data class TaskInfo(
     val identifier: String,
     val state: State,
     val tags: Set<String>,
+    val typedTags: Set<Tag>,
     val runAttemptCount: Int,
     val outputData: Any?,
     val nextScheduledTime: Instant?,

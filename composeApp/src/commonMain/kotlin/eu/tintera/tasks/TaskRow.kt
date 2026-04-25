@@ -15,7 +15,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastJoinToString
 import eu.tintera.tasks.handlers.TestHandlerData
 import eu.tintera.tasks.handlers.TestHandlerProgress
 import org.jetbrains.compose.resources.painterResource
@@ -75,35 +74,23 @@ fun TaskRow(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Tagy
-                    FlowRow(
-                        modifier = Modifier
-                            .weight(1f)
-                            //.horizontalScroll(rememberScrollState())
+                    Column(
+                        modifier = Modifier.weight(1f)
                             .padding(end = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        info.tags.forEach { tag ->
-                            // Pokud je tag plný název třídy, vezmeme jen konec
-                            val displayTag = if (tag.contains(".")) tag.substringAfterLast(".") else tag
-
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
-                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            ) {
-                                Text(
-                                    text = displayTag,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
+                        TagsRow(
+                            items = info.tags
+                        ) { tag ->
+                            if (tag.contains(".")) tag.substringAfterLast(".") else tag
                         }
+
+                        TagsRow(
+                            items = info.typedTags,
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        ) { it.toString() }
                     }
-
-
 
                     // Textový stav
                     Text(

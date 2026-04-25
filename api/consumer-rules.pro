@@ -4,3 +4,4 @@
  -keep,allowobfuscation,allowshrinking class kotlin.coroutines.Continuation
 
 -keep class * implements eu.tintera.tasks.TaskHandler { *; }
+-keep class * implements eu.tintera.tasks.Tag { *; }

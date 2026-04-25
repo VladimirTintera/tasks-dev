@@ -1,7 +1,9 @@
-package eu.tintera.tasks
+package eu.tintera.tasks.koin.protobuf
 
+import eu.tintera.tasks.TaskHandler
 import eu.tintera.tasks.koin.taskRegistration
 import eu.tintera.tasks.migrations.Migration
+import eu.tintera.tasks.protobufSerializer
 import org.koin.core.definition.KoinDefinition
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.factoryOf

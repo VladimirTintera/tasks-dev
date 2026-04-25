@@ -3,7 +3,6 @@ package eu.tintera.tasks.runtime
 import eu.tintera.tasks.InternalTasksApi
 import eu.tintera.tasks.TaskLifecycleObserver
 import eu.tintera.tasks.di.TasksKoinContext
-import eu.tintera.tasks.koin.mainModule
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.getAndUpdate
 import org.koin.core.KoinApplication

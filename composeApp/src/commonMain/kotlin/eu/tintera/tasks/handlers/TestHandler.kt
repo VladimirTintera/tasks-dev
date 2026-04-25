@@ -2,13 +2,34 @@ package eu.tintera.tasks.handlers
 
 import eu.tintera.tasks.*
 import eu.tintera.tasks.MainViewModel.Companion.DEFAULT_TAG
+import eu.tintera.tasks.serialization.TagSerializer
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.Serializable
+import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
+
+data class TestTypedTag(
+    val number: Int
+) : Tag {
+
+    companion object {
+
+        val serializer = object : TagSerializer<TestTypedTag> {
+            override fun encodeToString(value: TestTypedTag) = value.number.toString()
+
+            override fun decodeFromStringOrNull(
+                value: String
+            ): TestTypedTag? = value.toIntOrNull()?.let {
+                TestTypedTag(it)
+            }
+        }
+    }
+
+}
 
 @Serializable
 data class TestHandlerProgress(
@@ -80,6 +101,9 @@ fun testTaskRequest(
         name = name
     ),
     tags = setOf(DEFAULT_TAG),
+    typedTags = TestTypedTag(Random.nextInt(0, 1000)).let {
+        setOf(it, it.copy(number = it.number + 1))
+    },
     constraints = Constraints(
         requiresDeviceIdle = false,
         requiresNetwork = false

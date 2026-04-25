@@ -24,4 +24,5 @@ fun coreModule() = module {
     factory {
         CompositeTaskLifecycleObserver(getAll())
     }
+    factoryOf(::TagMapper)
 }

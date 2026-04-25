@@ -52,6 +52,7 @@ internal class TaskProcessorImpl(
             val workflowJob = launch {
 
                 taskLifecycleObserver.onWaitingForPreconditions(id)
+
                 val preconditionsValid = waitForPreconditions(
                     id = id,
                     task = task

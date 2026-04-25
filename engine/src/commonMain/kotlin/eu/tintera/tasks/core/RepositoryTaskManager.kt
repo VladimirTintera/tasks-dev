@@ -17,7 +17,8 @@ import kotlin.uuid.Uuid
 class RepositoryCoreTaskManager(
     private val repository: Repository,
     private val taskRegistry: RegistryResolver,
-    private val taskMigrator: TaskMigrator
+    private val taskMigrator: TaskMigrator,
+    private val tagMapper: TagMapper
 ) : TaskManager {
 
     override suspend fun <T : Any> enqueueUniqueTask(
@@ -52,10 +53,12 @@ class RepositoryCoreTaskManager(
             repeatInterval = null
         )
 
-        insert(t, task.tags + uniqueName + t.identifier, parentIds.toSet())
+        insert(t, task.serializeTags() + uniqueName + t.identifier, parentIds.toSet())
 
         t.id
     }
+
+    private suspend fun TaskRequest<*>.serializeTags() = tagMapper.serialize(TaskTags(tags, typedTags))
 
     private suspend fun <I : Any, O : Any, P : Any> findRegistrationOrNull(
         identifier: String
@@ -173,7 +176,7 @@ class RepositoryCoreTaskManager(
             registration = findRegistration<T, Any, Any>(taskRequest.identifier),
             repeatInterval = null
         )
-        insert(task, taskRequest.tags + taskRequest.identifier, parentIds)
+        insert(task, taskRequest.serializeTags() + taskRequest.identifier, parentIds)
         return task.id
     }
 
@@ -207,7 +210,7 @@ class RepositoryCoreTaskManager(
             repeatInterval = repeatInterval.coerceAtLeast(MINIMAL_REPEAT_INTERVAL)
         )
 
-        insert(t, task.tags + uniqueName + t.identifier, emptySet())
+        insert(t, task.serializeTags() + uniqueName + t.identifier, emptySet())
         t.id
     }
 
@@ -238,7 +241,8 @@ class RepositoryCoreTaskManager(
                     data = this,
                     registration = registration
                 )
-            }
+            },
+            tags = tagMapper.parse(tags)
         )
     }
 

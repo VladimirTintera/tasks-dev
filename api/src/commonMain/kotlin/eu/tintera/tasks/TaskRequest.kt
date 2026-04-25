@@ -9,6 +9,7 @@ data class TaskRequest<I: Any>(
     val data: I,
     val constraints: Constraints = Constraints.EMPTY,
     val tags: Set<String> = emptySet(),
+    val typedTags: Set<Tag> = emptySet(),
     val backoffCriteria: BackoffCriteria? = null,
     val keepResultsForAtLeast: Duration = 24.hours
 )
@@ -19,6 +20,7 @@ inline fun <reified T : TaskHandler<I, *, *>, I: Any> taskRequest(
     initialDelay: Duration = Duration.ZERO,
     constraints: Constraints = Constraints.EMPTY,
     tags: Set<String> = emptySet(),
+    typedTags: Set<Tag> = emptySet(),
     backoffCriteria: BackoffCriteria? = null,
     keepResultsForAtLeast: Duration = 24.hours
 ): TaskRequest<I> = TaskRequest(
@@ -27,6 +29,7 @@ inline fun <reified T : TaskHandler<I, *, *>, I: Any> taskRequest(
     data = data,
     constraints = constraints,
     tags = tags,
+    typedTags = typedTags,
     backoffCriteria = backoffCriteria,
     keepResultsForAtLeast = keepResultsForAtLeast
 )

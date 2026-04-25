@@ -31,12 +31,13 @@ interface TaskEvaluator {
 
 @Suppress("UNCHECKED_CAST")
 class TaskEvaluatorImpl(
-    private val taskRegistry: RegistryResolver,
+    private val registryResolver: RegistryResolver,
     private val repository: Repository,
     private val taskMigrator: TaskMigrator,
     private val taskScopeFactory: TaskScopeFactory,
     private val applicationScope: ApplicationScope,
-    private val dispatchers: AppDispatchers
+    private val dispatchers: AppDispatchers,
+    private val tagMapper: TagMapper
 ) : TaskEvaluator {
 
     override suspend fun handle(
@@ -45,7 +46,8 @@ class TaskEvaluatorImpl(
         onForegroundInfo: suspend (ForegroundInfo) -> Boolean
     ): TaskEvaluatorResult<Any> {
 
-        val registration = taskRegistry.resolve<Any, Any, Any>(task.identifier) ?: return TaskEvaluatorResult.Failure
+        val registration =
+            registryResolver.resolve<Any, Any, Any>(task.identifier) ?: return TaskEvaluatorResult.Failure
 
         val migrationResult = taskMigrator.migrate(
             data = task,
@@ -71,7 +73,7 @@ class TaskEvaluatorImpl(
         } ?: return TaskResult.Failure.toResult(registration)
 
         val parents = repository.parentsDataFor(id).mapNotNull { parentEntity ->
-            taskRegistry.resolve<Any, Any, Any>(parentEntity.identifier)?.let { parentRegistration ->
+            registryResolver.resolve<Any, Any, Any>(parentEntity.identifier)?.let { parentRegistration ->
                 val migratedData = taskMigrator.migrate(data = parentEntity, registration = parentRegistration)
                 ParentData(
                     id = parentEntity.id,
@@ -84,6 +86,8 @@ class TaskEvaluatorImpl(
             }
         }
 
+        val tags = tagMapper.parse(tags = task.tags)
+
         return taskScopeFactory.createForTask(
             taskId = id,
             data = typedInput,
@@ -92,7 +96,9 @@ class TaskEvaluatorImpl(
             onForegroundInfoProvided = onForegroundInfo,
             progressSerializer = registration.progressSerializer,
             scope = applicationScope + dispatchers.default,
-            tags = task.tags
+            tags = tags.tags,
+            typedTags = tags.typedTags,
+            saveDispatcher = dispatchers.io
         ).use { scope ->
             try {
                 with(registration.factory()) {
@@ -120,7 +126,6 @@ class TaskEvaluatorImpl(
             bytes = registration.outputSerializer.encodeToBytes(outputData)
         )
     }
-
 
     companion object {
         private const val TAG = "TaskEvaluator"

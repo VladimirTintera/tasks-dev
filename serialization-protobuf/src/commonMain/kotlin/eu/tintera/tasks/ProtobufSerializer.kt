@@ -5,7 +5,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.protobuf.ProtoBuf
 import kotlinx.serialization.serializer
 
-private val protoBuf: ProtoBuf = ProtoBuf { encodeDefaults = true }
+
 
 private class ProtobufSerializer<T : Any>(
     private val kSerializer: KSerializer<T>
@@ -20,7 +20,8 @@ private class ProtobufSerializer<T : Any>(
     }
 }
 
-fun <T : Any> protobufSerializer(serializer: KSerializer<T>): Serializer<T> =
-    ProtobufSerializer(serializer)
+fun <T : Any> protobufSerializer(
+    serializer: KSerializer<T>
+): Serializer<T> = ProtobufSerializer(serializer)
 
 inline fun <reified T : Any> protobufSerializer(): Serializer<T> = protobufSerializer(serializer<T>())
