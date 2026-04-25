@@ -20,4 +20,5 @@ val androidModule = module {
 
     factory<WorkManager> { WorkManager.getInstance(get()) }
     factoryOf(::WorkManagerTaskManager) bind TaskManager::class
+    factoryOf(::WorkManagerRepositoryImpl) bind WorkManagerRepository::class
 }

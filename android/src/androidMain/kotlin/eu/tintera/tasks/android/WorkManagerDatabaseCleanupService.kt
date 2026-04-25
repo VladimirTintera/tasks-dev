@@ -1,36 +1,25 @@
 package eu.tintera.tasks.android
 
-import androidx.work.WorkManager
-import androidx.work.WorkQuery
 import eu.tintera.tasks.State
-import eu.tintera.tasks.core.allowedSourceStatesForChangeTo
 import eu.tintera.tasks.core.cleanup.DatabaseCleanupService
-import eu.tintera.tasks.core.data.Repository
-import eu.tintera.tasks.core.runningStates
 import eu.tintera.tasks.core.terminalStates
-import kotlinx.coroutines.flow.first
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
-import kotlin.uuid.toJavaUuid
-import kotlin.uuid.toKotlinUuid
 
 internal class WorkManagerDatabaseCleanupService(
-    private val repository: Repository,
-    private val workManager: WorkManager,
+    private val workManagerRepository: WorkManagerRepository,
+    private val cleanupServiceRepository: WorkManagerDatabaseCleanupServiceRepository,
+    private val clock: Clock,
 ) : DatabaseCleanupService {
 
     override suspend fun cleanup() {
 
-        val activeTasks = repository.dispatchableTasks(
-            states = runningStates
-        ).first()
+        val activeTasks = cleanupServiceRepository.cleanableTasks()
 
         if (activeTasks.isEmpty()) return
 
-        val workQuery = WorkQuery.Builder.fromIds(activeTasks.map { it.id.toJavaUuid() }).build()
-        val realWorkInfos = workManager.getWorkInfosFlow(workQuery).first()
-        val realWorkInfoMap = realWorkInfos.associateBy { it.id.toKotlinUuid() }
+        val workItems = workManagerRepository.find(activeTasks.map { it.id }).associateBy { it.id }
 
         data class ChangedItem(
             val id: Uuid,
@@ -40,29 +29,26 @@ internal class WorkManagerDatabaseCleanupService(
         )
 
         val itemsWithNewStates = activeTasks.mapNotNull { dbItem ->
-            val realInfo = realWorkInfoMap[dbItem.id]
-            val state = realInfo?.state?.toState() ?: State.Cancelled
+            val realInfo = workItems[dbItem.id]
+            val state = realInfo?.state ?: State.Cancelled
 
             if (state != dbItem.state) ChangedItem(
                 id = dbItem.id,
                 state = state,
                 runAttemptCount = realInfo?.runAttemptCount ?: 1,
-                finishedAt = realInfo?.let { Instant.DISTANT_PAST } ?: Clock.System.now()
+                finishedAt = realInfo?.let { Instant.DISTANT_PAST } ?: clock.now()
             )
             else null
         }
 
         itemsWithNewStates.forEach { item ->
-            if (item.state in terminalStates) repository.updateTerminatingState(
-                id = item.id,
+            if (item.state in terminalStates) cleanupServiceRepository.terminate(
+                taskId = item.id,
                 state = item.state,
-                finishedAt = item.finishedAt,
-                outputData = null
-            ) else repository.updateState(
-                id = item.id,
+                finishedAt = item.finishedAt
+            ) else cleanupServiceRepository.rewriteState(
+                taskId = item.id,
                 state = item.state,
-                allowedSourceStates = item.state.allowedSourceStatesForChangeTo().toSet(),
-                resetProcessTime = true,
                 runAttemptCount = item.runAttemptCount
             )
         }

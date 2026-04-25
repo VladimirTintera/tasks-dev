@@ -16,6 +16,8 @@ val databaseModule = module {
     factory { get<TasksDatabase>().taskProgressDataDao() }
     factory { get<TasksDatabase>().taskDataDao() }
     factory { get<TasksDatabase>().taskProcessorDao() }
+    factory { get<TasksDatabase>().dispatchableTaskDao() }
+    factory { get<TasksDatabase>().cleanableTaskDao() }
 
     factoryOf(::DatabaseFactory)
 

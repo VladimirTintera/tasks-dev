@@ -8,7 +8,7 @@ import kotlin.uuid.Uuid
 
 interface Repository {
 
-    fun dispatchableTasks(states: List<State>): Flow<List<DispatchableTask>>
+
 
 
 

@@ -42,6 +42,7 @@ include(":engine-db")
 include(":db")
 include(":api")
 include(":android")
+include(":android-db")
 include(":di")
 
 include(":compat")

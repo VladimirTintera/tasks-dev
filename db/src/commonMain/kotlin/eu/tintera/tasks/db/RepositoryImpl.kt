@@ -18,17 +18,7 @@ internal class RepositoryImpl(
     private val taskParentTaskDao: TaskParentTaskDao,
     private val transactionRunner: TransactionRunner
 ) : Repository {
-    override fun dispatchableTasks(states: List<State>): Flow<List<DispatchableTask>> =
-        taskDao.getDispatchableTasksByStates(
-            states = states.map { it.toEntityState() }
-        ).distinctUntilChanged().map {
-            it.map { task ->
-                DispatchableTask(
-                    id = task.id,
-                    state = task.state.toTaskState()
-                )
-            }
-        }
+
 
     override fun parentStatesForTask(id: Uuid) = taskDao.parentStatesForTask(id).map { list ->
         list.map { it.toTaskState() }

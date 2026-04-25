@@ -49,6 +49,7 @@ kotlin {
             implementation(libs.androidx.core.ktx)
             implementation(libs.koin.android)
             implementation(projects.android)
+            implementation(projects.androidDb)
         }
 
         iosMain.dependencies {

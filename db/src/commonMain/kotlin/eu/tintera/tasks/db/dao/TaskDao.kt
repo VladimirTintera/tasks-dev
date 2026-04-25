@@ -149,8 +149,7 @@ interface TaskDao {
 
 
 
-    @Query("SELECT id, state FROM Task WHERE state IN (:states)")
-    fun getDispatchableTasksByStates(states: List<State>): Flow<List<GetDispatchableTaskByStates>>
+
 
 
 
