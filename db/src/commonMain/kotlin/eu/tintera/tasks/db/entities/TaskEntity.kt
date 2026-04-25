@@ -104,8 +104,7 @@ internal interface TaskDao {
     @Query("UPDATE Task set runAttemptCount = :runAttemptCount WHERE id = :id")
     suspend fun updateRunAttemptCount(id: Uuid, runAttemptCount: Int)
 
-    @Query("UPDATE Task set progressData = :progressData WHERE id = :id")
-    suspend fun updateProgressData(id: Uuid, progressData: ByteArray?)
+
 
     @Query(
         """
@@ -154,8 +153,7 @@ internal interface TaskDao {
     @Query("SELECT * FROM Task WHERE id = :id")
     suspend fun task(id: Uuid): TaskEntity?
 
-    @Query("SELECT t.id, t.identifier, t.outputData, t.finishedAt, t.version FROM Task t JOIN TaskParentTask p ON p.parentTaskId = t.id WHERE p.taskId = :id")
-    suspend fun parentsDataFor(id: Uuid): List<ParentDataEntity>
+
 
     @Query("SELECT DISTINCT t.state FROM Task t JOIN TaskParentTask p ON p.parentTaskId = t.id WHERE p.taskId = :id")
     fun parentStatesForTask(id: Uuid): Flow<List<State>>
@@ -222,22 +220,13 @@ internal interface TaskDao {
         finishedAt: Instant
     )
 
-    @Query("UPDATE Task set version = :version, inputData = :input, outputData = :output, progressData = :progress WHERE id = :taskId")
-    suspend fun upgradeData(
-        taskId: Uuid,
-        input: ByteArray?,
-        output: ByteArray?,
-        progress: ByteArray?,
-        version: Int
-    )
+
 
     @Query("SELECT id, state FROM Task WHERE state IN (:states)")
     fun getDispatchableTasksByStates(states: List<State>): Flow<List<GetDispatchableTaskByStates>>
 
-    @Query("SELECT state, initialDelay, runAttemptCount, networkRequired, requiresDeviceIdle, repeatInterval, backoffCriteria, processTime from Task where id = :id")
-    fun processableTask(id: Uuid): Flow<ProcessableTaskEntity?>
 
-    @Query("SELECT t.identifier, t.runAttemptCount, t.version, t.inputData, t.outputData, t.progressData, tt.taskId, tt.name from Task t LEFT JOIN TaskTag tt ON tt.taskId = t.id where t.id = :id")
-    suspend fun getExecutableTasksById(id: Uuid): Map<GetExecutableTasksById, List<GetExecutableTaskByIdTag>>?
+
+
 
 }

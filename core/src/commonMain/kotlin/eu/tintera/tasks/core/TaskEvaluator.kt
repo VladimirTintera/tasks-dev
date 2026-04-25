@@ -2,7 +2,7 @@ package eu.tintera.tasks.core
 
 import eu.tintera.tasks.*
 import eu.tintera.tasks.core.data.ExecutableTask
-import eu.tintera.tasks.core.data.Repository
+import eu.tintera.tasks.core.data.TaskEvaluatorRepository
 import eu.tintera.tasks.core.migrations.TaskMigrator
 import kotlinx.coroutines.plus
 import kotlin.coroutines.cancellation.CancellationException
@@ -32,12 +32,12 @@ interface TaskEvaluator {
 @Suppress("UNCHECKED_CAST")
 class TaskEvaluatorImpl(
     private val registryResolver: RegistryResolver,
-    private val repository: Repository,
     private val taskMigrator: TaskMigrator,
     private val taskScopeFactory: TaskScopeFactory,
     private val applicationScope: ApplicationScope,
     private val dispatchers: AppDispatchers,
-    private val tagMapper: TagMapper
+    private val tagMapper: TagMapper,
+    private val repository: TaskEvaluatorRepository
 ) : TaskEvaluator {
 
     override suspend fun handle(

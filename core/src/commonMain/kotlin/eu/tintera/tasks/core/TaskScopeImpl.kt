@@ -4,19 +4,18 @@ import eu.tintera.tasks.ForegroundInfo
 import eu.tintera.tasks.ParentData
 import eu.tintera.tasks.Tag
 import eu.tintera.tasks.TaskScope
-import eu.tintera.tasks.core.data.Repository
+import eu.tintera.tasks.core.data.TaskScopeRepository
 import eu.tintera.tasks.serialization.Serializer
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.flow.update
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.Uuid
 
 
 class TaskScopeFactory(
-    private val repository: Repository
+    private val repository: TaskScopeRepository
 ) {
     fun <Input : Any, Progress : Any> createForTask(
         taskId: Uuid,
@@ -51,7 +50,7 @@ class TaskScopeImpl<Input : Any, Progress : Any>(
     override val parents: List<ParentData>,
     private val onForegroundInfoProvided: suspend (ForegroundInfo) -> Boolean,
     scope: CoroutineScope,
-    private val repository: Repository,
+    private val repository: TaskScopeRepository,
     private val progressSerializer: Serializer<Progress>,
     override val tags: Set<String>,
     override val typedTags: Set<Tag>,
@@ -62,8 +61,9 @@ class TaskScopeImpl<Input : Any, Progress : Any>(
 
     @OptIn(FlowPreview::class)
     private val job = scope.launch {
-        progress.filterNotNull().sample(300.milliseconds).collect {
+        progress.filterNotNull().collect {
             trySave(it)
+            delay(300.milliseconds)
         }
     }
 

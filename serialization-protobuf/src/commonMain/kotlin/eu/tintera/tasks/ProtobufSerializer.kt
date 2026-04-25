@@ -2,10 +2,7 @@ package eu.tintera.tasks
 
 import eu.tintera.tasks.serialization.Serializer
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.protobuf.ProtoBuf
 import kotlinx.serialization.serializer
-
-
 
 private class ProtobufSerializer<T : Any>(
     private val kSerializer: KSerializer<T>

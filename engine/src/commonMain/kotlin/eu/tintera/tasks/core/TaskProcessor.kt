@@ -3,11 +3,10 @@ package eu.tintera.tasks.core
 import eu.tintera.guard.ExecutionContextProvider
 import eu.tintera.guard.invoke
 import eu.tintera.tasks.EventBus
-import eu.tintera.tasks.State
 import eu.tintera.tasks.core.data.ExecutableTask
 import eu.tintera.tasks.core.data.ProcessableTask
-import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.TaskProcessResult
+import eu.tintera.tasks.core.data.TaskProcessorRepository
 import eu.tintera.tasks.core.preconditions.PreconditionLostException
 import eu.tintera.tasks.core.preconditions.TaskPreconditionController
 import kotlinx.coroutines.*
@@ -24,13 +23,13 @@ internal interface TaskProcessor {
 }
 
 internal class TaskProcessorImpl(
-    private val repository: Repository,
     private val taskEvaluator: TaskEvaluator,
     private val executionContextProvider: ExecutionContextProvider,
     config: TaskProcessorConfig = TaskProcessorConfig(),
     private val preconditionController: TaskPreconditionController,
     private val taskResultProcessor: TaskResultProcessor,
-    private val taskLifecycleObserver: CompositeTaskLifecycleObserver
+    private val taskLifecycleObserver: CompositeTaskLifecycleObserver,
+    private val repository: TaskProcessorRepository
 ) : TaskProcessor {
 
     private val concurrencySemaphore = Semaphore(config.maxConcurrentTasks)
@@ -87,11 +86,9 @@ internal class TaskProcessorImpl(
     ): Boolean {
         return when (preconditionController.waitForAll(task)) {
             TaskPreconditionController.WaitResult.SUCCESS -> {
-                updateState(
+                repository.updateEnqueuedState(
                     id = id,
-                    state = State.Enqueued,
-                    resetProcessTime = true,
-                    runAttemptCount = null
+                    allowedSourceStates = runningStates
                 )
                 taskLifecycleObserver.onPreconditionsSucceeded(id)
                 true
@@ -141,11 +138,10 @@ internal class TaskProcessorImpl(
 
         val retryCount = executableTask.runAttemptCount
 
-        updateState(
+        repository.updateRunningState(
             id = id,
-            state = State.Running,
-            resetProcessTime = true,
-            runAttemptCount = retryCount + 1
+            runAttemptCount = retryCount + 1,
+            allowedSourceStates = runningStates
         )
 
         val evaluatorResult: ExecutionResult = try {
@@ -197,19 +193,6 @@ internal class TaskProcessorImpl(
             }
         }
     }
-
-    private suspend fun updateState(
-        id: Uuid,
-        state: State,
-        resetProcessTime: Boolean,
-        runAttemptCount: Int?
-    ) = repository.updateState(
-        id = id,
-        state = state,
-        allowedSourceStates = state.allowedSourceStatesForChangeTo().toSet(),
-        resetProcessTime = resetProcessTime,
-        runAttemptCount = runAttemptCount
-    )
 
     companion object {
         private const val TAG = "TaskProcessor"

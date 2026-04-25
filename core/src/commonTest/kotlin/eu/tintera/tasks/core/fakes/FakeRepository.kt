@@ -183,13 +183,6 @@ class FakeRepository : Repository {
         TODO("Not yet implemented")
     }
 
-    override suspend fun updateProgressData(
-        id: Uuid,
-        progressData: ByteArray?
-    ) {
-        TODO("Not yet implemented")
-    }
-
     override suspend fun updateState(
         id: Uuid,
         state: State,
@@ -224,10 +217,6 @@ class FakeRepository : Repository {
         progress: ByteArray?,
         version: Int
     ) {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun <T> withTransaction(action: suspend Repository.() -> T): T {
         TODO("Not yet implemented")
     }
 }

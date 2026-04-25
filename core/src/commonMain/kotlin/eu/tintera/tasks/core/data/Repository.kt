@@ -10,11 +10,9 @@ interface Repository {
 
     fun dispatchableTasks(states: List<State>): Flow<List<DispatchableTask>>
 
-    fun processableTask(id: Uuid): Flow<ProcessableTask?>
 
-    suspend fun executableTask(id: Uuid) : ExecutableTask?
 
-    suspend fun parentsDataFor(id: Uuid): List<ParentData>
+
     fun parentStatesForTask(id: Uuid): Flow<List<State>>
     suspend fun updateNextRun(
         id: Uuid,
@@ -53,7 +51,7 @@ interface Repository {
 
     suspend fun resetState(from: State, to: State, excludedIds: Set<Uuid>)
 
-    suspend fun updateProgressData(id: Uuid, progressData: ByteArray?)
+
 
     suspend fun updateState(
         id: Uuid,
@@ -65,5 +63,5 @@ interface Repository {
 
     suspend fun updateTerminatingStateWithDescendants(id: Uuid, state: State, allowedSourceStates: Set<State>, finishedAt: Instant)
 
-    suspend fun upgradeData(id: Uuid, input: ByteArray?, output: ByteArray?, progress: ByteArray?, version: Int)
+
 }

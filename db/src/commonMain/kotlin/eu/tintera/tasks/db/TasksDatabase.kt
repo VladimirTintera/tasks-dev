@@ -2,6 +2,9 @@ package eu.tintera.tasks.db
 
 import androidx.room.*
 import androidx.room.migration.AutoMigrationSpec
+import eu.tintera.tasks.db.dao.TaskEvaluatorDao
+import eu.tintera.tasks.db.dao.TaskProcessorDao
+import eu.tintera.tasks.db.dao.TaskScopeDao
 import eu.tintera.tasks.db.entities.*
 
 internal const val databaseFile = "eu.tintera.tasks.db"
@@ -36,6 +39,10 @@ internal abstract class TasksDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao
     abstract fun taskTagDao(): TaskTagDao
     abstract fun taskParentTaskDao(): TaskParentTaskDao
+
+    abstract fun taskProgressDataDao(): TaskScopeDao
+    abstract fun taskDataDao(): TaskEvaluatorDao
+    abstract fun taskProcessorDao(): TaskProcessorDao
 }
 
 @DeleteColumn(tableName = "Task", columnName = "requiresSystemKeepAlive")

@@ -30,48 +30,6 @@ internal class DatabaseRepository(
             }
         }
 
-    override fun processableTask(
-        id: Uuid
-    ) = taskDao.processableTask(id).distinctUntilChanged().map {
-        it?.let {
-            ProcessableTask(
-                id = id,
-                state = it.state.toTaskState(),
-                initialDelay = it.initialDelay,
-                runAttemptCount = it.runAttemptCount,
-                networkRequired = it.networkRequired,
-                requiresDeviceIdle = it.requiresDeviceIdle,
-                repeatInterval = it.repeatInterval,
-                backoffCriteria = it.backoffCriteria?.toTaskBackoffCriteria(),
-                processTime = it.processTime
-            )
-        }
-    }
-
-    override suspend fun executableTask(id: Uuid): ExecutableTask? =
-        taskDao.getExecutableTasksById(id)?.map { (task, tags) ->
-            ExecutableTask(
-                identifier = task.identifier,
-                runAttemptCount = task.runAttemptCount,
-                version = task.version,
-                inputData = task.inputData,
-                outputData = task.outputData,
-                progressData = task.progressData,
-                tags = tags.map { it.name }.toSet()
-            )
-        }?.firstOrNull()
-
-
-    override suspend fun parentsDataFor(id: Uuid) = taskDao.parentsDataFor(id).map {
-        ParentData(
-            id = it.id,
-            identifier = it.identifier,
-            outputData = it.outputData,
-            finishedAt = it.finishedAt ?: Instant.DISTANT_PAST,
-            version = it.version
-        )
-    }
-
     override fun parentStatesForTask(id: Uuid) = taskDao.parentStatesForTask(id).map { list ->
         list.map { it.toTaskState() }
     }.distinctUntilChanged()
@@ -235,12 +193,6 @@ internal class DatabaseRepository(
         )
     }
 
-    override suspend fun updateProgressData(
-        id: Uuid,
-        progressData: ByteArray?
-    ) = taskDao.updateProgressData(id, progressData)
-
-
     override suspend fun updateState(
         id: Uuid,
         state: State,
@@ -269,17 +221,5 @@ internal class DatabaseRepository(
         finishedAt = finishedAt
     )
 
-    override suspend fun upgradeData(
-        id: Uuid,
-        input: ByteArray?,
-        output: ByteArray?,
-        progress: ByteArray?,
-        version: Int
-    ) = taskDao.upgradeData(
-        taskId = id,
-        input = input,
-        output = output,
-        progress = progress,
-        version = version
-    )
+
 }
