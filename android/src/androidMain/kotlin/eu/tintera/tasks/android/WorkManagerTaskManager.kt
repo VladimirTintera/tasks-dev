@@ -10,6 +10,8 @@ import eu.tintera.tasks.core.data.ExecutableTask
 import eu.tintera.tasks.core.data.Info
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
+import eu.tintera.tasks.core.data.TransactionRunner
+import eu.tintera.tasks.core.data.invoke
 import eu.tintera.tasks.core.migrations.TaskMigrator
 import eu.tintera.tasks.serialization.Serializer
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -30,7 +32,8 @@ internal class WorkManagerTaskManager(
     private val repository: Repository,
     private val taskRegistry: RegistryResolver,
     private val taskMigrator: TaskMigrator,
-    private val tagMapper: TagMapper
+    private val tagMapper: TagMapper,
+    private val transactionRunner: TransactionRunner
 ) : TaskManager {
 
     private suspend fun TaskRequest<*>.serializeTags() = tagMapper.serialize(TaskTags(tags, typedTags))
@@ -107,7 +110,7 @@ internal class WorkManagerTaskManager(
         val rootIds = roots.map { it.second.id.toKotlinUuid() }.toSet()
         val result = withContext(NonCancellable) {
 
-            repository.withTransaction {
+            transactionRunner {
 
                 roots.forEach { (task, work) ->
                     saveTask(
@@ -142,7 +145,7 @@ internal class WorkManagerTaskManager(
 
         withContext(NonCancellable) {
 
-            val result = repository.withTransaction {
+            val result = transactionRunner {
                 roots.forEach { (task, work) ->
                     saveTask(
                         id = work.id.toKotlinUuid(),

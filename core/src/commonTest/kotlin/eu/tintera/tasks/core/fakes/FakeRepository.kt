@@ -1,16 +1,10 @@
 package eu.tintera.tasks.core.fakes
 
+import eu.tintera.tasks.ParentData
 import eu.tintera.tasks.State
-import eu.tintera.tasks.core.data.DispatchableTask
-import eu.tintera.tasks.core.data.ExecutableTask
-import eu.tintera.tasks.core.data.FullTask
-import eu.tintera.tasks.core.data.ProcessableTask
-import eu.tintera.tasks.core.data.Repository
-import eu.tintera.tasks.core.data.Task
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.update
+import eu.tintera.tasks.TaskInfoQuery
+import eu.tintera.tasks.core.data.*
+import kotlinx.coroutines.flow.*
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
@@ -30,11 +24,19 @@ class FakeRepository : Repository {
         TODO("Not yet implemented")
     }
 
-    override fun parentsDataFor(id: Uuid): Flow<List<Task>> {
+    override suspend fun parentsDataFor(id: Uuid): List<eu.tintera.tasks.core.data.ParentData> {
         val parentIds = parentMap[id] ?: emptySet()
         return tasks.map { allTasks ->
-            allTasks.filter { it.id in parentIds }
-        }
+            allTasks.filter { it.id in parentIds }.map {
+                ParentData(
+                    id = it.id,
+                    identifier = it.identifier,
+                    outputData = it.outputData,
+                    finishedAt = it.finishedAt ?: Instant.DISTANT_PAST,
+                    version = it.version
+                )
+            }
+        }.first()
     }
 
     override fun parentStatesForTask(id: Uuid): Flow<List<State>> {
@@ -102,14 +104,8 @@ class FakeRepository : Repository {
         }
     }
 
-    override suspend fun taskState(id: Uuid): State? {
-        return tasks.value.firstOrNull {
-            it.id == id
-        }?.state
-    }
-
-    override fun task(id: Uuid): Flow<Task?> {
-        return tasks.map { it.firstOrNull { it.id == id } }
+    override suspend fun task(id: Uuid): Task? {
+        return tasks.map { it.firstOrNull { it.id == id } }.firstOrNull()
     }
 
     override suspend fun allByUniqueName(uniqueName: String): List<Task> {
@@ -139,22 +135,33 @@ class FakeRepository : Repository {
         TODO("Not yet implemented")
     }
 
-    override fun taskInfosByTag(name: String): Flow<List<FullTask>> {
+    override fun taskInfosByTag(name: String): Flow<List<Info>> {
         TODO("Not yet implemented")
     }
 
-    override fun taskInfoById(id: Uuid): Flow<FullTask?> {
+    override fun taskInfos(query: TaskInfoQuery): Flow<List<Info>> {
         TODO("Not yet implemented")
     }
 
-    override fun taskInfoByIds(ids: Set<Uuid>): Flow<List<Task>> {
+    override fun taskInfoById(id: Uuid): Flow<Info?> {
         TODO("Not yet implemented")
     }
 
-    override fun schedulableTasks(states: List<State>): Flow<List<Task>> {
+    override fun taskInfoByIds(ids: Set<Uuid>): Flow<List<Info>> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun schedulableTasks(states: List<State>): List<SchedulableTask> {
         return tasks.map {
-            it.filter { it.state in states }
-        }
+            it.filter { it.state in states }.map {
+                SchedulableTask(
+                    id = it.id,
+                    processTime = it.processTime,
+                    requiresDeviceIdle = it.requiresDeviceIdle,
+                    networkRequired = it.networkRequired
+                )
+            }
+        }.first()
     }
 
     override suspend fun childrenForTask(id: Uuid): List<Uuid> {
@@ -164,7 +171,7 @@ class FakeRepository : Repository {
     override suspend fun taskIdsByTagAndState(
         states: List<State>,
         tag: String
-    ): List<Task> {
+    ): List<Uuid> {
         TODO("Not yet implemented")
     }
 
@@ -201,10 +208,11 @@ class FakeRepository : Repository {
         }
     }
 
-    override suspend fun terminateWithDescendants(
+    override suspend fun updateTerminatingStateWithDescendants(
         id: Uuid,
         state: State,
-        allowedSourceStates: Set<State>
+        allowedSourceStates: Set<State>,
+        finishedAt: Instant
     ) {
         TODO("Not yet implemented")
     }

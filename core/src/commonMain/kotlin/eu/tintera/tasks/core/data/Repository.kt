@@ -66,8 +66,4 @@ interface Repository {
     suspend fun updateTerminatingStateWithDescendants(id: Uuid, state: State, allowedSourceStates: Set<State>, finishedAt: Instant)
 
     suspend fun upgradeData(id: Uuid, input: ByteArray?, output: ByteArray?, progress: ByteArray?, version: Int)
-
-    suspend fun <T> withTransaction(
-        action: suspend Repository.() -> T
-    ): T
 }

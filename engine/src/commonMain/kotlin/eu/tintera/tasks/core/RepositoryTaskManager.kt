@@ -4,6 +4,8 @@ import eu.tintera.tasks.*
 import eu.tintera.tasks.core.data.Info
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
+import eu.tintera.tasks.core.data.TransactionRunner
+import eu.tintera.tasks.core.data.invoke
 import eu.tintera.tasks.core.data.toTaskInfo
 import eu.tintera.tasks.core.migrations.TaskMigrator
 import kotlinx.coroutines.flow.Flow
@@ -18,21 +20,22 @@ class RepositoryCoreTaskManager(
     private val repository: Repository,
     private val taskRegistry: RegistryResolver,
     private val taskMigrator: TaskMigrator,
-    private val tagMapper: TagMapper
+    private val tagMapper: TagMapper,
+    private val transactionRunner: TransactionRunner
 ) : TaskManager {
 
     override suspend fun <T : Any> enqueueUniqueTask(
         task: TaskRequest<T>,
         uniqueName: String,
         existingTaskPolicy: ExistingTaskPolicy,
-    ): Uuid = repository.withTransaction {
+    ): Uuid = transactionRunner {
 
         val existing = allUndoneByUniqueName(uniqueName)
 
         val parentIds: List<Uuid> = when (existingTaskPolicy) {
             ExistingTaskPolicy.Keep -> {
                 if (existing.isNotEmpty())
-                    return@withTransaction existing.first().id
+                    return@transactionRunner existing.first().id
                 emptyList()
             }
 
@@ -53,7 +56,7 @@ class RepositoryCoreTaskManager(
             repeatInterval = null
         )
 
-        insert(t, task.serializeTags() + uniqueName + t.identifier, parentIds.toSet())
+        repository.insert(t, task.serializeTags() + uniqueName + t.identifier, parentIds.toSet())
 
         t.id
     }
@@ -71,18 +74,18 @@ class RepositoryCoreTaskManager(
 
     override suspend fun enqueueContinuation(
         continuation: TaskContinuation,
-    ) = repository.withTransaction {
+    ) = transactionRunner {
         val uniqueName = Uuid.random().toString()
-        insertContinuation(
+        repository.insertContinuation(
             taskContinuation = continuation,
             uniqueName = uniqueName,
             parentIds = setOf()
         )
     }
 
-    private suspend fun Repository.allUndoneByUniqueName(
+    private suspend fun allUndoneByUniqueName(
         uniqueName: String
-    ) = allByUniqueName(uniqueName).let { list ->
+    ) = repository.allByUniqueName(uniqueName).let { list ->
         list.filter { !it.state.terminal() }
     }
 
@@ -90,14 +93,14 @@ class RepositoryCoreTaskManager(
         continuation: TaskContinuation,
         uniqueName: String,
         existingTaskPolicy: ExistingTaskPolicy,
-    ) = repository.withTransaction {
+    ) = transactionRunner {
 
         val existing = allUndoneByUniqueName(uniqueName)
 
         val parentIds: List<Uuid> = when (existingTaskPolicy) {
             ExistingTaskPolicy.Keep -> {
                 if (existing.any { !it.state.terminal() })
-                    return@withTransaction
+                    return@transactionRunner
                 emptyList()
             }
 
@@ -111,7 +114,7 @@ class RepositoryCoreTaskManager(
             ExistingTaskPolicy.Append -> existing.map { it.id }
         }
 
-        insertContinuation(continuation, uniqueName, parentIds.toSet())
+        repository.insertContinuation(continuation, uniqueName, parentIds.toSet())
     }
 
     private fun <T : Any> TaskRequest<T>.toTask(
@@ -147,7 +150,7 @@ class RepositoryCoreTaskManager(
 
     override suspend fun <T : Any> enqueueTask(
         task: TaskRequest<T>,
-    ): Uuid = repository.withTransaction {
+    ): Uuid = transactionRunner {
         insertTask(task, Uuid.random().toString(), setOf())
     }
 
@@ -165,7 +168,7 @@ class RepositoryCoreTaskManager(
         }
     }
 
-    private suspend fun <T : Any> Repository.insertTask(
+    private suspend fun <T : Any> insertTask(
         taskRequest: TaskRequest<T>,
         uniqueName: String,
         parentIds: Set<Uuid>,
@@ -176,7 +179,7 @@ class RepositoryCoreTaskManager(
             registration = findRegistration<T, Any, Any>(taskRequest.identifier),
             repeatInterval = null
         )
-        insert(task, taskRequest.serializeTags() + taskRequest.identifier, parentIds)
+        repository.insert(task, taskRequest.serializeTags() + taskRequest.identifier, parentIds)
         return task.id
     }
 
@@ -185,15 +188,15 @@ class RepositoryCoreTaskManager(
         repeatInterval: Duration,
         uniqueName: String,
         existingTaskPolicy: ExistingPeriodicTaskPolicy,
-    ): Uuid = repository.withTransaction {
+    ): Uuid = transactionRunner {
 
-        val existing = allByUniqueName(uniqueName)
+        val existing = repository.allByUniqueName(uniqueName)
 
         when (existingTaskPolicy) {
             ExistingPeriodicTaskPolicy.Keep -> {
                 val notCompleted = existing.firstOrNull { !it.state.terminal() }
                 if (notCompleted != null)
-                    return@withTransaction notCompleted.id
+                    return@transactionRunner notCompleted.id
             }
 
             ExistingPeriodicTaskPolicy.Replace -> {
@@ -210,7 +213,7 @@ class RepositoryCoreTaskManager(
             repeatInterval = repeatInterval.coerceAtLeast(MINIMAL_REPEAT_INTERVAL)
         )
 
-        insert(t, task.serializeTags() + uniqueName + t.identifier, emptySet())
+        repository.insert(t, task.serializeTags() + uniqueName + t.identifier, emptySet())
         t.id
     }
 
@@ -246,15 +249,15 @@ class RepositoryCoreTaskManager(
         )
     }
 
-    override suspend fun cancelTaskById(id: Uuid) = repository.withTransaction {
+    override suspend fun cancelTaskById(id: Uuid) = transactionRunner {
         cancelTask(id)
     }
 
     override suspend fun cancelTasksByTag(
         tag: String
-    ) = repository.withTransaction {
+    ) = transactionRunner {
 
-        val tasks = taskIdsByTagAndState(
+        val tasks = repository.taskIdsByTagAndState(
             tag = tag,
             states = listOf(State.Running, State.Blocked, State.Enqueued)
         )
@@ -264,8 +267,8 @@ class RepositoryCoreTaskManager(
         }
     }
 
-    private suspend fun Repository.cancelTask(taskId: Uuid) {
-        updateTerminatingStateWithDescendants(
+    private suspend fun cancelTask(taskId: Uuid) {
+        repository.updateTerminatingStateWithDescendants(
             id = taskId,
             state = State.Cancelled,
             allowedSourceStates = State.Cancelled.allowedSourceStatesForChangeTo().toSet(),

@@ -1,7 +1,5 @@
 package eu.tintera.tasks.db
 
-import androidx.room.immediateTransaction
-import androidx.room.useWriterConnection
 import eu.tintera.tasks.State
 import eu.tintera.tasks.TaskInfoQuery
 import eu.tintera.tasks.core.data.*
@@ -17,7 +15,8 @@ internal class DatabaseRepository(
     private val db: TasksDatabase,
     private val taskDao: TaskDao,
     private val taskTagDao: TaskTagDao,
-    private val taskParentTaskDao: TaskParentTaskDao
+    private val taskParentTaskDao: TaskParentTaskDao,
+    private val transactionRunner: TransactionRunner
 ) : Repository {
     override fun dispatchableTasks(states: List<State>): Flow<List<DispatchableTask>> =
         taskDao.getDispatchableTasksByStates(
@@ -124,7 +123,7 @@ internal class DatabaseRepository(
         task: Task,
         tags: Set<String>,
         parentIds: Set<Uuid>
-    ) = withTransaction {
+    ) = transactionRunner {
         taskDao.insert(
             task.toTaskEntity()
         )
@@ -283,12 +282,4 @@ internal class DatabaseRepository(
         progress = progress,
         version = version
     )
-
-    override suspend fun <T> withTransaction(
-        action: suspend Repository.() -> T
-    ) = db.useWriterConnection {
-        it.immediateTransaction {
-            action()
-        }
-    }
 }
