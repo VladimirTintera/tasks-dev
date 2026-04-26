@@ -1,4 +1,4 @@
-package eu.tintera.tasks.core.preconditions
+package eu.tintera.tasks.core.constraints
 
 sealed interface PreconditionResult {
     data object Met : PreconditionResult       // Vše splněno (Boolean true)

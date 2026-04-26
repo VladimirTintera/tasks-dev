@@ -1,4 +1,4 @@
-package eu.tintera.tasks.core.preconditions
+package eu.tintera.tasks.core.constraints
 
 import eu.tintera.tasks.State
 import eu.tintera.tasks.core.ProcessableTask
@@ -8,9 +8,9 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transformWhile
 
-internal class ParentsTaskPrecondition(
+internal class ParentsConstraint(
     private val repository: Repository
-) : TaskPrecondition {
+) : Constraint {
 
     override fun hasConstraint(task: ProcessableTask): Boolean = true
 

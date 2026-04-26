@@ -6,8 +6,8 @@ import eu.tintera.tasks.TaskResult
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.core.fakes.*
 import eu.tintera.tasks.core.migrations.TaskMigrator
-import eu.tintera.tasks.core.preconditions.NetworkStateTaskPrecondition
-import eu.tintera.tasks.core.preconditions.TaskPreconditionController
+import eu.tintera.tasks.core.constraints.NetworkStateConstraint
+import eu.tintera.tasks.core.constraints.ConstraintController
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceTimeBy
@@ -53,7 +53,7 @@ class TaskProcessorTest {
             repository = fakeRepository,
             taskEvaluator = fakeEvaluator,
             executionContextProvider = fakeWakeLock,
-            preconditionController = TaskPreconditionController(emptyList()),
+            preconditionController = ConstraintController(emptyList()),
             taskResultProcessor = TaskResultProcessorImpl(fakeRepository)
         )
 
@@ -128,7 +128,7 @@ class TaskProcessorTest {
             taskEvaluator = fakeEvaluator,
             executionContextProvider = FakeExecutionContextProvider(),
             taskScopeFactory = FakeTaskScopeFactory(),
-            preconditionController = TaskPreconditionController(emptyList())
+            preconditionController = ConstraintController(emptyList())
         )
 
         val task = createTask(identifier = "successTask")
@@ -152,7 +152,7 @@ class TaskProcessorTest {
             taskEvaluator = fakeEvaluator,
             executionContextProvider = FakeExecutionContextProvider(),
             taskScopeFactory = FakeTaskScopeFactory(),
-            preconditionController = TaskPreconditionController(emptyList())
+            preconditionController = ConstraintController(emptyList())
         )
 
         val task = createTask(identifier = "retryTask")
@@ -174,7 +174,7 @@ class TaskProcessorTest {
             taskEvaluator = TaskEvaluator(TaskRegistry()),
             executionContextProvider = FakeExecutionContextProvider(),
             taskScopeFactory = FakeTaskScopeFactory(),
-            preconditionController = TaskPreconditionController(emptyList())
+            preconditionController = ConstraintController(emptyList())
         )
 
         val parentTask = createTask(identifier = "parent", state = State.Failed)
@@ -209,9 +209,9 @@ class TaskProcessorTest {
             taskEvaluator = fakeEvaluator,
             executionContextProvider = FakeExecutionContextProvider(),
             taskScopeFactory = FakeTaskScopeFactory(),
-            preconditionController = TaskPreconditionController(
+            preconditionController = ConstraintController(
                 listOf(
-                    NetworkStateTaskPrecondition(fakeNetworkState)
+                    NetworkStateConstraint(fakeNetworkState)
                 )
             )
         )
@@ -265,9 +265,9 @@ class TaskProcessorTest {
             taskEvaluator = fakeEvaluator,
             executionContextProvider = FakeExecutionContextProvider(),
             taskScopeFactory = FakeTaskScopeFactory(),
-            preconditionController = TaskPreconditionController(
+            preconditionController = ConstraintController(
                 listOf(
-                    NetworkStateTaskPrecondition(fakeNetworkState)
+                    NetworkStateConstraint(fakeNetworkState)
                 )
             )
         )
@@ -312,7 +312,7 @@ class TaskProcessorTest {
             taskEvaluator = fakeEvaluator,
             executionContextProvider = FakeExecutionContextProvider(),
             taskScopeFactory = FakeTaskScopeFactory(),
-            preconditionController = TaskPreconditionController(emptyList())
+            preconditionController = ConstraintController(emptyList())
         )
 
         val delayDuration = 10.seconds
@@ -350,7 +350,7 @@ class TaskProcessorTest {
             taskEvaluator = fakeEvaluator,
             executionContextProvider = FakeExecutionContextProvider(),
             taskScopeFactory = FakeTaskScopeFactory(),
-            preconditionController = TaskPreconditionController(emptyList())
+            preconditionController = ConstraintController(emptyList())
         )
 
         val task = createTask(identifier = "exceptionTask")
@@ -384,7 +384,7 @@ class TaskProcessorTest {
             taskEvaluator = fakeEvaluator,
             executionContextProvider = executionContextProvider(fakeProvider),
             taskScopeFactory = FakeTaskScopeFactory(),
-            preconditionController = TaskPreconditionController(emptyList())
+            preconditionController = ConstraintController(emptyList())
         )
 
 
@@ -444,7 +444,7 @@ class TaskProcessorTest {
             taskEvaluator = fakeEvaluator,
             executionContextProvider = executionContextProvider(fakeProvider),
             taskScopeFactory = FakeTaskScopeFactory(),
-            preconditionController = TaskPreconditionController(emptyList())
+            preconditionController = ConstraintController(emptyList())
         )
 
 

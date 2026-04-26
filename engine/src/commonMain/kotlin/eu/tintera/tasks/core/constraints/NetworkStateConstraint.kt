@@ -1,12 +1,12 @@
-package eu.tintera.tasks.core.preconditions
+package eu.tintera.tasks.core.constraints
 
 import eu.tintera.tasks.core.NetworkState
 import eu.tintera.tasks.core.ProcessableTask
 import kotlinx.coroutines.flow.map
 
-internal class NetworkStateTaskPrecondition(
+internal class NetworkStateConstraint(
     private val networkState: NetworkState
-) : TaskPrecondition {
+) : Constraint {
     override fun hasConstraint(task: ProcessableTask) = task.networkRequired
 
     override fun isValid(task: ProcessableTask) = networkState.state().map {

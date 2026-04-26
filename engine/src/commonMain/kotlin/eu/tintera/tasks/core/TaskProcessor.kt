@@ -5,8 +5,8 @@ import eu.tintera.guard.invoke
 import eu.tintera.tasks.EventBus
 import eu.tintera.tasks.core.data.ExecutableTask
 import eu.tintera.tasks.core.data.TaskProcessResult
-import eu.tintera.tasks.core.preconditions.PreconditionLostException
-import eu.tintera.tasks.core.preconditions.TaskPreconditionController
+import eu.tintera.tasks.core.constraints.ConstraintLostException
+import eu.tintera.tasks.core.constraints.ConstraintController
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -24,7 +24,7 @@ internal class TaskProcessorImpl(
     private val taskEvaluator: TaskEvaluator,
     private val executionContextProvider: ExecutionContextProvider,
     config: TaskProcessorConfig = TaskProcessorConfig(),
-    private val preconditionController: TaskPreconditionController,
+    private val preconditionController: ConstraintController,
     private val taskResultProcessor: TaskResultProcessor,
     private val taskLifecycleObserver: CompositeTaskLifecycleObserver,
     private val repository: TaskProcessorRepository
@@ -83,7 +83,7 @@ internal class TaskProcessorImpl(
         task: StateFlow<ProcessableTask?>
     ): Boolean {
         return when (preconditionController.waitForAll(task)) {
-            TaskPreconditionController.WaitResult.SUCCESS -> {
+            ConstraintController.WaitResult.SUCCESS -> {
                 repository.updateEnqueuedState(
                     id = id,
                     allowedSourceStates = runningStates
@@ -92,7 +92,7 @@ internal class TaskProcessorImpl(
                 true
             }
 
-            TaskPreconditionController.WaitResult.FAILED -> withContext(NonCancellable) {
+            ConstraintController.WaitResult.FAILED -> withContext(NonCancellable) {
                 taskLifecycleObserver.onPreconditionsFailed(id)
                 task.value?.also {
                     taskResultProcessor.handleResult(
@@ -106,7 +106,7 @@ internal class TaskProcessorImpl(
                 false
             }
 
-            TaskPreconditionController.WaitResult.CANCELED -> withContext(NonCancellable) {
+            ConstraintController.WaitResult.CANCELED -> withContext(NonCancellable) {
                 taskLifecycleObserver.onCanceled(id)
                 task.value?.also {
                     taskResultProcessor.handleResult(it.toTaskProcessResult(ExecutionResult.Canceled))
@@ -147,7 +147,7 @@ internal class TaskProcessorImpl(
 
                 val capabilityWatcher = launch {
                     preconditionController.waitForUnmet(task)
-                    this@coroutineScope.cancel(PreconditionLostException())
+                    this@coroutineScope.cancel(ConstraintLostException())
                 }
 
                 val result = taskEvaluator.handle(
@@ -159,7 +159,7 @@ internal class TaskProcessorImpl(
                 capabilityWatcher.cancel()
                 ExecutionResult.EvaluatorResult(result)
             }
-        } catch (e: PreconditionLostException) {
+        } catch (e: ConstraintLostException) {
             EventBus.send(
                 TAG,
                 "Task interrupted '${executableTask.identifier}' due to lost capability. Enqueueing back."

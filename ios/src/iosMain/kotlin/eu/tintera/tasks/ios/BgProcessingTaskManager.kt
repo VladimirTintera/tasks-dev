@@ -3,8 +3,8 @@ package eu.tintera.tasks.ios
 import eu.tintera.tasks.core.AppDispatchers
 import eu.tintera.tasks.core.ApplicationScope
 import eu.tintera.tasks.core.ProcessableTask
-import eu.tintera.tasks.core.preconditions.PreconditionResult
-import eu.tintera.tasks.core.preconditions.TaskPrecondition
+import eu.tintera.tasks.core.constraints.PreconditionResult
+import eu.tintera.tasks.core.constraints.Constraint
 import kotlinx.coroutines.flow.map
 import platform.BackgroundTasks.BGProcessingTaskRequest
 import kotlin.time.Clock
@@ -25,7 +25,7 @@ internal class BgProcessingTaskManager(
     appLifecycleObserver = appLifecycleObserver,
     tag = "BgProcessingTaskManager",
     clock = clock,
-), TaskPrecondition {
+), Constraint {
 
     override fun List<BgTaskManagerTask>.filter() = if (!isAppRefreshTaskAllowed) this else filter {
         it.requiresDeviceIdle

@@ -1,11 +1,11 @@
-package eu.tintera.tasks.core.preconditions
+package eu.tintera.tasks.core.constraints
 
 import eu.tintera.tasks.core.ProcessableTask
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.*
 
-internal class TaskPreconditionController(
-    preconditions: List<TaskPrecondition>
+internal class ConstraintController(
+    preconditions: List<Constraint>
 ) {
 
     enum class WaitResult {
@@ -15,7 +15,7 @@ internal class TaskPreconditionController(
     }
 
     private val allPreconditions = preconditions.map {
-        ReactiveTaskPrecondition(it)
+        ReactiveConstraint(it)
     }
 
     private val executionPreconditions = allPreconditions.filter {

@@ -5,14 +5,13 @@ import eu.tintera.guard.TokenProducer
 import eu.tintera.tasks.core.AppStateObserver
 import eu.tintera.tasks.core.NetworkState
 import eu.tintera.tasks.core.engineModule
-import eu.tintera.tasks.core.preconditions.TaskPrecondition
+import eu.tintera.tasks.core.constraints.Constraint
 import eu.tintera.tasks.engine.db.engineDbModule
 import org.koin.core.module.dsl.createdAtStart
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.bind
 import org.koin.dsl.binds
 import org.koin.dsl.module
-import platform.posix.clock
 
 fun iosModule(
     bgProcessingTaskIdentifier: String?,
@@ -36,7 +35,7 @@ fun iosModule(
                 isAppRefreshTaskAllowed = appRefreshTaskIdentifier != null,
                 clock = get(),
             )
-        } binds arrayOf(TokenProducer::class, ExecutionContextObserver::class, TaskPrecondition::class)
+        } binds arrayOf(TokenProducer::class, ExecutionContextObserver::class, Constraint::class)
     }
 
     appRefreshTaskIdentifier?.also { identifier ->

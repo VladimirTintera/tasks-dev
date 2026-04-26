@@ -1,11 +1,11 @@
-package eu.tintera.tasks.core.preconditions
+package eu.tintera.tasks.core.constraints
 
 import eu.tintera.tasks.core.ProcessableTask
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlin.time.Clock
 
-internal class ProcessTimePrecondition : TaskPrecondition {
+internal class ProcessTimePrecondition : Constraint {
 
     override fun hasConstraint(task: ProcessableTask) = task.processTime != null
 

@@ -1,11 +1,11 @@
-package eu.tintera.tasks.core.preconditions
+package eu.tintera.tasks.core.constraints
 
 import eu.tintera.tasks.core.ProcessableTask
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 
-internal class ReactiveTaskPrecondition(
-    private val delegate: TaskPrecondition
+internal class ReactiveConstraint(
+    private val delegate: Constraint
 ) {
     val monitorDuringExecution: Boolean get() = delegate.monitorDuringExecution
 

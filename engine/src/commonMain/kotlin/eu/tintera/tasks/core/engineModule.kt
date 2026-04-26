@@ -3,7 +3,7 @@ package eu.tintera.tasks.core
 import eu.tintera.guard.ExecutionContextObserver
 import eu.tintera.tasks.TaskManager
 import eu.tintera.tasks.core.db.coreDbModule
-import eu.tintera.tasks.core.preconditions.*
+import eu.tintera.tasks.core.constraints.*
 import org.koin.core.module.dsl.createdAtStart
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
@@ -22,13 +22,13 @@ val engineModule = module {
         createdAtStart()
     }
 
-    singleOf(::InitialDelayTaskPrecondition) bind TaskPrecondition::class
-    singleOf(::NetworkStateTaskPrecondition) bind TaskPrecondition::class
-    singleOf(::ParentsTaskPrecondition) bind TaskPrecondition::class
-    singleOf(::ProcessTimePrecondition) bind TaskPrecondition::class
+    singleOf(::InitialDelayConstraint) bind Constraint::class
+    singleOf(::NetworkStateConstraint) bind Constraint::class
+    singleOf(::ParentsConstraint) bind Constraint::class
+    singleOf(::ProcessTimePrecondition) bind Constraint::class
 
     single {
-        TaskPreconditionController(preconditions = getAll())
+        ConstraintController(preconditions = getAll())
     }
 
     singleOf(::ActiveTaskTrackerImpl) bind ActiveTaskTracker::class
