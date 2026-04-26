@@ -5,7 +5,6 @@ import eu.tintera.guard.invoke
 import eu.tintera.tasks.EventBus
 import eu.tintera.tasks.core.data.ExecutableTask
 import eu.tintera.tasks.core.data.TaskProcessResult
-import eu.tintera.tasks.core.data.TaskProcessorRepository
 import eu.tintera.tasks.core.preconditions.PreconditionLostException
 import eu.tintera.tasks.core.preconditions.TaskPreconditionController
 import kotlinx.coroutines.*

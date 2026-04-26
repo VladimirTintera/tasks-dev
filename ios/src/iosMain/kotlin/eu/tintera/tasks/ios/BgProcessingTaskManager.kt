@@ -1,32 +1,33 @@
-package eu.tintera.tasks.runtime
+package eu.tintera.tasks.ios
 
 import eu.tintera.tasks.core.AppDispatchers
 import eu.tintera.tasks.core.ApplicationScope
 import eu.tintera.tasks.core.ProcessableTask
-import eu.tintera.tasks.core.data.Repository
-import eu.tintera.tasks.core.data.SchedulableTask
 import eu.tintera.tasks.core.preconditions.PreconditionResult
 import eu.tintera.tasks.core.preconditions.TaskPrecondition
 import kotlinx.coroutines.flow.map
 import platform.BackgroundTasks.BGProcessingTaskRequest
+import kotlin.time.Clock
 
 internal class BgProcessingTaskManager(
     scope: ApplicationScope,
     dispatchers: AppDispatchers,
     private val taskIdentifier: String,
-    repository: Repository,
+    repository: BgTaskManagerRepository,
     appLifecycleObserver: AppLifecycleObserver,
-    private val isAppRefreshTaskAllowed: Boolean
+    private val isAppRefreshTaskAllowed: Boolean,
+    clock: Clock
 ) : BgTaskManager(
     scope = scope,
     dispatchers = dispatchers,
     taskIdentifier = taskIdentifier,
     repository = repository,
     appLifecycleObserver = appLifecycleObserver,
-    tag = "BgProcessingTaskManager"
+    tag = "BgProcessingTaskManager",
+    clock = clock,
 ), TaskPrecondition {
 
-    override fun List<SchedulableTask>.filter() = if (!isAppRefreshTaskAllowed) this else filter {
+    override fun List<BgTaskManagerTask>.filter() = if (!isAppRefreshTaskAllowed) this else filter {
         it.requiresDeviceIdle
     }
 

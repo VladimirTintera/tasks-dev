@@ -1,4 +1,4 @@
-package eu.tintera.tasks.runtime
+package eu.tintera.tasks.ios
 
 import eu.tintera.tasks.core.NetworkState
 import kotlinx.coroutines.channels.awaitClose

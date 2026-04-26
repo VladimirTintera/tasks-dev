@@ -2,8 +2,8 @@ package eu.tintera.tasks.engine.db
 
 import eu.tintera.tasks.State
 import eu.tintera.tasks.core.ProcessableTask
+import eu.tintera.tasks.core.TaskProcessorRepository
 import eu.tintera.tasks.core.data.ExecutableTask
-import eu.tintera.tasks.core.data.TaskProcessorRepository
 import eu.tintera.tasks.db.dao.TaskProcessorDao
 import eu.tintera.tasks.db.toEntityState
 import eu.tintera.tasks.db.toTaskBackoffCriteria

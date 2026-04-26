@@ -147,17 +147,6 @@ internal class RepositoryImpl(
         tasks.map { it.toInfo(emptySet()) }
     }
 
-    override suspend fun schedulableTasks(states: List<State>): List<SchedulableTask> = taskDao.schedulableTasks(
-        states = states.map { it.toEntityState() }
-    ).map {
-        SchedulableTask(
-            id = it.id,
-            processTime = it.processTime,
-            requiresDeviceIdle = it.requiresDeviceIdle,
-            networkRequired = it.networkRequired
-        )
-    }
-
     override suspend fun childrenForTask(id: Uuid): List<Uuid> = taskParentTaskDao.childrenForTask(id)
 
     override suspend fun taskIdsByTagAndState(

@@ -1,8 +1,8 @@
 package eu.tintera.tasks.engine.db
 
 import eu.tintera.tasks.State
+import eu.tintera.tasks.core.TaskDispatcherRepository
 import eu.tintera.tasks.core.data.DispatchableTask
-import eu.tintera.tasks.core.data.TaskDispatcherRepository
 import eu.tintera.tasks.db.dao.DispatchableTaskDao
 import eu.tintera.tasks.db.toEntityState
 import eu.tintera.tasks.db.toTaskState

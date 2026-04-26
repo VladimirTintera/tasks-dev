@@ -1,7 +1,6 @@
 package eu.tintera.tasks.core
 
 import eu.tintera.guard.EventBus
-import eu.tintera.tasks.core.data.TaskDispatcherRepository
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow

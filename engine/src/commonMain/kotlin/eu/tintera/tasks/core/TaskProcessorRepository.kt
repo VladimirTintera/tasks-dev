@@ -1,7 +1,7 @@
-package eu.tintera.tasks.core.data
+package eu.tintera.tasks.core
 
 import eu.tintera.tasks.State
-import eu.tintera.tasks.core.ProcessableTask
+import eu.tintera.tasks.core.data.ExecutableTask
 import kotlinx.coroutines.flow.Flow
 import kotlin.uuid.Uuid
 

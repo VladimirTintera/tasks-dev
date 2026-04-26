@@ -8,11 +8,6 @@ import kotlin.uuid.Uuid
 
 interface Repository {
 
-
-
-
-
-
     fun parentStatesForTask(id: Uuid): Flow<List<State>>
     suspend fun updateNextRun(
         id: Uuid,
@@ -42,8 +37,6 @@ interface Repository {
     fun taskInfoById(id: Uuid): Flow<Info?>
 
     fun taskInfoByIds(ids: Set<Uuid>): Flow<List<Info>>
-
-    suspend fun schedulableTasks(states: List<State>): List<SchedulableTask>
 
     suspend fun childrenForTask(id: Uuid): List<Uuid>
 

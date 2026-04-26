@@ -44,6 +44,8 @@ include(":api")
 include(":android")
 include(":android-db")
 include(":di")
+include(":ios")
+include(":ios-db")
 
 include(":compat")
 

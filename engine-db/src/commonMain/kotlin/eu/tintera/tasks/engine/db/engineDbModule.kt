@@ -1,7 +1,7 @@
 package eu.tintera.tasks.engine.db
 
-import eu.tintera.tasks.core.data.TaskDispatcherRepository
-import eu.tintera.tasks.core.data.TaskProcessorRepository
+import eu.tintera.tasks.core.TaskDispatcherRepository
+import eu.tintera.tasks.core.TaskProcessorRepository
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.bind
 import org.koin.dsl.module

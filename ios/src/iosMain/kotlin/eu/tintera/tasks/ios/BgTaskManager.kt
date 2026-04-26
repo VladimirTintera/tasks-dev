@@ -1,4 +1,4 @@
-package eu.tintera.tasks.runtime
+package eu.tintera.tasks.ios
 
 import eu.tintera.guard.ExecutionContextObserver
 import eu.tintera.guard.Token
@@ -6,8 +6,6 @@ import eu.tintera.guard.TokenProducer
 import eu.tintera.tasks.EventBus
 import eu.tintera.tasks.core.AppDispatchers
 import eu.tintera.tasks.core.ApplicationScope
-import eu.tintera.tasks.core.data.Repository
-import eu.tintera.tasks.core.data.SchedulableTask
 import eu.tintera.tasks.core.runningStates
 import kotlinx.cinterop.*
 import kotlinx.coroutines.flow.*
@@ -26,12 +24,13 @@ internal abstract class BgTaskManager(
     scope: ApplicationScope,
     dispatchers: AppDispatchers,
     private val taskIdentifier: String,
-    private val repository: Repository,
+    private val repository: BgTaskManagerRepository,
     private val appLifecycleObserver: AppLifecycleObserver,
-    private val tag: String
+    private val tag: String,
+    private val clock: Clock
 ) : TokenProducer, ExecutionContextObserver {
     protected val currentToken = MutableStateFlow<BGTask?>(null)
-    protected var lastKnownTasks: List<SchedulableTask> = emptyList()
+    protected var lastKnownTasks: List<BgTaskManagerTask> = emptyList()
         private set
 
     init {
@@ -66,12 +65,11 @@ internal abstract class BgTaskManager(
         }
     }
 
-    abstract fun List<SchedulableTask>.filter(): List<SchedulableTask>
+    abstract fun List<BgTaskManagerTask>.filter(): List<BgTaskManagerTask>
 
-    private suspend fun nextPlanedTime() = repository.schedulableTasks(runningStates).filter().let { tasks ->
+    private suspend fun nextPlanedTime() = repository.tasks(runningStates).filter().let { tasks ->
         lastKnownTasks = tasks
-        val now = Clock.System.now()
-        tasks.minOfOrNull { it.processTime ?: now }?.coerceAtLeast(now + 30.minutes)
+        tasks.minOfOrNull { it.processTime }?.coerceAtLeast(clock.now() + 30.minutes)
     }
 
     suspend fun evaluateAndScheduleNext() {

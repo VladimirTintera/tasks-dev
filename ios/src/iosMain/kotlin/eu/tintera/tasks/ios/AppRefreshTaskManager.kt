@@ -1,26 +1,27 @@
-package eu.tintera.tasks.runtime
+package eu.tintera.tasks.ios
 
 import eu.tintera.tasks.core.AppDispatchers
 import eu.tintera.tasks.core.ApplicationScope
-import eu.tintera.tasks.core.data.Repository
-import eu.tintera.tasks.core.data.SchedulableTask
 import platform.BackgroundTasks.BGAppRefreshTaskRequest
+import kotlin.time.Clock
 
 internal class AppRefreshTaskManager(
     scope: ApplicationScope,
     dispatchers: AppDispatchers,
     private val taskIdentifier: String,
-    repository: Repository,
-    appLifecycleObserver: AppLifecycleObserver
+    repository: BgTaskManagerRepository,
+    appLifecycleObserver: AppLifecycleObserver,
+    clock: Clock
 ) : BgTaskManager(
     scope = scope,
     dispatchers = dispatchers,
     taskIdentifier = taskIdentifier,
     repository = repository,
     appLifecycleObserver = appLifecycleObserver,
-    tag = "AppRefreshTaskManager"
+    tag = "AppRefreshTaskManager",
+    clock = clock,
 ) {
-    override fun List<SchedulableTask>.filter(): List<SchedulableTask> = filterNot {
+    override fun List<BgTaskManagerTask>.filter() = filterNot {
         it.requiresDeviceIdle
     }
 
