@@ -20,6 +20,7 @@ val databaseModule = module {
     factory { get<TasksDatabase>().cleanableTaskDao() }
     factory { get<TasksDatabase>().schedulableTaskDao() }
     factory { get<TasksDatabase>().orphanTaskDao() }
+    factory { get<TasksDatabase>().parentConstraintDao() }
 
     factoryOf(::DatabaseFactory)
 

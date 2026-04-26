@@ -19,11 +19,6 @@ internal class RepositoryImpl(
     private val transactionRunner: TransactionRunner
 ) : Repository {
 
-
-    override fun parentStatesForTask(id: Uuid) = taskDao.parentStatesForTask(id).map { list ->
-        list.map { it.toTaskState() }
-    }.distinctUntilChanged()
-
     override suspend fun updateNextRun(
         id: Uuid,
         processTime: Instant,
@@ -184,6 +179,4 @@ internal class RepositoryImpl(
         allowedSourceStates = allowedSourceStates.map { it.toEntityState() },
         finishedAt = finishedAt
     )
-
-
 }

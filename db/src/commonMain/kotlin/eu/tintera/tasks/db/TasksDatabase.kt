@@ -5,6 +5,7 @@ import androidx.room.migration.AutoMigrationSpec
 import eu.tintera.tasks.db.dao.CleanableTaskDao
 import eu.tintera.tasks.db.dao.DispatchableTaskDao
 import eu.tintera.tasks.db.dao.OrphanTaskDao
+import eu.tintera.tasks.db.dao.ParentConstraintDao
 import eu.tintera.tasks.db.dao.SchedulableTaskDao
 import eu.tintera.tasks.db.dao.TaskDao
 import eu.tintera.tasks.db.dao.TaskEvaluatorDao
@@ -52,6 +53,7 @@ internal abstract class TasksDatabase : RoomDatabase() {
     abstract fun cleanableTaskDao(): CleanableTaskDao
     abstract fun schedulableTaskDao(): SchedulableTaskDao
     abstract fun orphanTaskDao(): OrphanTaskDao
+    abstract fun parentConstraintDao() : ParentConstraintDao
 }
 
 @DeleteColumn(tableName = "Task", columnName = "requiresSystemKeepAlive")

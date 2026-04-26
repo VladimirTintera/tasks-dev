@@ -8,7 +8,6 @@ import kotlin.uuid.Uuid
 
 interface Repository {
 
-    fun parentStatesForTask(id: Uuid): Flow<List<State>>
     suspend fun updateNextRun(
         id: Uuid,
         processTime: Instant,

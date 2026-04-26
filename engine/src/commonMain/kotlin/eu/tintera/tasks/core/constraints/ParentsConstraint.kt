@@ -2,21 +2,20 @@ package eu.tintera.tasks.core.constraints
 
 import eu.tintera.tasks.State
 import eu.tintera.tasks.core.ProcessableTask
-import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.terminal
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transformWhile
 
 internal class ParentsConstraint(
-    private val repository: Repository
+    private val repository: ParentsConstraintRepository
 ) : Constraint {
 
     override fun hasConstraint(task: ProcessableTask): Boolean = true
 
     override fun isValid(
         task: ProcessableTask
-    ) = repository.parentStatesForTask(task.id).map { states ->
+    ) = repository.parentStates(task.id).map { states ->
         when {
             states.isEmpty() -> PreconditionResult.Met
             State.Failed in states -> PreconditionResult.Failed
