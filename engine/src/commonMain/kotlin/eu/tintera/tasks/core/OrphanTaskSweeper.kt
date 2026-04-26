@@ -3,12 +3,11 @@ package eu.tintera.tasks.core
 import eu.tintera.guard.ExecutionContextObserver
 import eu.tintera.tasks.EventBus
 import eu.tintera.tasks.State
-import eu.tintera.tasks.core.data.Repository
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 
 internal class OrphanTaskSweeper(
-    private val repository: Repository,
+    private val repository: OrphanTaskSweeperRepository,
     private val scope: ApplicationScope,
     private val dispatchers: AppDispatchers,
     private val activeTaskTracker: ActiveTaskTracker, // <--- Sdílený tracker

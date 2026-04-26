@@ -157,21 +157,6 @@ internal class RepositoryImpl(
         tag = tag
     )
 
-    override suspend fun resetState(
-        from: State,
-        to: State,
-        excludedIds: Set<Uuid>
-    ) {
-        if (excludedIds.isEmpty()) taskDao.resetState(
-            from = from.toEntityState(),
-            to = to.toEntityState()
-        ) else taskDao.resetStateWithExclusion(
-            from = from.toEntityState(),
-            to = to.toEntityState(),
-            excludedIds = excludedIds
-        )
-    }
-
     override suspend fun updateState(
         id: Uuid,
         state: State,

@@ -42,10 +42,6 @@ interface Repository {
 
     suspend fun taskIdsByTagAndState(states: List<State>, tag: String): List<Uuid>
 
-    suspend fun resetState(from: State, to: State, excludedIds: Set<Uuid>)
-
-
-
     suspend fun updateState(
         id: Uuid,
         state: State,
@@ -55,6 +51,4 @@ interface Repository {
     )
 
     suspend fun updateTerminatingStateWithDescendants(id: Uuid, state: State, allowedSourceStates: Set<State>, finishedAt: Instant)
-
-
 }

@@ -1,15 +1,8 @@
 package eu.tintera.tasks.db.dao
 
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import androidx.room.RawQuery
-import androidx.room.RoomRawQuery
+import androidx.room.*
 import eu.tintera.tasks.db.State
-import eu.tintera.tasks.db.entities.GetDispatchableTaskByStates
 import eu.tintera.tasks.db.entities.InfoEntity
-import eu.tintera.tasks.db.entities.SchedulableTaskEntity
 import eu.tintera.tasks.db.entities.TaskEntity
 import eu.tintera.tasks.db.entities.TaskTag
 import kotlinx.coroutines.flow.Flow
@@ -30,7 +23,6 @@ interface TaskDao {
 
     @Query("UPDATE Task set runAttemptCount = :runAttemptCount WHERE id = :id")
     suspend fun updateRunAttemptCount(id: Uuid, runAttemptCount: Int)
-
 
 
     @Query(
@@ -67,7 +59,7 @@ interface TaskDao {
     fun taskInfoByTag(name: String): Flow<Map<InfoEntity, List<TaskTag>>>
 
     @RawQuery(observedEntities = [TaskEntity::class, TaskTag::class])
-    fun taskInfoByRawQuery(query: RoomRawQuery) : Flow<Map<InfoEntity, List<TaskTag>>>
+    fun taskInfoByRawQuery(query: RoomRawQuery): Flow<Map<InfoEntity, List<TaskTag>>>
 
     @Query(
         "SELECT id FROM Task WHERE state IN (:states) AND EXISTS(SELECT * FROM TaskTag WHERE TaskTag.taskId = Task.id AND TaskTag.name = :tag)"
@@ -76,7 +68,6 @@ interface TaskDao {
 
     @Query("SELECT * FROM Task WHERE id = :id")
     suspend fun task(id: Uuid): TaskEntity?
-
 
 
     @Query("SELECT DISTINCT t.state FROM Task t JOIN TaskParentTask p ON p.parentTaskId = t.id WHERE p.taskId = :id")
@@ -113,12 +104,6 @@ interface TaskDao {
     )
     suspend fun cleanOld(currentTimeMillis: Long, states: List<State>)
 
-    @Query("UPDATE Task set state = :to WHERE state = :from")
-    suspend fun resetState(from: State, to: State)
-
-    @Query("UPDATE Task set state = :to WHERE state = :from AND id NOT IN (:excludedIds)")
-    suspend fun resetStateWithExclusion(from: State, to: State, excludedIds: Set<Uuid>)
-
     @Query(
         """
     WITH RECURSIVE Descendants(id) AS (
@@ -143,13 +128,4 @@ interface TaskDao {
         allowedSourceStates: List<State>,
         finishedAt: Instant
     )
-
-
-
-
-
-
-
-
-
 }
