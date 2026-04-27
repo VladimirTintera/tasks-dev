@@ -4,6 +4,7 @@ import eu.tintera.tasks.State
 import eu.tintera.tasks.TaskInfoQuery
 import eu.tintera.tasks.core.data.*
 import eu.tintera.tasks.db.dao.TaskDao
+import eu.tintera.tasks.db.dao.TaskResultDao
 import eu.tintera.tasks.db.entities.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -14,32 +15,11 @@ import kotlin.uuid.Uuid
 
 internal class RepositoryImpl(
     private val taskDao: TaskDao,
+    private val taskResultDao: TaskResultDao,
     private val taskTagDao: TaskTagDao,
     private val taskParentTaskDao: TaskParentTaskDao,
     private val transactionRunner: TransactionRunner
 ) : Repository {
-
-    override suspend fun updateNextRun(
-        id: Uuid,
-        processTime: Instant,
-        state: State,
-        progressData: ByteArray?,
-        runAttemptCount: Int?
-    ) = taskDao.updateRetry(
-        id = id,
-        processTime = processTime,
-        state = state.toEntityState(),
-        progress = progressData,
-        runAttemptCount = runAttemptCount
-    )
-
-    override suspend fun updateRunAttemptCount(
-        id: Uuid,
-        runAttemptsCount: Int
-    ) = taskDao.updateRunAttemptCount(
-        id = id,
-        runAttemptCount = runAttemptsCount
-    )
 
     override suspend fun updateTerminatingState(
         id: Uuid,
@@ -168,15 +148,13 @@ internal class RepositoryImpl(
         )
     }
 
-    override suspend fun updateTerminatingStateWithDescendants(
+    override suspend fun finishTaskWithUnsuccess(
         id: Uuid,
         state: State,
-        allowedSourceStates: Set<State>,
         finishedAt: Instant
-    ) = taskDao.updateTerminatingStateWithAllDescendants(
+    ) = taskResultDao.finishTaskWithUnsuccess(
         taskId = id,
         state = state.toEntityState(),
-        allowedSourceStates = allowedSourceStates.map { it.toEntityState() },
         finishedAt = finishedAt
     )
 }

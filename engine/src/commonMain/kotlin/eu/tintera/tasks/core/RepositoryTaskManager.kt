@@ -1,12 +1,7 @@
 package eu.tintera.tasks.core
 
 import eu.tintera.tasks.*
-import eu.tintera.tasks.core.data.Info
-import eu.tintera.tasks.core.data.Repository
-import eu.tintera.tasks.core.data.Task
-import eu.tintera.tasks.core.data.TransactionRunner
-import eu.tintera.tasks.core.data.invoke
-import eu.tintera.tasks.core.data.toTaskInfo
+import eu.tintera.tasks.core.data.*
 import eu.tintera.tasks.core.migrations.TaskMigrator
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -268,10 +263,9 @@ class RepositoryCoreTaskManager(
     }
 
     private suspend fun cancelTask(taskId: Uuid) {
-        repository.updateTerminatingStateWithDescendants(
+        repository.finishTaskWithUnsuccess(
             id = taskId,
             state = State.Cancelled,
-            allowedSourceStates = State.Cancelled.allowedSourceStatesForChangeTo().toSet(),
             finishedAt = Clock.System.now()
         )
     }

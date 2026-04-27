@@ -2,7 +2,6 @@ package eu.tintera.tasks.core
 
 import eu.tintera.tasks.BackoffCriteria
 import eu.tintera.tasks.State
-import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.TaskProcessResult
 import kotlin.time.Clock
 
@@ -11,7 +10,7 @@ interface TaskResultProcessor {
 }
 
 class TaskResultProcessorImpl(
-    private val repository: Repository,
+    private val repository: TaskResultProcessorRepository,
     private val taskLifecycleObserver: CompositeTaskLifecycleObserver
 ) : TaskResultProcessor {
 
@@ -22,32 +21,27 @@ class TaskResultProcessorImpl(
                 when (result.evaluatorResult) {
                     TaskEvaluatorResult.Failure -> {
                         val duration = task.repeatInterval
-                        if (duration != null) repository.updateNextRun(
+                        if (duration != null) repository.scheduleNextFromBeginning(
                             id = task.id,
                             state = State.Enqueued,
-                            processTime = now + duration,
-                            progressData = null,
-                            runAttemptCount = 0
+                            processTime = now + duration
                         )
-                        else repository.updateTerminatingState(
+                        else repository.failTask(
                             id = task.id,
                             state = State.Failed,
-                            finishedAt = now,
-                            outputData = null
+                            finishedAt = now
                         )
                     }
 
                     is TaskEvaluatorResult.Success -> {
                         val duration = task.repeatInterval
 
-                        if (duration != null) repository.updateNextRun(
+                        if (duration != null) repository.scheduleNextFromBeginning(
                             id = task.id,
                             state = State.Enqueued,
-                            processTime = now + duration,
-                            progressData = null,
-                            runAttemptCount = 0
+                            processTime = now + duration
                         )
-                        else repository.updateTerminatingState(
+                        else repository.successTask(
                             id = task.id,
                             state = State.Succeeded,
                             finishedAt = now,
@@ -57,12 +51,10 @@ class TaskResultProcessorImpl(
 
                     TaskEvaluatorResult.Retry -> {
                         val backoff = (task.backoffCriteria ?: BackoffCriteria.DEFAULT).calculate(task.retryCount)
-                        repository.updateNextRun(
+                        repository.scheduleNext(
                             id = task.id,
                             state = State.Enqueued,
-                            processTime = now + backoff,
-                            progressData = null,
-                            runAttemptCount = null
+                            processTime = now + backoff
                         )
                     }
                 }
@@ -70,22 +62,19 @@ class TaskResultProcessorImpl(
             }
 
             ExecutionResult.Yielded -> {
-                repository.updateNextRun(
+                repository.scheduleNext(
                     id = task.id,
                     state = State.Enqueued,
-                    processTime = now,
-                    progressData = null,
-                    runAttemptCount = null
+                    processTime = now
                 )
                 taskLifecycleObserver.onCanceled(task.id, "Precondition lost")
             }
 
             ExecutionResult.Canceled -> {
-                repository.updateTerminatingState(
+                repository.failTask(
                     id = task.id,
                     state = State.Cancelled,
-                    finishedAt = now,
-                    outputData = null,
+                    finishedAt = now
                 )
                 taskLifecycleObserver.onCanceled(task.id, "Task canceled")
             }

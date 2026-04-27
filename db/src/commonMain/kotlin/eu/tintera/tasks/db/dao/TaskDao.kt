@@ -12,19 +12,6 @@ import kotlin.uuid.Uuid
 @Dao
 interface TaskDao {
 
-    @Query("UPDATE Task set state = :state, processTime = :processTime, progressData = :progress, runAttemptCount = (CASE WHEN :runAttemptCount IS NULL THEN runAttemptCount ELSE :runAttemptCount END) WHERE id = :id")
-    suspend fun updateRetry(
-        id: Uuid,
-        processTime: Instant,
-        state: State,
-        progress: ByteArray?,
-        runAttemptCount: Int?
-    )
-
-    @Query("UPDATE Task set runAttemptCount = :runAttemptCount WHERE id = :id")
-    suspend fun updateRunAttemptCount(id: Uuid, runAttemptCount: Int)
-
-
     @Query(
         """
         UPDATE Task set 
@@ -100,28 +87,5 @@ interface TaskDao {
     )
     suspend fun cleanOld(currentTimeMillis: Long, states: List<State>)
 
-    @Query(
-        """
-    WITH RECURSIVE Descendants(id) AS (
-        -- 1. Základní případ: Začínáme od kořene (task, který rušíme)
-        SELECT :taskId
-        UNION ALL
-        -- 2. Rekurzivní krok: Najdi všechny děti úkolů, které už máme v Descendants
-        SELECT tpt.taskId 
-        FROM TaskParentTask tpt
-        INNER JOIN Descendants d ON tpt.parentTaskId = d.id
-    )
-    -- 3. Hromadný Update: Zruš všechny tasky, jejichž ID jsme našli v rekurzi
-    UPDATE Task 
-    SET state = :state, finishedAt = :finishedAt, processTime = NULL, progressData = NULL
-    WHERE id IN Descendants 
-    AND state IN (:allowedSourceStates)
-"""
-    )
-    suspend fun updateTerminatingStateWithAllDescendants(
-        taskId: Uuid,
-        state: State,
-        allowedSourceStates: List<State>,
-        finishedAt: Instant
-    )
+
 }

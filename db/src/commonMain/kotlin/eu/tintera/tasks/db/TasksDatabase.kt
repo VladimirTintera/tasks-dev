@@ -10,6 +10,7 @@ import eu.tintera.tasks.db.dao.SchedulableTaskDao
 import eu.tintera.tasks.db.dao.TaskDao
 import eu.tintera.tasks.db.dao.TaskEvaluatorDao
 import eu.tintera.tasks.db.dao.TaskProcessorDao
+import eu.tintera.tasks.db.dao.TaskResultDao
 import eu.tintera.tasks.db.dao.TaskScopeDao
 import eu.tintera.tasks.db.entities.*
 
@@ -54,6 +55,7 @@ internal abstract class TasksDatabase : RoomDatabase() {
     abstract fun schedulableTaskDao(): SchedulableTaskDao
     abstract fun orphanTaskDao(): OrphanTaskDao
     abstract fun parentConstraintDao() : ParentConstraintDao
+    abstract fun taskResultDao() : TaskResultDao
 }
 
 @DeleteColumn(tableName = "Task", columnName = "requiresSystemKeepAlive")

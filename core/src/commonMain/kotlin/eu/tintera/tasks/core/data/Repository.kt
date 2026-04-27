@@ -8,15 +8,6 @@ import kotlin.uuid.Uuid
 
 interface Repository {
 
-    suspend fun updateNextRun(
-        id: Uuid,
-        processTime: Instant,
-        state: State,
-        progressData: ByteArray?,
-        runAttemptCount: Int?
-    )
-
-    suspend fun updateRunAttemptCount(id: Uuid, runAttemptsCount: Int)
     suspend fun updateTerminatingState(
         id: Uuid,
         state: State,
@@ -49,5 +40,5 @@ interface Repository {
         runAttemptCount: Int?
     )
 
-    suspend fun updateTerminatingStateWithDescendants(id: Uuid, state: State, allowedSourceStates: Set<State>, finishedAt: Instant)
+    suspend fun finishTaskWithUnsuccess(id: Uuid, state: State, finishedAt: Instant)
 }
