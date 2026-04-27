@@ -8,12 +8,6 @@ internal class ConstraintController(
     preconditions: List<Constraint>
 ) {
 
-    enum class WaitResult {
-        SUCCESS,
-        FAILED,
-        CANCELED
-    }
-
     private val allPreconditions = preconditions.map {
         ReactiveConstraint(it)
     }
@@ -24,16 +18,15 @@ internal class ConstraintController(
 
     suspend fun waitForAll(
         taskFlow: StateFlow<ProcessableTask?>
-    ): WaitResult = if (allPreconditions.isEmpty()) WaitResult.SUCCESS
+    ): Boolean = if (allPreconditions.isEmpty()) true
     else combine(
         allPreconditions.map {
-            it.isValid(taskFlow).onStart { emit(PreconditionResult.Unmet) }
+            it.isValid(taskFlow).onStart { emit(ConstraintResult.Unmet) }
         }
     ) { array ->
         when {
-            PreconditionResult.Failed in array -> WaitResult.FAILED
-            PreconditionResult.Cancelled in array -> WaitResult.CANCELED
-            array.all { it == PreconditionResult.Met } -> WaitResult.SUCCESS
+            ConstraintResult.Failed in array -> false
+            array.all { it == ConstraintResult.Met } -> true
             else -> null
         }
     }.filterNotNull().first()
@@ -44,6 +37,6 @@ internal class ConstraintController(
     ) = if (executionPreconditions.isEmpty()) awaitCancellation() else executionPreconditions.map {
         it.isValid(taskFlow)
     }.merge().first {
-        it != PreconditionResult.Met
+        it != ConstraintResult.Met
     }
 }

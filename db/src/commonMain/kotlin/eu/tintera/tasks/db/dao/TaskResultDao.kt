@@ -22,34 +22,38 @@ interface TaskResultDao {
     -- 3. Hromadný Update: Zruš všechny tasky, jejichž ID jsme našli v rekurzi
     UPDATE Task 
     SET state = :state, finishedAt = :finishedAt, processTime = NULL, progressData = NULL
-    WHERE id IN Descendants
+    WHERE id IN Descendants AND state IN (:allowedSourceStates)
 """
     )
     suspend fun finishTaskWithUnsuccess(
         taskId: Uuid,
         state: State,
+        allowedSourceStates: List<State>,
         finishedAt: Instant
     )
 
-    @Query("UPDATE Task set state = :state, finishedAt = :finishedAt, outputData = :outputData, processTime = NULL, progressData = null  WHERE id = :id")
+    @Query("UPDATE Task set state = :state, finishedAt = :finishedAt, outputData = :outputData, processTime = NULL, progressData = null AND state IN (:allowedSourceStates)  WHERE id = :id")
     suspend fun finishTaskWithSuccess(
         id: Uuid,
         state: State,
+        allowedSourceStates: List<State>,
         finishedAt: Instant,
         outputData: ByteArray
     )
 
-    @Query("UPDATE Task set state = :state, processTime = :processTime, progressData = null, runAttemptCount = 0 WHERE id = :id")
+    @Query("UPDATE Task set state = :state, processTime = :processTime, progressData = null, runAttemptCount = 0 AND state IN (:allowedSourceStates) WHERE id = :id")
     suspend fun scheduleNextFromBeginning(
         id: Uuid,
         processTime: Instant,
-        state: State
+        state: State,
+        allowedSourceStates: List<State>
     )
 
-    @Query("UPDATE Task set state = :state, processTime = :processTime, progressData = null WHERE id = :id")
+    @Query("UPDATE Task set state = :state, processTime = :processTime, progressData = null AND state IN (:allowedSourceStates) WHERE id = :id")
     suspend fun scheduleNext(
         id: Uuid,
         processTime: Instant,
-        state: State
+        state: State,
+        allowedSourceStates: List<State>
     )
 }

@@ -3,6 +3,7 @@ package eu.tintera.tasks.db
 import eu.tintera.tasks.State
 import eu.tintera.tasks.TaskInfoQuery
 import eu.tintera.tasks.core.data.*
+import eu.tintera.tasks.core.runningStates
 import eu.tintera.tasks.db.dao.TaskDao
 import eu.tintera.tasks.db.dao.TaskResultDao
 import eu.tintera.tasks.db.entities.*
@@ -155,6 +156,7 @@ internal class RepositoryImpl(
     ) = taskResultDao.finishTaskWithUnsuccess(
         taskId = id,
         state = state.toEntityState(),
-        finishedAt = finishedAt
+        finishedAt = finishedAt,
+        allowedSourceStates = runningStates.map { it.toEntityState() }
     )
 }

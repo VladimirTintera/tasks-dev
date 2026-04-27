@@ -15,7 +15,7 @@ internal class ProcessTimePrecondition : Constraint {
             val diff = it - now
             if (diff.isPositive()) delay(diff)
         }
-        emit(PreconditionResult.Met)
+        emit(ConstraintResult.Met)
     }
 
     override val monitorDuringExecution = false

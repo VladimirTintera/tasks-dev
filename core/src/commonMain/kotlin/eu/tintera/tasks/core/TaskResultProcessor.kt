@@ -24,12 +24,14 @@ class TaskResultProcessorImpl(
                         if (duration != null) repository.scheduleNextFromBeginning(
                             id = task.id,
                             state = State.Enqueued,
-                            processTime = now + duration
+                            processTime = now + duration,
+                            allowedSourceStates = runningStates
                         )
                         else repository.failTask(
                             id = task.id,
                             state = State.Failed,
-                            finishedAt = now
+                            finishedAt = now,
+                            allowedSourceStates = runningStates
                         )
                     }
 
@@ -39,13 +41,15 @@ class TaskResultProcessorImpl(
                         if (duration != null) repository.scheduleNextFromBeginning(
                             id = task.id,
                             state = State.Enqueued,
-                            processTime = now + duration
+                            processTime = now + duration,
+                            allowedSourceStates = runningStates
                         )
                         else repository.successTask(
                             id = task.id,
                             state = State.Succeeded,
                             finishedAt = now,
-                            outputData = result.evaluatorResult.bytes
+                            outputData = result.evaluatorResult.bytes,
+                            allowedSourceStates = runningStates
                         )
                     }
 
@@ -54,7 +58,8 @@ class TaskResultProcessorImpl(
                         repository.scheduleNext(
                             id = task.id,
                             state = State.Enqueued,
-                            processTime = now + backoff
+                            processTime = now + backoff,
+                            allowedSourceStates = runningStates
                         )
                     }
                 }
@@ -65,7 +70,8 @@ class TaskResultProcessorImpl(
                 repository.scheduleNext(
                     id = task.id,
                     state = State.Enqueued,
-                    processTime = now
+                    processTime = now,
+                    allowedSourceStates = runningStates
                 )
                 taskLifecycleObserver.onCanceled(task.id, "Precondition lost")
             }
@@ -74,7 +80,8 @@ class TaskResultProcessorImpl(
                 repository.failTask(
                     id = task.id,
                     state = State.Cancelled,
-                    finishedAt = now
+                    finishedAt = now,
+                    allowedSourceStates = runningStates
                 )
                 taskLifecycleObserver.onCanceled(task.id, "Task canceled")
             }

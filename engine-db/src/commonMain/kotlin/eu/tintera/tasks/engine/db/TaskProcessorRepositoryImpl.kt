@@ -50,7 +50,7 @@ internal class TaskProcessorRepositoryImpl(
     override suspend fun updateRunningState(
         id: Uuid,
         runAttemptCount: Int,
-        allowedSourceStates: List<State>
+        allowedSourceStates: Set<State>
     ) {
         dao.updateRunningState(
             id = id,
@@ -60,7 +60,7 @@ internal class TaskProcessorRepositoryImpl(
         )
     }
 
-    override suspend fun updateEnqueuedState(id: Uuid, allowedSourceStates: List<State>) {
+    override suspend fun updateEnqueuedState(id: Uuid, allowedSourceStates: Set<State>) {
         dao.updateEnqueuedState(
             id = id,
             allowedSourceStates = allowedSourceStates.map { it.toEntityState() },

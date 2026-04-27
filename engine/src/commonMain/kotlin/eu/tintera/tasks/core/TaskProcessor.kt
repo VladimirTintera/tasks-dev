@@ -3,10 +3,10 @@ package eu.tintera.tasks.core
 import eu.tintera.guard.ExecutionContextProvider
 import eu.tintera.guard.invoke
 import eu.tintera.tasks.EventBus
+import eu.tintera.tasks.core.constraints.ConstraintController
+import eu.tintera.tasks.core.constraints.ConstraintLostException
 import eu.tintera.tasks.core.data.ExecutableTask
 import eu.tintera.tasks.core.data.TaskProcessResult
-import eu.tintera.tasks.core.constraints.ConstraintLostException
-import eu.tintera.tasks.core.constraints.ConstraintController
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -81,50 +81,17 @@ internal class TaskProcessorImpl(
     private suspend fun waitForPreconditions(
         id: Uuid,
         task: StateFlow<ProcessableTask?>
-    ): Boolean {
-        return when (preconditionController.waitForAll(task)) {
-            ConstraintController.WaitResult.SUCCESS -> {
-                repository.updateEnqueuedState(
-                    id = id,
-                    allowedSourceStates = runningStates
-                )
-                taskLifecycleObserver.onPreconditionsSucceeded(id)
-                true
-            }
-
-            ConstraintController.WaitResult.FAILED -> withContext(NonCancellable) {
-                taskLifecycleObserver.onPreconditionsFailed(id)
-                task.value?.also {
-                    taskResultProcessor.handleResult(
-                        it.toTaskProcessResult(
-                            ExecutionResult.EvaluatorResult(
-                                TaskEvaluatorResult.Failure
-                            )
-                        )
-                    )
-                }
-                false
-            }
-
-            ConstraintController.WaitResult.CANCELED -> withContext(NonCancellable) {
-                taskLifecycleObserver.onCanceled(id)
-                task.value?.also {
-                    taskResultProcessor.handleResult(it.toTaskProcessResult(ExecutionResult.Canceled))
-                }
-                false
-            }
+    ): Boolean = preconditionController.waitForAll(task).also {
+        if (it) {
+            repository.updateEnqueuedState(
+                id = id,
+                allowedSourceStates = runningStates
+            )
+            taskLifecycleObserver.onPreconditionsSucceeded(id)
+        } else {
+            taskLifecycleObserver.onPreconditionsFailed(id)
         }
     }
-
-    private fun ProcessableTask.toTaskProcessResult(
-        result: ExecutionResult
-    ) = TaskProcessResult(
-        id = id,
-        executionResult = result,
-        repeatInterval = repeatInterval,
-        backoffCriteria = backoffCriteria,
-        retryCount = runAttemptCount
-    )
 
     private suspend fun executeTask(
         id: Uuid,

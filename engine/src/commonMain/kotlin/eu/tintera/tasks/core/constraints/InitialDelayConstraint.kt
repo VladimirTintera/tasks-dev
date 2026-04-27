@@ -9,7 +9,7 @@ internal class InitialDelayConstraint : Constraint {
 
     override fun isValid(task: ProcessableTask) = flow {
         delay(task.initialDelay)
-        emit(PreconditionResult.Met)
+        emit(ConstraintResult.Met)
     }
 
     override val monitorDuringExecution = false

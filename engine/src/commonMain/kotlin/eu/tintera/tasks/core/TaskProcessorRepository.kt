@@ -10,6 +10,6 @@ interface TaskProcessorRepository {
 
     suspend fun executableTask(id: Uuid): ExecutableTask?
 
-    suspend fun updateRunningState(id: Uuid, runAttemptCount: Int, allowedSourceStates: List<State>)
-    suspend fun updateEnqueuedState(id: Uuid, allowedSourceStates: List<State>)
+    suspend fun updateRunningState(id: Uuid, runAttemptCount: Int, allowedSourceStates: Set<State>)
+    suspend fun updateEnqueuedState(id: Uuid, allowedSourceStates: Set<State>)
 }

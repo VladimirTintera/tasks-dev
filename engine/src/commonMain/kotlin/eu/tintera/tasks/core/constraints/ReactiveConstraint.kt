@@ -16,7 +16,7 @@ internal class ReactiveConstraint(
         delegate.hasConstraint(it)
     }.flatMapLatest { task ->
         if (!delegate.hasConstraint(task)) {
-            flowOf(PreconditionResult.Met)
+            flowOf(ConstraintResult.Met)
         } else {
             delegate.isValid(task)
         }

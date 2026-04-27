@@ -11,8 +11,8 @@ internal class NetworkStateConstraint(
 
     override fun isValid(task: ProcessableTask) = networkState.state().map {
         when (it) {
-            NetworkState.State.Disconnected -> PreconditionResult.Unmet
-            NetworkState.State.Connected -> PreconditionResult.Met
+            NetworkState.State.Disconnected -> ConstraintResult.Unmet
+            NetworkState.State.Connected -> ConstraintResult.Met
         }
     }
 

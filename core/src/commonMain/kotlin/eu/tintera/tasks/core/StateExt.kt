@@ -7,9 +7,12 @@ import eu.tintera.tasks.State
         State.Cancelled, State.Succeeded, State.Failed
     )
 
-val runningStates = listOf(State.Enqueued, State.Blocked, State.Running)
+val failedStates: Set<State>
+    get() = setOf(State.Failed, State.Cancelled)
 
-val nonTerminalStates = State.entries.filterNot { it in terminalStates }
+val runningStates = setOf(State.Enqueued, State.Blocked, State.Running)
+
+val nonTerminalStates = State.entries.filterNot { it in terminalStates }.toSet()
 
 fun State.terminal(): Boolean = when {
     terminalStates.contains(this) -> true

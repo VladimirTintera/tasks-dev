@@ -5,5 +5,5 @@ import eu.tintera.tasks.core.data.DispatchableTask
 import kotlinx.coroutines.flow.Flow
 
 interface TaskDispatcherRepository {
-    fun dispatchableTasks(states: List<State>): Flow<List<DispatchableTask>>
+    fun dispatchableTasks(states: Set<State>): Flow<List<DispatchableTask>>
 }

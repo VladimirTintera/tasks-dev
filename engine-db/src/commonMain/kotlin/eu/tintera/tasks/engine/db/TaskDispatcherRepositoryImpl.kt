@@ -14,7 +14,7 @@ class TaskDispatcherRepositoryImpl(
     private val dispatchableTaskDao: DispatchableTaskDao
 ) : TaskDispatcherRepository {
 
-    override fun dispatchableTasks(states: List<State>): Flow<List<DispatchableTask>> =
+    override fun dispatchableTasks(states: Set<State>): Flow<List<DispatchableTask>> =
         dispatchableTaskDao.getDispatchableTasksByStates(
             states = states.map { it.toEntityState() }
         ).distinctUntilChanged().map {
