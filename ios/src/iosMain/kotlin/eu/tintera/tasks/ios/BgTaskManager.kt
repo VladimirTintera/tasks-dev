@@ -53,6 +53,8 @@ internal abstract class BgTaskManager(
         task.expirationHandler = onExpire
 
         object : Token {
+            override val tag = "BgTask"
+
             override suspend fun release() {
                 currentToken.update { null }
                 task.setTaskCompletedWithSuccess(true)
