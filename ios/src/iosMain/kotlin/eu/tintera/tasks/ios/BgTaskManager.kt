@@ -46,30 +46,33 @@ internal abstract class BgTaskManager(
         }
     }
 
-    override fun token(
-        onExpire: () -> Unit
-    ): Flow<Token> = currentToken.filterNotNull().map { task ->
+    override fun token(): Flow<Token> = currentToken.filterNotNull().map { task ->
 
-        task.expirationHandler = onExpire
+        object : Token("BgTask") {
 
-        object : Token {
-            override val tag = "BgTask"
-
-            override suspend fun release() {
+            override suspend fun onRelease() {
                 currentToken.update { null }
                 task.setTaskCompletedWithSuccess(true)
             }
 
-            override fun cancel() {
+            override fun onCancel() {
                 currentToken.update { null }
                 task.setTaskCompletedWithSuccess(false)
+            }
+
+            fun cancel() {
+                finishWithCancel()
+            }
+        }.also {
+            task.expirationHandler = {
+                it.cancel()
             }
         }
     }
 
     abstract fun List<BgTaskManagerTask>.filter(): List<BgTaskManagerTask>
 
-    private suspend fun nextPlanedTime() = repository.tasks(runningStates).filter().let { tasks ->
+    private suspend fun nextPlanedTime() = repository.tasks(runningStates.toList()).filter().let { tasks ->
         lastKnownTasks = tasks
         tasks.minOfOrNull { it.processTime }?.coerceAtLeast(clock.now() + 30.minutes)
     }
