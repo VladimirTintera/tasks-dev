@@ -39,16 +39,10 @@ interface TaskManager {
 
     suspend fun cancelTaskById(id: Uuid)
     suspend fun cancelTasksByTag(tag: String)
-
-    suspend fun cancelTask(type: KClass<out TaskHandler<Any, Any, Any>>) = cancelTasksByTag(type.fullName)
-
     fun taskInfos(query: TaskInfoQuery): Flow<List<TaskInfo>>
 
     companion object
 }
-
-
-suspend inline fun <reified T : TaskHandler<Any, Any, Any>> TaskManager.cancelTask() = cancelTask(T::class)
 
 fun TaskManager.taskInfos(block: TaskInfoQuery.Builder.() -> Unit) = taskInfos(
     TaskInfoQuery.builder().apply(block).build()

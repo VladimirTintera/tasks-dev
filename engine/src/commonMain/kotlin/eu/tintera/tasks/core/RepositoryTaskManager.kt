@@ -3,10 +3,7 @@ package eu.tintera.tasks.core
 import eu.tintera.tasks.*
 import eu.tintera.tasks.core.data.*
 import eu.tintera.tasks.core.migrations.TaskMigrator
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.uuid.Uuid
@@ -224,9 +221,26 @@ class RepositoryCoreTaskManager(
     }
 
     override fun taskInfos(query: TaskInfoQuery) = query.takeIf { !it.isEmpty() }?.let {
-        repository.taskInfos(query).distinctUntilChanged().map { list ->
-            list.map { it.toTaskInfo() }
+        flow {
+            val tags = tagMapper.serialize(
+                TaskTags(
+                    tags = query.tags.rawTags,
+                    typedTags = query.tags.tags
+                )
+            )
+
+            repository.taskInfos(
+                tags = tags,
+                ids = query.ids,
+                states = query.states,
+                uniqueNames = query.uniqueNames,
+            ).distinctUntilChanged().map { list ->
+                list.map { it.toTaskInfo() }
+            }.collect {
+                emit(it)
+            }
         }
+
     } ?: emptyFlow()
 
     override fun taskInfoById(

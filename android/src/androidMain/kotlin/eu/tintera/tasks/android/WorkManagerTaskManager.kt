@@ -341,16 +341,24 @@ internal class WorkManagerTaskManager(
     override fun taskInfos(
         query: TaskInfoQuery
     ) = query.takeIf { !it.isEmpty() }?.let {
-        workManager.getWorkInfosFlow(
-            WorkQuery.Builder
-                .fromTags(query.tags.toList())
-                .addIds(query.ids.map { it.toJavaUuid() })
-                .addStates(query.states.map { it.toWorkState() })
-                .addUniqueWorkNames(query.uniqueNames.toList()).build()
-        ).map {
-            println(it)
-            it
-        }.toTaskInfos()
+        flow {
+            val tags = tagMapper.serialize(
+                TaskTags(
+                    tags = query.tags.rawTags,
+                    typedTags = query.tags.tags
+                )
+            )
+            workManager.getWorkInfosFlow(
+                WorkQuery.Builder
+                    .fromTags(tags.toList())
+                    .addIds(query.ids.map { it.toJavaUuid() })
+                    .addStates(query.states.map { it.toWorkState() })
+                    .addUniqueWorkNames(query.uniqueNames.toList()).build()
+            ).map {
+                println(it)
+                it
+            }.toTaskInfos().collect { emit(it) }
+        }
     } ?: emptyFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)

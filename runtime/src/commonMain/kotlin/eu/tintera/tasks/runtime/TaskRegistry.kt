@@ -60,7 +60,7 @@ internal class TaskRegistry(
         }
         registry.update { currentMap ->
             if (registration.identifier in currentMap) {
-                throw IllegalArgumentException("Handler for '${registration}identifier' is already registered.")
+                throw IllegalArgumentException("Handler for '${registration.identifier}' is already registered.")
             }
             currentMap + (registration.identifier to registration)
         }

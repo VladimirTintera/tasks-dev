@@ -23,7 +23,12 @@ interface Repository {
     suspend fun cleanOld(terminalStates: Set<State>)
 
     fun taskInfosByTag(name: String): Flow<List<Info>>
-    fun taskInfos(query: TaskInfoQuery): Flow<List<Info>>
+    fun taskInfos(
+        ids: Set<Uuid>,
+        tags: Set<String>,
+        states: Set<State>,
+        uniqueNames: Set<String>
+    ): Flow<List<Info>>
     fun taskInfoById(id: Uuid): Flow<Info?>
 
     fun taskInfoByIds(ids: Set<Uuid>): Flow<List<Info>>

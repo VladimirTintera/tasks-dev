@@ -99,13 +99,16 @@ internal class RepositoryImpl(
     }
 
     override fun taskInfos(
-        query: TaskInfoQuery
+        ids: Set<Uuid>,
+        tags: Set<String>,
+        states: Set<State>,
+        uniqueNames: Set<String>
     ): Flow<List<Info>> = taskDao.taskInfoByRawQuery(
         query = TaskQuery(
-            ids = query.ids.toList(),
-            tags = query.tags.toList(),
-            states = query.states.map { it.toEntityState() },
-            uniqueNames = query.uniqueNames.toList(),
+            ids = ids.toList(),
+            tags = tags.toList(),
+            states = states.map { it.toEntityState() },
+            uniqueNames = uniqueNames.toList(),
         ).toRoomRawQuery()
     ).distinctUntilChanged().map { map ->
         map.map { (value, tags) ->
