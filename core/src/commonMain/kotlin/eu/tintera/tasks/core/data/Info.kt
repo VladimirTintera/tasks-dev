@@ -1,6 +1,7 @@
 package eu.tintera.tasks.core.data
 
 import eu.tintera.tasks.State
+import eu.tintera.tasks.Tags
 import eu.tintera.tasks.TaskInfo
 import eu.tintera.tasks.TaskRegistration
 import eu.tintera.tasks.core.TaskTags
@@ -74,8 +75,10 @@ fun <O : Any, P : Any> Info.toTaskInfo(
         identifier = identifier,
         runAttemptCount = runAttemptCount,
         state = state,
-        tags = tags.tags,
-        typedTags = tags.typedTags,
+        tags = Tags(
+            rawTags = tags.tags,
+            typedTags = tags.typedTags
+        ),
         outputData = outputData?.let {
             migrationResult?.output ?: registration?.outputSerializer?.decodeFromBytes(it)
         },

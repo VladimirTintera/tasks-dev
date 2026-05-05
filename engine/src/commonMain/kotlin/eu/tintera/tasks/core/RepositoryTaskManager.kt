@@ -56,7 +56,12 @@ class RepositoryCoreTaskManager(
         t.id
     }
 
-    private suspend fun TaskRequest<*>.serializeTags() = tagMapper.serialize(TaskTags(tags, typedTags))
+    private suspend fun TaskRequest<*>.serializeTags() = tagMapper.serialize(
+        tags = TaskTags(
+            tags = tags.rawTags,
+            typedTags = tags.tags
+        )
+    )
 
     private suspend fun <I : Any, O : Any, P : Any> findRegistrationOrNull(
         identifier: String

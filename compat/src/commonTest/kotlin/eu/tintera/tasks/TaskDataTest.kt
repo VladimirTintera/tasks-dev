@@ -1,5 +1,8 @@
 package eu.tintera.tasks
 
+import eu.tintera.tasks.compat.plus
+import eu.tintera.tasks.compat.sum
+import eu.tintera.tasks.compat.taskDataOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

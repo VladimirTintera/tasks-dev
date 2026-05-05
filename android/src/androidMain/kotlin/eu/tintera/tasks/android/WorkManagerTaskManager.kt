@@ -6,12 +6,7 @@ import eu.tintera.tasks.*
 import eu.tintera.tasks.BackoffPolicy
 import eu.tintera.tasks.Constraints
 import eu.tintera.tasks.core.*
-import eu.tintera.tasks.core.data.ExecutableTask
-import eu.tintera.tasks.core.data.Info
-import eu.tintera.tasks.core.data.Repository
-import eu.tintera.tasks.core.data.Task
-import eu.tintera.tasks.core.data.TransactionRunner
-import eu.tintera.tasks.core.data.invoke
+import eu.tintera.tasks.core.data.*
 import eu.tintera.tasks.core.migrations.TaskMigrator
 import eu.tintera.tasks.serialization.Serializer
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -36,7 +31,9 @@ internal class WorkManagerTaskManager(
     private val transactionRunner: TransactionRunner
 ) : TaskManager {
 
-    private suspend fun TaskRequest<*>.serializeTags() = tagMapper.serialize(TaskTags(tags, typedTags))
+    private suspend fun TaskRequest<*>.serializeTags() = tagMapper.serialize(
+        tags = TaskTags(tags.rawTags, tags.tags)
+    )
 
     private suspend fun <T : Any> TaskRequest<T>.oneTimeWorkRequest() =
         OneTimeWorkRequestBuilder<TaskWorker>().apply {
@@ -424,8 +421,10 @@ internal class WorkManagerTaskManager(
         return TaskInfo(
             id = id.toKotlinUuid(),
             state = state.toState(),
-            tags = parsedTags.tags,
-            typedTags = parsedTags.typedTags,
+            tags = Tags(
+                rawTags = parsedTags.tags,
+                typedTags = parsedTags.typedTags
+            ),
             runAttemptCount = runAttemptCount,
             outputData = info?.outputData?.let {
                 migrationResult?.output ?: registration?.outputSerializer?.decodeFromBytesOrNull(it)

@@ -1,5 +1,6 @@
 package eu.tintera.tasks
 
+import eu.tintera.tasks.compat.Data
 import eu.tintera.tasks.koin.taskRegistration
 import eu.tintera.tasks.migrations.Migration
 import org.koin.core.definition.KoinDefinition

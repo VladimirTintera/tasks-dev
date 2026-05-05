@@ -8,6 +8,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import eu.tintera.tasks.handlers.TestTypedTag
 
 @Composable
 fun TaskInfoItem(
@@ -41,8 +42,8 @@ fun TaskInfoItem(
             Text(text = info.runAttemptCount.toString())
         }
 
-        info.tags.forEach {
-            Text(text = it)
+        info.tags.get<TestTypedTag>().forEach {
+            Text(text = "Tagged data: ${it.number}")
         }
 
         Text(info.nextScheduledTime.toString())

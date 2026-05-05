@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import eu.tintera.tasks.handlers.TestHandlerData
 import eu.tintera.tasks.handlers.TestHandlerProgress
+import eu.tintera.tasks.handlers.TestTypedTag
 import org.jetbrains.compose.resources.painterResource
 import taskmanager.composeapp.generated.resources.Res
 import taskmanager.composeapp.generated.resources.check_24dp_1f1f1f_fill0_wght400_grad0_opsz24
@@ -80,16 +81,16 @@ fun TaskRow(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         TagsRow(
-                            items = info.tags
+                            items = info.tags.rawTags()
                         ) { tag ->
                             if (tag.contains(".")) tag.substringAfterLast(".") else tag
                         }
 
                         TagsRow(
-                            items = info.typedTags,
+                            items = info.tags.get<TestTypedTag>(),
                             color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
                             contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        ) { it.toString() }
+                        ) { it.number.toString() }
                     }
 
                     // Textový stav

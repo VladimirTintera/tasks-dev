@@ -1,5 +1,7 @@
 package eu.tintera.tasks
 
+import eu.tintera.tasks.compat.Data
+import eu.tintera.tasks.compat.taskDataOf
 import eu.tintera.tasks.serialization.Serializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoBuf

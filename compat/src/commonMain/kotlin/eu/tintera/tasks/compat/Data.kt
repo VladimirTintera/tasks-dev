@@ -1,4 +1,4 @@
-package eu.tintera.tasks
+package eu.tintera.tasks.compat
 
 import kotlin.collections.plus
 

@@ -100,9 +100,12 @@ fun testTaskRequest(
         count = count,
         name = name
     ),
-    tags = setOf(DEFAULT_TAG),
-    typedTags = TestTypedTag(Random.nextInt(0, 1000)).let {
-        setOf(it, it.copy(number = it.number + 1))
+    tags = tags {
+        tag(DEFAULT_TAG)
+        TestTypedTag(Random.nextInt(0, 1000)).let {
+            tag(it)
+            tag(it.copy(number = it.number + 1))
+        }
     },
     constraints = Constraints(
         requiresDeviceIdle = false,

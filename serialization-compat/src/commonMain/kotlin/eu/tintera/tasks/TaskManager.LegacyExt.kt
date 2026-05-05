@@ -1,5 +1,7 @@
 package eu.tintera.tasks
 
+import eu.tintera.tasks.compat.LegacyTaskHandler
+
 fun Registry.register(
     identifier: String,
     factory: () -> LegacyTaskHandler
