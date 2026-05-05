@@ -48,7 +48,9 @@ internal abstract class BgTaskManager(
 
     override fun token(): Flow<Token> = currentToken.filterNotNull().map { task ->
 
-        object : Token("BgTask") {
+        object : Token() {
+
+            override val tag = "BgTask"
 
             override suspend fun onRelease() {
                 currentToken.update { null }
