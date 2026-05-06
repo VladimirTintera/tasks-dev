@@ -29,7 +29,7 @@ internal abstract class BgTaskManager(
     private val tag: String,
     private val clock: Clock
 ) : TokenProducer, ExecutionContextObserver {
-    protected val currentToken = MutableStateFlow<BGTask?>(null)
+    protected val currentToken = MutableStateFlow<BgTaskToken?>(null)
     protected var lastKnownTasks: List<BgTaskManagerTask> = emptyList()
         private set
 
@@ -46,31 +46,7 @@ internal abstract class BgTaskManager(
         }
     }
 
-    override fun token(): Flow<Token> = currentToken.filterNotNull().map { task ->
-
-        object : Token() {
-
-            override val tag = "BgTask"
-
-            override suspend fun onRelease() {
-                currentToken.update { null }
-                task.setTaskCompletedWithSuccess(true)
-            }
-
-            override fun onCancel() {
-                currentToken.update { null }
-                task.setTaskCompletedWithSuccess(false)
-            }
-
-            fun cancel() {
-                finishWithCancel()
-            }
-        }.also {
-            task.expirationHandler = {
-                it.cancel()
-            }
-        }
-    }
+    override fun token(): Flow<Token> = currentToken.filterNotNull()
 
     abstract fun List<BgTaskManagerTask>.filter(): List<BgTaskManagerTask>
 
@@ -89,11 +65,13 @@ internal abstract class BgTaskManager(
         BGTaskScheduler.sharedScheduler.registerForTaskWithIdentifier(
             identifier = taskIdentifier,
             usingQueue = null
-        ) { task ->
+        ) {
             EventBus.send(tag, "BGTask started")
 
-            task?.also {
-                currentToken.update { it }
+            it?.also { task ->
+                currentToken.getAndUpdate {
+                    BgTaskToken(taskIdentifier, task)
+                }?.cancel()
             }
         }
     }
@@ -127,5 +105,31 @@ internal abstract class BgTaskManager(
 
     override fun onPreCancel() {
         if (appLifecycleObserver.isBackground.value) schedule(Clock.System.now() + 1.hours)
+    }
+}
+
+internal class BgTaskToken(
+    identifier: String,
+    private val task: BGTask
+) : Token() {
+
+    override val tag = "BgTask:$identifier"
+
+    init {
+        task.expirationHandler = {
+            finishWithCancel()
+        }
+    }
+
+    override suspend fun onRelease() {
+        task.setTaskCompletedWithSuccess(true)
+    }
+
+    override fun onCancel() {
+        task.setTaskCompletedWithSuccess(false)
+    }
+
+    fun cancel() {
+        finishWithCancel()
     }
 }
