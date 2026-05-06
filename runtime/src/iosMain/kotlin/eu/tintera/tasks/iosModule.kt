@@ -59,7 +59,7 @@ internal fun iosModule(
 
 class DebugObserver : ExecutionContextObserver {
     override fun onPreCancel() {
-        EventBus.send(TAG, "nnPreCancel")
+        EventBus.send(TAG, "onPreCancel")
     }
 
     override suspend fun onPreRelease() {

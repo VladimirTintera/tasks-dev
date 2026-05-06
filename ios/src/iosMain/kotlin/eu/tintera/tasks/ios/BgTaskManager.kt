@@ -1,5 +1,6 @@
 package eu.tintera.tasks.ios
 
+import eu.tintera.guard.AbstractToken
 import eu.tintera.guard.ExecutionContextObserver
 import eu.tintera.guard.Token
 import eu.tintera.guard.TokenProducer
@@ -111,7 +112,7 @@ internal abstract class BgTaskManager(
 internal class BgTaskToken(
     identifier: String,
     private val task: BGTask
-) : Token() {
+) : AbstractToken() {
 
     override val tag = "BgTask:$identifier"
 
