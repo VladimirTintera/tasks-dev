@@ -4,6 +4,5 @@ import eu.tintera.tasks.TaskInfoQuery
 
 fun TaskInfoQuery.isEmpty() = ids.isEmpty()
         && uniqueNames.isEmpty()
-        && tags.tags.isEmpty()
-        && tags.rawTags.isEmpty()
+        && tags.isEmpty()
         && states.isEmpty()

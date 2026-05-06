@@ -1,11 +1,6 @@
 package eu.tintera.tasks.compat
 
-import eu.tintera.tasks.BackoffCriteria
-import eu.tintera.tasks.Constraints
-import eu.tintera.tasks.TagsRequest
-import eu.tintera.tasks.TaskHandler
-import eu.tintera.tasks.TaskRequest
-import eu.tintera.tasks.fullName
+import eu.tintera.tasks.*
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 
@@ -14,7 +9,7 @@ inline fun <reified T : TaskHandler<Data, *, *>> taskRequest(
     data: Data = Data.EMPTY,
     initialDelay: Duration = Duration.ZERO,
     constraints: Constraints = Constraints.EMPTY,
-    tags: TagsRequest = TagsRequest(),
+    tags: Set<Tag> = emptySet(),
     backoffCriteria: BackoffCriteria? = null,
     keepResultsForAtLeast: Duration = 24.hours
 ): TaskRequest<Data> = TaskRequest(

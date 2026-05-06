@@ -36,7 +36,7 @@ internal class BgProcessingTaskManager(
         requiresNetworkConnectivity = lastKnownTasks.any { it.networkRequired }
     }
 
-    override fun hasConstraint(task: ProcessableTask) = task.requiresDeviceIdle
+    override fun hasConstraint(task: ProcessableTask) = if (isAppRefreshTaskAllowed) task.requiresDeviceIdle else false
 
     override fun isValid(task: ProcessableTask) = currentToken.map {
         if (it != null) ConstraintResult.Met else ConstraintResult.Unmet

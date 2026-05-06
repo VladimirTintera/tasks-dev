@@ -53,12 +53,7 @@ class RepositoryCoreTaskManager(
         t.id
     }
 
-    private suspend fun TaskRequest<*>.serializeTags() = tagMapper.serialize(
-        tags = TaskTags(
-            tags = tags.rawTags,
-            typedTags = tags.tags
-        )
-    )
+    private suspend fun TaskRequest<*>.serializeTags() = tagMapper.serialize(tags)
 
     private suspend fun <I : Any, O : Any, P : Any> findRegistrationOrNull(
         identifier: String
@@ -222,12 +217,7 @@ class RepositoryCoreTaskManager(
 
     override fun taskInfos(query: TaskInfoQuery) = query.takeIf { !it.isEmpty() }?.let {
         flow {
-            val tags = tagMapper.serialize(
-                TaskTags(
-                    tags = query.tags.rawTags,
-                    typedTags = query.tags.tags
-                )
-            )
+            val tags = tagMapper.serialize(query.tags)
 
             repository.taskInfos(
                 tags = tags,

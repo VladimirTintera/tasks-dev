@@ -25,8 +25,7 @@ class TaskScopeFactory(
         onForegroundInfoProvided: suspend (ForegroundInfo) -> Boolean,
         progressSerializer: Serializer<Progress>,
         scope: CoroutineScope,
-        tags: Set<String>,
-        typedTags: Set<Tag>,
+        tags: Set<Tag>,
         saveDispatcher: CoroutineDispatcher
     ) = TaskScopeImpl(
         repository = repository,
@@ -38,7 +37,6 @@ class TaskScopeFactory(
         progressSerializer = progressSerializer,
         scope = scope,
         tags = tags,
-        typedTags = typedTags,
         saveDispatcher = saveDispatcher
     )
 }
@@ -52,8 +50,7 @@ class TaskScopeImpl<Input : Any, Progress : Any>(
     scope: CoroutineScope,
     private val repository: TaskScopeRepository,
     private val progressSerializer: Serializer<Progress>,
-    override val tags: Set<String>,
-    override val typedTags: Set<Tag>,
+    override val tags: Set<Tag>,
     private val saveDispatcher: CoroutineDispatcher
 ) : TaskScope<Input, Progress>, AutoCloseable {
 

@@ -81,7 +81,7 @@ fun TaskRow(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         TagsRow(
-                            items = info.tags.rawTags()
+                            items = info.tags.labels()
                         ) { tag ->
                             if (tag.contains(".")) tag.substringAfterLast(".") else tag
                         }

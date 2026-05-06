@@ -6,43 +6,38 @@ import kotlin.uuid.Uuid
 data class TaskInfoQuery(
     val ids: Set<Uuid>,
     val states: Set<State>,
-    val tags: TagsRequest,
+    val tags: Set<Tag>,
     val uniqueNames: Set<String>
-) {
-    class Builder {
-        private var ids = mutableSetOf<Uuid>()
-        private var states = mutableSetOf<State>()
-        private var tags = mutableSetOf<String>()
-        private var typedTags = mutableSetOf<Tag>()
-        private var uniqueNames = mutableSetOf<String>()
+)
 
-        fun addIds(vararg ids: Uuid) = apply { this.ids.addAll(ids) }
-        fun addIds(ids: List<Uuid>) = apply { this.ids.addAll(ids) }
+class TaskInfoQueryBuilder {
+    private val ids = mutableSetOf<Uuid>()
+    private val states = mutableSetOf<State>()
+    private val tags = mutableSetOf<Tag>()
+    private val uniqueNames = mutableSetOf<String>()
 
-        fun addStates(states: List<State>) = apply { this.states.addAll(states) }
-        fun addStates(vararg states: State) = apply { this.states.addAll(states) }
+    fun addIds(vararg ids: Uuid) = apply { this.ids.addAll(ids) }
+    fun addIds(ids: Iterable<Uuid>) = apply { this.ids.addAll(ids) }
 
-        @JvmName("addRawTags")
-        fun addTags(tags: List<String>) = apply { this.tags.addAll(tags) }
-        fun addTags(vararg tags: String) = apply { this.tags.addAll(tags) }
+    fun addStates(states: Iterable<State>) = apply { this.states.addAll(states) }
+    fun addStates(vararg states: State) = apply { this.states.addAll(states) }
 
-        @JvmName("addTypedTags")
-        fun addTags(tags: List<Tag>) = apply { this.typedTags.addAll(tags) }
-        fun addTags(vararg tags: Tag) = apply { this.typedTags.addAll(tags) }
+    @JvmName("addRawTags")
+    fun addTags(tags: Iterable<String>) = apply { this.tags.addAll(tags.map { LabelTag(it) }) }
+    fun addTags(vararg tags: String) = apply { this.tags.addAll(tags.map { LabelTag(it) }) }
 
-        fun addUniqueNames(uniqueNames: List<String>) = apply { this.uniqueNames.addAll(uniqueNames) }
-        fun addUniqueNames(vararg uniqueName: String) = apply { this.uniqueNames.addAll(uniqueName) }
+    @JvmName("addTypedTags")
+    fun addTags(tags: Iterable<Tag>) = apply { this.tags.addAll(tags) }
+    fun addTags(vararg tags: Tag) = apply { this.tags.addAll(tags) }
 
-        fun build() = TaskInfoQuery(
-            ids = ids,
-            states = states,
-            tags = TagsRequest(tags, typedTags),
-            uniqueNames = uniqueNames
-        )
-    }
+    fun addUniqueNames(uniqueNames: Iterable<String>) = apply { this.uniqueNames.addAll(uniqueNames) }
+    fun addUniqueNames(vararg uniqueName: String) = apply { this.uniqueNames.addAll(uniqueName) }
 
-    companion object {
-        fun builder() = Builder()
-    }
+    fun build() = TaskInfoQuery(
+        ids = ids,
+        states = states,
+        tags = tags,
+        uniqueNames = uniqueNames
+    )
 }
 

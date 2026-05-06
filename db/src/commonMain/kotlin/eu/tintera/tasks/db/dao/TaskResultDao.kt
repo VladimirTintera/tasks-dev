@@ -32,7 +32,7 @@ interface TaskResultDao {
         finishedAt: Instant
     )
 
-    @Query("UPDATE Task set state = :state, finishedAt = :finishedAt, outputData = :outputData, processTime = NULL, progressData = null AND state IN (:allowedSourceStates)  WHERE id = :id")
+    @Query("UPDATE Task set state = :state, finishedAt = :finishedAt, outputData = :outputData, processTime = NULL, progressData = null  WHERE id = :id AND state IN (:allowedSourceStates)")
     suspend fun finishTaskWithSuccess(
         id: Uuid,
         state: State,
@@ -41,7 +41,7 @@ interface TaskResultDao {
         outputData: ByteArray
     )
 
-    @Query("UPDATE Task set state = :state, processTime = :processTime, progressData = null, runAttemptCount = 0 AND state IN (:allowedSourceStates) WHERE id = :id")
+    @Query("UPDATE Task set state = :state, processTime = :processTime, progressData = null, runAttemptCount = 0 WHERE id = :id AND state IN (:allowedSourceStates)")
     suspend fun scheduleNextFromBeginning(
         id: Uuid,
         processTime: Instant,
@@ -49,7 +49,7 @@ interface TaskResultDao {
         allowedSourceStates: List<State>
     )
 
-    @Query("UPDATE Task set state = :state, processTime = :processTime, progressData = null AND state IN (:allowedSourceStates) WHERE id = :id")
+    @Query("UPDATE Task set state = :state, processTime = :processTime, progressData = null WHERE id = :id AND state IN (:allowedSourceStates) ")
     suspend fun scheduleNext(
         id: Uuid,
         processTime: Instant,

@@ -96,8 +96,7 @@ class TaskEvaluatorImpl(
             onForegroundInfoProvided = onForegroundInfo,
             progressSerializer = registration.progressSerializer,
             scope = applicationScope + dispatchers.default,
-            tags = tags.tags,
-            typedTags = tags.typedTags,
+            tags = tags.toSet(),
             saveDispatcher = dispatchers.io
         ).use { scope ->
             try {

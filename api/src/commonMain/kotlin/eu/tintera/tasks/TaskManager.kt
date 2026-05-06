@@ -1,7 +1,6 @@
 package eu.tintera.tasks
 
 import kotlinx.coroutines.flow.Flow
-import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.uuid.Uuid
 
@@ -44,7 +43,7 @@ interface TaskManager {
     companion object
 }
 
-fun TaskManager.taskInfos(block: TaskInfoQuery.Builder.() -> Unit) = taskInfos(
-    TaskInfoQuery.builder().apply(block).build()
+fun TaskManager.taskInfos(block: TaskInfoQueryBuilder.() -> Unit) = taskInfos(
+    TaskInfoQueryBuilder().apply(block).build()
 )
 

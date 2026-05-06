@@ -32,7 +32,7 @@ internal class WorkManagerTaskManager(
 ) : TaskManager {
 
     private suspend fun TaskRequest<*>.serializeTags() = tagMapper.serialize(
-        tags = TaskTags(tags.rawTags, tags.tags)
+        tags = tags
     )
 
     private suspend fun <T : Any> TaskRequest<T>.oneTimeWorkRequest() =
@@ -342,12 +342,8 @@ internal class WorkManagerTaskManager(
         query: TaskInfoQuery
     ) = query.takeIf { !it.isEmpty() }?.let {
         flow {
-            val tags = tagMapper.serialize(
-                TaskTags(
-                    tags = query.tags.rawTags,
-                    typedTags = query.tags.tags
-                )
-            )
+            val tags = tagMapper.serialize(query.tags)
+
             workManager.getWorkInfosFlow(
                 WorkQuery.Builder
                     .fromTags(tags.toList())
@@ -429,10 +425,7 @@ internal class WorkManagerTaskManager(
         return TaskInfo(
             id = id.toKotlinUuid(),
             state = state.toState(),
-            tags = Tags(
-                rawTags = parsedTags.tags,
-                typedTags = parsedTags.typedTags
-            ),
+            tags = parsedTags,
             runAttemptCount = runAttemptCount,
             outputData = info?.outputData?.let {
                 migrationResult?.output ?: registration?.outputSerializer?.decodeFromBytesOrNull(it)

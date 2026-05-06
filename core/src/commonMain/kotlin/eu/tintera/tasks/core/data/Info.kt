@@ -1,10 +1,9 @@
 package eu.tintera.tasks.core.data
 
 import eu.tintera.tasks.State
-import eu.tintera.tasks.Tags
+import eu.tintera.tasks.Tag
 import eu.tintera.tasks.TaskInfo
 import eu.tintera.tasks.TaskRegistration
-import eu.tintera.tasks.core.TaskTags
 import eu.tintera.tasks.core.migrations.MigratableData
 import eu.tintera.tasks.core.migrations.MigrationResult
 import kotlin.time.Instant
@@ -67,7 +66,7 @@ data class Info(
 fun <O : Any, P : Any> Info.toTaskInfo(
     registration: TaskRegistration<Any, O, P>?,
     migrationResult: MigrationResult?,
-    tags: TaskTags
+    tags: Set<Tag>
 ): TaskInfo {
 
     return TaskInfo(
@@ -75,10 +74,7 @@ fun <O : Any, P : Any> Info.toTaskInfo(
         identifier = identifier,
         runAttemptCount = runAttemptCount,
         state = state,
-        tags = Tags(
-            rawTags = tags.tags,
-            typedTags = tags.typedTags
-        ),
+        tags = tags,
         outputData = outputData?.let {
             migrationResult?.output ?: registration?.outputSerializer?.decodeFromBytes(it)
         },
