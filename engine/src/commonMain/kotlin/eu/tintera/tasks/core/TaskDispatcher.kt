@@ -27,8 +27,6 @@ internal class TaskDispatcher(
     ) { tasks, _ -> tasks }
 
     init {
-
-        // Init blok necháváme čistý a logiku přesouváme do privátních funkcí
         scope.launch(dispatchers.io) {
             collectAndDispatchTasks()
         }
@@ -47,7 +45,6 @@ internal class TaskDispatcher(
                 }
             }
 
-            // 3. Najdeme tasky, pro které ještě nemáme Job
             val newTasks = tasks.filter { !currentJobsMap.containsKey(it.id) }
 
             if (newTasks.isNotEmpty()) {
