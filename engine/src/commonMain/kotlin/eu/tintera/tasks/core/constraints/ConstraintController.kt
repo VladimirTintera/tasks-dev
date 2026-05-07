@@ -5,22 +5,22 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.*
 
 internal class ConstraintController(
-    preconditions: List<Constraint>
+    constraints: List<Constraint>
 ) {
 
-    private val allPreconditions = preconditions.map {
+    private val allConstraints = constraints.map {
         ReactiveConstraint(it)
     }
 
-    private val executionPreconditions = allPreconditions.filter {
+    private val executionConstraints = allConstraints.filter {
         it.monitorDuringExecution
     }
 
     suspend fun waitForAll(
         taskFlow: StateFlow<ProcessableTask?>
-    ): Boolean = if (allPreconditions.isEmpty()) true
+    ): Boolean = if (allConstraints.isEmpty()) true
     else combine(
-        allPreconditions.map {
+        allConstraints.map {
             it.isValid(taskFlow).onStart { emit(ConstraintResult.Unmet) }
         }
     ) { array ->
@@ -34,7 +34,7 @@ internal class ConstraintController(
 
     suspend fun waitForUnmet(
         taskFlow: StateFlow<ProcessableTask?>
-    ) = if (executionPreconditions.isEmpty()) awaitCancellation() else executionPreconditions.map {
+    ) = if (executionConstraints.isEmpty()) awaitCancellation() else executionConstraints.map {
         it.isValid(taskFlow)
     }.merge().first {
         it != ConstraintResult.Met

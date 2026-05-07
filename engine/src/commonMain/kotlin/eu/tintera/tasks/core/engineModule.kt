@@ -28,7 +28,7 @@ val engineModule = module {
     singleOf(::ProcessTimePrecondition) bind Constraint::class
 
     single {
-        ConstraintController(preconditions = getAll())
+        ConstraintController(constraints = getAll())
     }
 
     singleOf(::ActiveTaskTrackerImpl) bind ActiveTaskTracker::class
