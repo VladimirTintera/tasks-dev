@@ -2,6 +2,7 @@ package eu.tintera.tasks
 
 import android.content.Context
 import androidx.sqlite.SQLiteDriver
+import eu.tintera.guard.ExecutionEnvironment
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -10,5 +11,6 @@ data class AndroidTasksConfiguration(
     val executionContextReleaseDebounce: Duration = 1.5.seconds,
     val compatTransformation: (Map<String, Any?>) -> ByteArray? = { null },
     val sqLiteDriver: SQLiteDriver? = null,
-    val databaseName: String = ""
+    val databaseName: String = "",
+    val executionEnvironment: ExecutionEnvironment? = null,
 )

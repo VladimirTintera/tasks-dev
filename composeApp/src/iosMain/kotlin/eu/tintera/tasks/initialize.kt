@@ -3,9 +3,8 @@ package eu.tintera.tasks
 import platform.Foundation.NSBundle
 
 fun initialize() : TaskManager {
-    val app = koinApp {
 
-    }
+    val app = koinApp()
 
     return TasksInitializer.initialize(
         config = IosTasksManagerConfiguration(
@@ -13,5 +12,7 @@ fun initialize() : TaskManager {
             appRefreshTaskIdentifier = (NSBundle.mainBundle.bundleIdentifier + ".AppRefreshTask")
         ),
         taskLifecycleObservers = app.koin.getAll()
-    )
+    ).also {
+        app.koin.get<TokenObserver>().start()
+    }
 }

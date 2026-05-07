@@ -1,4 +1,4 @@
-package eu.tintera.tasks.core
+package eu.tintera.tasks.core.guard
 
 import eu.tintera.guard.ExecutionContextObserver
 import eu.tintera.guard.ExecutionContextObserverRegistry

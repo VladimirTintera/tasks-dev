@@ -1,6 +1,8 @@
 package eu.tintera.tasks
 
 import co.touchlab.kermit.Logger
+import eu.tintera.guard.ExecutionEnvironment
+import eu.tintera.guard.TokenObservable
 import eu.tintera.tasks.handlers.TestHandler
 import eu.tintera.tasks.handlers.TestHandlerData
 import eu.tintera.tasks.handlers.TestHandlerProgress
@@ -14,14 +16,17 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.koin.core.context.startKoin
+import org.koin.core.module.dsl.createdAtStart
 import org.koin.core.module.dsl.factoryOf
+import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.KoinAppDeclaration
 import org.koin.dsl.bind
+import org.koin.dsl.binds
 import org.koin.dsl.module
 
 fun koinApp(
-    appDeclaration: KoinAppDeclaration
+    appDeclaration: KoinAppDeclaration = {}
 ) = startKoin {
     appDeclaration()
     modules(
@@ -30,6 +35,14 @@ fun koinApp(
             single {
                 Tasks.taskManager
             }
+
+            single {
+                ApplicationScope(SupervisorJob())
+            }
+
+            single {
+                Tasks.executionEnvironment
+            } binds arrayOf(ExecutionEnvironment::class, TokenObservable::class)
 
             factoryOf(::TasksObserver) bind TaskLifecycleObserver::class
 
@@ -91,6 +104,13 @@ fun koinApp(
                         }
                     }
                 }
+            }
+
+            single {
+                TokenObserver(
+                    scope = get(),
+                    tokenObservable = get()
+                )
             }
         }
     )

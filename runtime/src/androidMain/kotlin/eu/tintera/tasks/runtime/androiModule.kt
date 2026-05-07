@@ -3,10 +3,12 @@ package eu.tintera.tasks.runtime
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import eu.tintera.guard.ExecutionEnvironmentConfig
+import eu.tintera.guard.PlatformContext
 import eu.tintera.tasks.AndroidTasksConfiguration
 import eu.tintera.tasks.android.WorkManagerConfiguration
 import eu.tintera.tasks.android.androidModule
 import eu.tintera.tasks.android.db.androidDbModule
+import eu.tintera.tasks.core.guard.guardInit
 import eu.tintera.tasks.db.DatabaseConfiguration
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -36,4 +38,13 @@ internal fun androidModule(
             override val databaseName: String = config.databaseName
         }
     }
+
+    single { PlatformContext(get()) }
+
+    guardInit(
+        executionEnvironment = config.executionEnvironment,
+        config = ExecutionEnvironmentConfig(
+            releaseDebounce = config.executionContextReleaseDebounce
+        )
+    )
 }

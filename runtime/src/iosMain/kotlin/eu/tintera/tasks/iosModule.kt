@@ -34,9 +34,10 @@ internal fun iosModule(
         )
     }
 
+    single { PlatformContext() }
+
     guardInit(
         executionEnvironment = config.executionEnvironment,
-        platformContext = PlatformContext(),
         config = ExecutionEnvironmentConfig(
             releaseDebounce = config.executionContextReleaseDebounce
         )

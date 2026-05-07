@@ -1,6 +1,7 @@
 package eu.tintera.tasks
 
 import android.app.Application
+import eu.tintera.guard.Token
 import org.koin.android.ext.koin.androidContext
 
 class MainApplication : Application() {
@@ -20,5 +21,7 @@ class MainApplication : Application() {
             ),
             taskLifecycleObservers = app.koin.getAll()
         )
+
+        app.koin.get<TokenObserver>().start()
     }
 }
