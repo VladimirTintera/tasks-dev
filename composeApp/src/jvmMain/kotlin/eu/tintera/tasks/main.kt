@@ -7,7 +7,7 @@ fun main() {
 
     val app = koinApp()
     TasksInitializer.initialize(
-        defaultJvmTasksManagerConfiguration("ComposeApp")
+        JvmTasksManagerConfiguration("ComposeApp")
     )
     app.koin.get<TokenObserver>().start()
 

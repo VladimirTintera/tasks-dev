@@ -37,8 +37,6 @@ internal fun jvmModule(
 
     singleOf<NetworkState>(::JvmNetworkState)
 
-    singleOf(::JvmTokenProvider) bind TokenProvider::class
-
     singleOf(::JvmAppStateObserver) bind AppStateObserver::class
 
     single {
