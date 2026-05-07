@@ -3,9 +3,11 @@ package eu.tintera.tasks
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,9 +20,7 @@ import eu.tintera.tasks.handlers.TestHandler
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
 import taskmanager.composeapp.generated.resources.Res
-import taskmanager.composeapp.generated.resources.cancel_24dp_1f1f1f_fill0_wght400_grad0_opsz24
 import taskmanager.composeapp.generated.resources.close_24dp_1f1f1f_fill0_wght400_grad0_opsz24
-import taskmanager.composeapp.generated.resources.schedule_24dp_1f1f1f_fill0_wght400_grad0_opsz24
 import kotlin.uuid.Uuid
 
 
@@ -67,7 +67,7 @@ fun App() {
                     ) { Text("Enqueue continuation") }
                 }
 
-                val listState = rememberLazyListState()
+                val listState = rememberLazyGridState()
 
                 var seenIds by remember { mutableStateOf(setOf<Uuid>()) }
 
@@ -88,18 +88,24 @@ fun App() {
                     }
                 }
 
-                LazyColumn(
+                LazyVerticalGrid(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
                     contentPadding = PaddingValues(16.dp),
-                    state = listState
+                    state = listState,
+                    columns = GridCells.Adaptive(minSize = 300.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    item(key = "static_top_anchor") {
-                        Spacer(modifier = Modifier.height(1.dp))
+                    item(
+                        key = "static_top_anchor",
+                        span = { GridItemSpan(maxLineSpan) } // Zabrání odsunutí první položky doprava
+                    ) {
+                        Spacer(modifier = Modifier.height(0.dp))
                     }
+
                     items(tasks.ongoing, { "${it.id}" }) {
                         TaskRow(
-                            modifier = Modifier.animateItem(),
+                            modifier = Modifier.fillMaxWidth().animateItem(),
                             info = it
                         ) {
                             if (it.state == State.Running || it.state == State.Enqueued || it.state == State.Blocked) {
@@ -137,11 +143,11 @@ fun App() {
                         }
                     }
 
-                    item {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
                         HorizontalDivider()
                     }
 
-                    items(tasks.finished, { "${it.id}"}) {
+                    items(tasks.finished, { "${it.id}" }) {
                         TaskRow(
                             modifier = Modifier.animateItem(),
                             info = it
