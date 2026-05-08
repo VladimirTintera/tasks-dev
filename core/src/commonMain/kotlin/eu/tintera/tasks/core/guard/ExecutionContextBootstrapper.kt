@@ -5,7 +5,7 @@ import eu.tintera.guard.ExecutionContextObserverRegistry
 import eu.tintera.guard.TokenProducer
 import eu.tintera.guard.TokenProducerRegistry
 
-class ExecutionContextBootstrapper(
+internal class ExecutionContextBootstrapper(
     private val observerRegistry: ExecutionContextObserverRegistry,
     private val tokenProducerRegistry: TokenProducerRegistry,
     observers: List<ExecutionContextObserver>,

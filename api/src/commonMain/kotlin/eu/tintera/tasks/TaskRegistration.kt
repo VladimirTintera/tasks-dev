@@ -15,7 +15,5 @@ class TaskRegistration<I : Any, O : Any, P : Any>(
     init {
         require(identifier.isNotBlank()) { "Task identifier cannot be blank." }
         require(currentVersion >= 1) { "Task version must be at least 1." }
-
-
     }
 }

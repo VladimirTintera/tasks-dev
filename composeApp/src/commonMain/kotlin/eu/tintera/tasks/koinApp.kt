@@ -88,22 +88,6 @@ fun koinApp(
                         }
                     }
                 }
-
-
-            }
-
-            single(createdAtStart = true) {
-                object {
-                    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-
-                    init {
-                        scope.launch {
-                            eu.tintera.guard.EventBus.events.collect {
-                                Logger.i(tag = it.tag) { it.message }
-                            }
-                        }
-                    }
-                }
             }
 
             single {
