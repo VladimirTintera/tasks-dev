@@ -2,17 +2,19 @@ package eu.tintera.tasks.runtime
 
 import eu.tintera.tasks.TaskLifecycleObserver
 import eu.tintera.tasks.TaskManager
+import eu.tintera.tasks.TaskManagerConfiguration
 import eu.tintera.tasks.Tasks
 import org.koin.core.KoinApplication
 import org.koin.core.module.Module
 
-abstract class TasksInitializerBase<T> {
+abstract class TasksInitializerBase {
 
-    internal abstract fun module(config: T): Module
+    internal abstract fun module(config: TaskManagerConfiguration): Module
 
-    open fun KoinApplication.customInitialization(config: T) {}
-    fun initialize(
-        config: T,
+    internal open fun KoinApplication.customInitialization(config: TaskManagerConfiguration) {}
+
+    internal fun create(
+        config: TaskManagerConfiguration,
         taskLifecycleObservers: List<TaskLifecycleObserver> = emptyList()
     ): TaskManager {
 

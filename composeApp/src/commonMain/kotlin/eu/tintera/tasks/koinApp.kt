@@ -1,7 +1,10 @@
 package eu.tintera.tasks
 
 import co.touchlab.kermit.Logger
+import eu.tintera.guard.ExecutionContextObserverRegistry
 import eu.tintera.guard.ExecutionEnvironment
+import eu.tintera.guard.ExhaustibleObservable
+import eu.tintera.guard.PendingTokenObservable
 import eu.tintera.guard.TokenObservable
 import eu.tintera.tasks.handlers.TestHandler
 import eu.tintera.tasks.handlers.TestHandlerData
@@ -42,7 +45,13 @@ fun koinApp(
 
             single {
                 Tasks.executionEnvironment
-            } binds arrayOf(ExecutionEnvironment::class, TokenObservable::class)
+            } binds arrayOf(
+                ExecutionEnvironment::class,
+                TokenObservable::class,
+                ExhaustibleObservable::class,
+                PendingTokenObservable::class,
+                ExecutionContextObserverRegistry::class
+            )
 
             factoryOf(::TasksObserver) bind TaskLifecycleObserver::class
 
@@ -88,13 +97,6 @@ fun koinApp(
                         }
                     }
                 }
-            }
-
-            single {
-                TokenObserver(
-                    scope = get(),
-                    tokenObservable = get()
-                )
             }
         }
     )

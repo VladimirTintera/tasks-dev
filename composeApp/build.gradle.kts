@@ -23,7 +23,8 @@ kotlin {
         )
         optIn.addAll(
             "kotlin.uuid.ExperimentalUuidApi",
-            "kotlin.concurrent.atomics.ExperimentalAtomicApi"
+            "kotlin.concurrent.atomics.ExperimentalAtomicApi",
+            "kotlinx.coroutines.ExperimentalCoroutinesApi"
         )
     }
 

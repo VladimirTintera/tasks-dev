@@ -1,18 +1,25 @@
 package eu.tintera.tasks
 
+import eu.tintera.tasks.koin.taskManagerBootstrapper
+import org.koin.dsl.module
 import platform.Foundation.NSBundle
 
-fun initialize() : TaskManager {
+fun initialize() {
 
-    val app = koinApp()
+    koinApp {
+        modules(
+            module {
+                single {
+                    TaskManagerConfiguration(
+                        bgProcessingTaskIdentifier = (NSBundle.mainBundle.bundleIdentifier + ".BgProcessingTask"),
+                        appRefreshTaskIdentifier = (NSBundle.mainBundle.bundleIdentifier + ".AppRefreshTask")
+                    )
+                }
 
-    return TasksInitializer.initialize(
-        config = IosTasksManagerConfiguration(
-            bgProcessingTaskIdentifier = (NSBundle.mainBundle.bundleIdentifier + ".BgProcessingTask"),
-            appRefreshTaskIdentifier = (NSBundle.mainBundle.bundleIdentifier + ".AppRefreshTask")
-        ),
-        taskLifecycleObservers = app.koin.getAll()
-    ).also {
-        app.koin.get<TokenObserver>().start()
+                taskManagerBootstrapper {
+                    koin.loadModules(listOf(logModule), createEagerInstances = true)
+                }
+            }
+        )
     }
 }

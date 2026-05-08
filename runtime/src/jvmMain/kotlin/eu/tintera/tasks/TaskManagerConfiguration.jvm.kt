@@ -6,7 +6,7 @@ import kotlin.io.path.absolutePathString
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-data class JvmTasksManagerConfiguration(
+actual class TaskManagerConfiguration(
     val databasePath: String,
     val databaseName: String = "",
     val maxConcurrentTasks: Int = 10,

@@ -2,14 +2,24 @@ package eu.tintera.tasks
 
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import eu.tintera.tasks.koin.taskManagerBootstrapper
+import org.koin.dsl.module
 
 fun main() {
 
-    val app = koinApp()
-    TasksInitializer.initialize(
-        JvmTasksManagerConfiguration("ComposeApp")
-    )
-    app.koin.get<TokenObserver>().start()
+    koinApp {
+        modules(
+            module {
+                single {
+                    TaskManagerConfiguration("ComposeApp")
+                }
+
+                taskManagerBootstrapper {
+                    koin.loadModules(listOf(logModule), createEagerInstances = true)
+                }
+            }
+        )
+    }
 
 
     application {

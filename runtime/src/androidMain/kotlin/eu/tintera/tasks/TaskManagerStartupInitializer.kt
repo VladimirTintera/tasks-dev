@@ -5,10 +5,11 @@ import androidx.startup.Initializer
 import androidx.work.WorkManagerInitializer
 
 class TaskManagerStartupInitializer : Initializer<TaskManager> {
+
     override fun create(
         context: Context
     ): TaskManager = TasksInitializer.initialize(
-        config = AndroidTasksConfiguration(
+        configuration = TaskManagerConfiguration(
             context = context
         )
     )

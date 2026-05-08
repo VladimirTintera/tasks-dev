@@ -6,7 +6,7 @@ import eu.tintera.guard.ExecutionEnvironment
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-data class AndroidTasksConfiguration(
+actual class TaskManagerConfiguration(
     val context: Context,
     val executionContextReleaseDebounce: Duration = 1.5.seconds,
     val compatTransformation: (Map<String, Any?>) -> ByteArray? = { null },

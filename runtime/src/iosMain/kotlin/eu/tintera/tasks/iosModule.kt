@@ -17,7 +17,7 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 
 internal fun iosModule(
-    config: IosTasksManagerConfiguration
+    config: TaskManagerConfiguration
 ): Module = module {
 
     includes(

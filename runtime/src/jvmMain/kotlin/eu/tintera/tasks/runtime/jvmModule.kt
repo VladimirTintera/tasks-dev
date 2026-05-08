@@ -4,8 +4,7 @@ import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import eu.tintera.guard.ExecutionEnvironmentConfig
 import eu.tintera.guard.PlatformContext
-import eu.tintera.guard.TokenProvider
-import eu.tintera.tasks.JvmTasksManagerConfiguration
+import eu.tintera.tasks.TaskManagerConfiguration
 import eu.tintera.tasks.core.AppStateObserver
 import eu.tintera.tasks.core.NetworkState
 import eu.tintera.tasks.core.TaskProcessorConfig
@@ -23,7 +22,7 @@ import org.koin.dsl.binds
 import org.koin.dsl.module
 
 internal fun jvmModule(
-    config: JvmTasksManagerConfiguration
+    config: TaskManagerConfiguration
 ): Module = module {
 
     includes(

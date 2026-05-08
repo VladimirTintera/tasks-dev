@@ -5,7 +5,7 @@ import eu.tintera.guard.ExecutionEnvironment
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-data class IosTasksManagerConfiguration(
+actual class TaskManagerConfiguration(
     val sqLiteDriver: SQLiteDriver? = null,
     val databaseName: String = "",
     val maxConcurrentTasks: Int = 10,

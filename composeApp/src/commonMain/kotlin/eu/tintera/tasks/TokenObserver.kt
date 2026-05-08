@@ -13,9 +13,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class TokenObserver(
-    private val scope: ApplicationScope,
-    private val tokenObservable: TokenObservable,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
+    scope: ApplicationScope,
+    private val observable: TokenObservable,
+    dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
 
     private val logger = Logger.withTag("TokenObserver")
@@ -25,9 +25,9 @@ class TokenObserver(
         val state: TokenState
     )
 
-    fun start() {
+    init {
         scope.launch(dispatcher) {
-            tokenObservable.acquiredTokens.buffer(
+            observable.acquiredTokens.buffer(
                 capacity = 100,
                 onBufferOverflow = BufferOverflow.DROP_OLDEST
             ).map { token ->

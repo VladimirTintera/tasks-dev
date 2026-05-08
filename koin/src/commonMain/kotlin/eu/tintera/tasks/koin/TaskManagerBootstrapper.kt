@@ -1,18 +1,18 @@
 package eu.tintera.tasks.koin
 
-import eu.tintera.tasks.AndroidTasksConfiguration
 import eu.tintera.tasks.TaskLifecycleObserver
+import eu.tintera.tasks.TaskManagerConfiguration
 import eu.tintera.tasks.TasksInitializer
 import org.koin.core.module.Module
 
 internal class TaskManagerBootstrapper(
-    configuration: AndroidTasksConfiguration,
+    configuration: TaskManagerConfiguration,
     observers: List<TaskLifecycleObserver>,
     onRegistered: () -> Unit
 ) {
     init {
         TasksInitializer.initialize(
-            config = configuration,
+            configuration = configuration,
             taskLifecycleObservers = observers
         )
         onRegistered()
