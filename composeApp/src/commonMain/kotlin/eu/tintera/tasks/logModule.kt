@@ -19,6 +19,10 @@ val logModule = module {
         )
     }
 
+    single(createdAtStart = true) {
+        MultiplexerObserver(scope = get(), observable = get())
+    }
+
     singleOf(::ExecutionContextObserver) {
         createdAtStart()
     }

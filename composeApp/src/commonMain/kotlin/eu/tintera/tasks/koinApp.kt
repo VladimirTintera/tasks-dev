@@ -4,6 +4,7 @@ import co.touchlab.kermit.Logger
 import eu.tintera.guard.ExecutionContextObserverRegistry
 import eu.tintera.guard.ExecutionEnvironment
 import eu.tintera.guard.ExhaustibleObservable
+import eu.tintera.guard.MultiplexerObservable
 import eu.tintera.guard.PendingTokenObservable
 import eu.tintera.guard.TokenObservable
 import eu.tintera.tasks.handlers.TestHandler
@@ -50,7 +51,8 @@ fun koinApp(
                 TokenObservable::class,
                 ExhaustibleObservable::class,
                 PendingTokenObservable::class,
-                ExecutionContextObserverRegistry::class
+                ExecutionContextObserverRegistry::class,
+                MultiplexerObservable::class
             )
 
             factoryOf(::TasksObserver) bind TaskLifecycleObserver::class
