@@ -7,6 +7,7 @@ import eu.tintera.tasks.BackoffPolicy
 import eu.tintera.tasks.Constraints
 import eu.tintera.tasks.core.*
 import eu.tintera.tasks.core.data.*
+import eu.tintera.tasks.core.migrations.MigratableData
 import eu.tintera.tasks.core.migrations.TaskMigrator
 import eu.tintera.tasks.serialization.Serializer
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -398,19 +399,17 @@ internal class WorkManagerTaskManager(
         info: Info?,
         registration: TaskRegistration<Any, Any, Any>?
     ): TaskInfo {
-
         val migrationResult = info?.let { task ->
             registration?.let { registration ->
+
+                val migrationData = object : MigratableData {
+                    override val version = task.version
+                    override val inputData = task.inputData
+                    override val outputData = task.outputData
+                    override val progressData = task.progressData
+                }
                 taskMigrator.migrate(
-                    data = ExecutableTask(
-                        identifier = task.identifier,
-                        runAttemptCount = task.runAttemptCount,
-                        version = task.version,
-                        inputData = task.inputData,
-                        outputData = task.outputData,
-                        progressData = task.progressData,
-                        tags = tags
-                    ),
+                    data = migrationData,
                     registration = registration
                 )
             }

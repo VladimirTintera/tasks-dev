@@ -1,10 +1,14 @@
 package eu.tintera.tasks.core.data
 
+import eu.tintera.tasks.BackoffCriteria
 import eu.tintera.tasks.core.migrations.MigratableData
+import kotlin.time.Duration
 
 data class ExecutableTask(
     val identifier: String,
     val runAttemptCount: Int,
+    val backoffCriteria: BackoffCriteria?,
+    val repeatInterval: Duration?,
     override val version: Int,
     override val inputData: ByteArray?,
     override val outputData: ByteArray?,

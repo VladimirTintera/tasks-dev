@@ -9,16 +9,13 @@ import androidx.annotation.RestrictTo
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import eu.tintera.tasks.EventBus
-import eu.tintera.tasks.ForegroundInfo
-import eu.tintera.tasks.InternalTasksApi
-import eu.tintera.tasks.State
-import eu.tintera.tasks.TaskResult
-import eu.tintera.tasks.core.*
-import eu.tintera.tasks.core.data.ExecutableTask
+import eu.tintera.tasks.*
+import eu.tintera.tasks.core.CompositeTaskLifecycleObserver
+import eu.tintera.tasks.core.TaskEvaluator
+import eu.tintera.tasks.core.TaskEvaluatorResult
 import eu.tintera.tasks.core.data.Repository
 import eu.tintera.tasks.core.data.Task
-import eu.tintera.tasks.core.data.TaskProcessResult
+import eu.tintera.tasks.core.nonTerminalStates
 import eu.tintera.tasks.di.TasksKoinComponent
 import kotlinx.coroutines.CancellationException
 import org.koin.core.component.inject
@@ -39,7 +36,6 @@ open class TaskWorker(
     }
     private val taskEvaluator: TaskEvaluator by inject()
     private val repository: Repository by inject()
-    private val taskResultProcessor: TaskResultProcessor by inject()
 
     private val workManagerConfiguration: WorkManagerConfiguration by inject()
     private val taskLifecycleObserver: CompositeTaskLifecycleObserver by inject()
@@ -107,32 +103,13 @@ open class TaskWorker(
         return try {
             val result = taskEvaluator.handle(
                 id = taskId,
-                task = ExecutableTask(
-                    identifier = task.identifier,
-                    runAttemptCount = task.runAttemptCount,
-                    version = task.version,
-                    inputData = task.inputData,
-                    outputData = task.outputData,
-                    progressData = task.progressData,
-                    tags = tags
-                ),
                 onForegroundInfo = ::internalSetForegroundInfo
             )
 
-            taskResultProcessor.handleResult(
-                TaskProcessResult(
-                    id = taskId,
-                    executionResult = ExecutionResult.EvaluatorResult(result),
-                    repeatInterval = task.repeatInterval,
-                    backoffCriteria = task.backoffCriteria,
-                    retryCount = task.runAttemptCount
-                )
-            )
-
             when (result) {
-                TaskEvaluatorResult.Failure -> Result.failure()
-                TaskEvaluatorResult.Retry -> Result.retry()
-                is TaskEvaluatorResult.Success -> Result.success()
+                TaskEvaluatorResult.FAILURE -> Result.failure()
+                TaskEvaluatorResult.RETRY -> Result.retry()
+                TaskEvaluatorResult.SUCCESS -> Result.success()
             }
         } catch (e: CancellationException) {
             taskLifecycleObserver.onCanceled(taskId)

@@ -5,8 +5,6 @@ import eu.tintera.guard.invoke
 import eu.tintera.tasks.EventBus
 import eu.tintera.tasks.core.constraints.ConstraintController
 import eu.tintera.tasks.core.constraints.ConstraintLostException
-import eu.tintera.tasks.core.data.ExecutableTask
-import eu.tintera.tasks.core.data.TaskProcessResult
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -14,6 +12,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
 internal interface TaskProcessor {
@@ -27,7 +26,8 @@ internal class TaskProcessorImpl(
     private val preconditionController: ConstraintController,
     private val taskResultProcessor: TaskResultProcessor,
     private val taskLifecycleObserver: CompositeTaskLifecycleObserver,
-    private val repository: TaskProcessorRepository
+    private val repository: TaskProcessorRepository,
+    private val clock: Clock,
 ) : TaskProcessor {
 
     private val concurrencySemaphore = Semaphore(config.maxConcurrentTasks)
@@ -58,8 +58,7 @@ internal class TaskProcessorImpl(
                 if (preconditionsValid) concurrencySemaphore.withPermit {
                     executeTask(
                         id = id,
-                        task = task,
-                        executableTask = repository.executableTask(id) ?: return@launch
+                        task = task
                     )
                 }
 
@@ -95,21 +94,17 @@ internal class TaskProcessorImpl(
 
     private suspend fun executeTask(
         id: Uuid,
-        task: StateFlow<ProcessableTask?>,
-        executableTask: ExecutableTask
+        task: StateFlow<ProcessableTask?>
     ) = executionContextProvider {
 
         taskLifecycleObserver.onStarted(id)
 
-        val retryCount = executableTask.runAttemptCount
-
-        repository.updateRunningState(
+        repository.run(
             id = id,
-            runAttemptCount = retryCount + 1,
             allowedSourceStates = runningStates
         )
 
-        val evaluatorResult: ExecutionResult = try {
+        try {
             coroutineScope {
 
                 val capabilityWatcher = launch {
@@ -119,43 +114,28 @@ internal class TaskProcessorImpl(
 
                 val result = taskEvaluator.handle(
                     id = id,
-                    task = executableTask,
                     onForegroundInfo = { true }
                 )
 
                 capabilityWatcher.cancel()
-                ExecutionResult.EvaluatorResult(result)
+                result
             }
-        } catch (e: ConstraintLostException) {
-            EventBus.send(
-                TAG,
-                "Task interrupted '${executableTask.identifier}' due to lost capability. Enqueueing back."
-            )
+        } catch (_: ConstraintLostException) {
             taskLifecycleObserver.onCanceled(id, "Precondition lost")
-            ExecutionResult.Yielded
+            repository.enqueue(
+                id = id,
+                processTime = clock.now(),
+                allowedSourceStates = runningStates
+            )
+            null
         } catch (e: CancellationException) {
             // when canceled, do nothing. Invalid Running states are handled by sweep mechanism
             // Let it crash
             taskLifecycleObserver.onCanceled(id, "Context cancelled")
             throw e
-        } catch (e: Throwable) {
-            EventBus.send(TAG, "Task failed '${executableTask.identifier}'")
-            ExecutionResult.EvaluatorResult(TaskEvaluatorResult.Failure)
-        }
-
-        task.value?.let {
-            withContext(NonCancellable) {
-                EventBus.send(TAG, "Task finished '${executableTask.identifier}', result = $evaluatorResult")
-                taskResultProcessor.handleResult(
-                    TaskProcessResult(
-                        id = id,
-                        executionResult = evaluatorResult,
-                        repeatInterval = it.repeatInterval,
-                        backoffCriteria = it.backoffCriteria,
-                        retryCount = retryCount
-                    )
-                )
-            }
+        } catch (_: Throwable) {
+            EventBus.send(TAG, "Task failed '${id}'")
+            repository.fail(id = id)
         }
     }
 

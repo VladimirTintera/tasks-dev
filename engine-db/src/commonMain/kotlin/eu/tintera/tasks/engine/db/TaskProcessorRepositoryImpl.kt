@@ -3,13 +3,13 @@ package eu.tintera.tasks.engine.db
 import eu.tintera.tasks.State
 import eu.tintera.tasks.core.ProcessableTask
 import eu.tintera.tasks.core.TaskProcessorRepository
-import eu.tintera.tasks.core.data.ExecutableTask
 import eu.tintera.tasks.db.dao.TaskProcessorDao
 import eu.tintera.tasks.db.toEntityState
 import eu.tintera.tasks.db.toTaskBackoffCriteria
 import eu.tintera.tasks.db.toTaskState
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 internal class TaskProcessorRepositoryImpl(
@@ -34,29 +34,14 @@ internal class TaskProcessorRepositoryImpl(
         }
     }
 
-    override suspend fun executableTask(id: Uuid): ExecutableTask? =
-        dao.getExecutableTasksById(id)?.map { (task, tags) ->
-            ExecutableTask(
-                identifier = task.identifier,
-                runAttemptCount = task.runAttemptCount,
-                version = task.version,
-                inputData = task.inputData,
-                outputData = task.outputData,
-                progressData = task.progressData,
-                tags = tags.map { it.name }.toSet()
-            )
-        }?.firstOrNull()
-
-    override suspend fun updateRunningState(
+    override suspend fun run(
         id: Uuid,
-        runAttemptCount: Int,
         allowedSourceStates: Set<State>
     ) {
-        dao.updateRunningState(
+        dao.run(
             id = id,
             state = eu.tintera.tasks.db.State.Running,
-            allowedSourceStates = allowedSourceStates.map { it.toEntityState() },
-            runAttemptCount = runAttemptCount
+            allowedSourceStates = allowedSourceStates.map { it.toEntityState() }
         )
     }
 
@@ -67,4 +52,22 @@ internal class TaskProcessorRepositoryImpl(
             state = eu.tintera.tasks.db.State.Enqueued
         )
     }
+
+    override suspend fun enqueue(
+        id: Uuid,
+        allowedSourceStates: Set<State>,
+        processTime: Instant
+    ) {
+        dao.enqueue(
+            id = id,
+            state = eu.tintera.tasks.db.State.Enqueued,
+            processTime =  processTime,
+            allowedSourceStates = allowedSourceStates.map { it.toEntityState() }
+        )
+    }
+
+    override suspend fun fail(id: Uuid) = dao.fail(
+        id = id,
+        state = eu.tintera.tasks.db.State.Failed
+    )
 }

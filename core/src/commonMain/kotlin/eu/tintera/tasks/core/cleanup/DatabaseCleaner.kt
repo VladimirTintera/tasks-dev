@@ -9,7 +9,7 @@ import kotlin.time.Duration.Companion.hours
 
 internal class DatabaseCleaner(
     private val handler: DatabaseCleanupTaskHandler,
-    private val registry: Registry,
+    registry: Registry,
     private val taskManager: TaskManager,
     scope: ApplicationScope,
     dispatchers: AppDispatchers

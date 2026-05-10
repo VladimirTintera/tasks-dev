@@ -35,6 +35,7 @@ plugins {
 include(":composeApp")
 
 include(":runtime")
+include(":infrastructure")
 include(":core")
 include(":core-db")
 include(":engine")

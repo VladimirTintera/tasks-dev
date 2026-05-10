@@ -3,30 +3,26 @@ package eu.tintera.tasks.core
 import eu.tintera.tasks.*
 import eu.tintera.tasks.core.data.ExecutableTask
 import eu.tintera.tasks.core.data.TaskEvaluatorRepository
+import eu.tintera.tasks.core.data.TaskProcessResult
 import eu.tintera.tasks.core.migrations.TaskMigrator
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.plus
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.uuid.Uuid
 
-sealed interface TaskEvaluatorResult<out Output> {
-    class Success<Output>(val outputData: Output, val bytes: ByteArray) : TaskEvaluatorResult<Output>
-    data object Failure : TaskEvaluatorResult<Nothing>
-    data object Retry : TaskEvaluatorResult<Nothing>
-
-    fun toTaskResult(): TaskResult<Output> = when (this) {
-        is Success -> TaskResult.success(outputData)
-        Failure -> TaskResult.failure()
-        Retry -> TaskResult.retry()
-    }
+enum class TaskEvaluatorResult {
+    SUCCESS,
+    FAILURE,
+    RETRY
 }
 
 
 interface TaskEvaluator {
     suspend fun handle(
         id: Uuid,
-        task: ExecutableTask,
         onForegroundInfo: suspend (ForegroundInfo) -> Boolean
-    ): TaskEvaluatorResult<Any>
+    ): TaskEvaluatorResult
 }
 
 @Suppress("UNCHECKED_CAST")
@@ -37,17 +33,20 @@ class TaskEvaluatorImpl(
     private val applicationScope: ApplicationScope,
     private val dispatchers: AppDispatchers,
     private val tagMapper: TagMapper,
-    private val repository: TaskEvaluatorRepository
+    private val repository: TaskEvaluatorRepository,
+    private val taskResultProcessor: TaskResultProcessor
 ) : TaskEvaluator {
 
     override suspend fun handle(
         id: Uuid,
-        task: ExecutableTask,
         onForegroundInfo: suspend (ForegroundInfo) -> Boolean
-    ): TaskEvaluatorResult<Any> {
+    ): TaskEvaluatorResult {
 
-        val registration =
-            registryResolver.resolve<Any, Any, Any>(task.identifier) ?: return TaskEvaluatorResult.Failure
+        val task = repository.executableTask(id) ?: return TaskEvaluatorResult.FAILURE
+
+        val registration = registryResolver.resolve<Any, Any, Any>(
+            identifier = task.identifier
+        ) ?: return TaskEvaluatorResult.FAILURE
 
         val migrationResult = taskMigrator.migrate(
             data = task,
@@ -70,7 +69,12 @@ class TaskEvaluatorImpl(
 
         val typedInput = migrationResult?.input ?: task.inputData?.let {
             registration.inputSerializer.decodeFromBytes(it)
-        } ?: return TaskResult.Failure.toResult(registration)
+        } ?: return handleResult(
+            id = id,
+            task = task,
+            result = TaskResult.Failure,
+            registration = registration,
+        )
 
         val parents = repository.parentsDataFor(id).mapNotNull { parentEntity ->
             registryResolver.resolve<Any, Any, Any>(parentEntity.identifier)?.let { parentRegistration ->
@@ -88,7 +92,7 @@ class TaskEvaluatorImpl(
 
         val tags = tagMapper.parse(tags = task.tags)
 
-        return taskScopeFactory.createForTask(
+        val result = taskScopeFactory.createForTask(
             taskId = id,
             data = typedInput,
             retryCount = task.runAttemptCount - 1,
@@ -111,19 +115,41 @@ class TaskEvaluatorImpl(
                 e.printStackTrace()
                 EventBus.send(TAG, "Task execution failed with error '${e.message}'")
                 TaskResult.Failure
-            }.toResult(registration)
+            }
         }
+
+        return handleResult(
+            id = id,
+            task = task,
+            result = result,
+            registration = registration,
+        )
     }
 
-    private fun TaskResult<Any>.toResult(
+    private suspend fun handleResult(
+        id: Uuid,
+        task: ExecutableTask,
+        result: TaskResult<Any>,
         registration: TaskRegistration<Any, Any, Any>
-    ) = when (this) {
-        TaskResult.Failure -> TaskEvaluatorResult.Failure
-        TaskResult.Retry -> TaskEvaluatorResult.Retry
-        is TaskResult.Success -> TaskEvaluatorResult.Success(
-            outputData = outputData,
-            bytes = registration.outputSerializer.encodeToBytes(outputData)
-        )
+    ): TaskEvaluatorResult {
+
+        withContext(NonCancellable) {
+            taskResultProcessor.handleResult(
+                result = TaskProcessResult(
+                    id = id,
+                    result = result,
+                    repeatInterval = task.repeatInterval,
+                    backoffCriteria = task.backoffCriteria,
+                    retryCount = task.runAttemptCount - 1
+                ), registration
+            )
+        }
+
+        return when (result) {
+            is TaskResult.Failure -> TaskEvaluatorResult.FAILURE
+            is TaskResult.Success -> TaskEvaluatorResult.SUCCESS
+            is TaskResult.Retry -> TaskEvaluatorResult.RETRY
+        }
     }
 
     companion object {

@@ -11,7 +11,7 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 
 val coreModule = module {
-    singleOf<AppDispatchers>(::RealDispatchers)
+    singleOf<AppDispatchers>(::AppDispatchersImpl)
     single { ApplicationScope(SupervisorJob()) }
     factoryOf(::TaskResultProcessorImpl) bind TaskResultProcessor::class
     factoryOf(::TaskEvaluatorImpl) bind TaskEvaluator::class

@@ -13,4 +13,6 @@ interface TaskEvaluatorRepository {
     )
 
     suspend fun parentsDataFor(id: Uuid): List<ParentData>
+
+    suspend fun executableTask(id: Uuid): ExecutableTask?
 }

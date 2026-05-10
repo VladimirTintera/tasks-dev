@@ -1,8 +1,12 @@
 package eu.tintera.tasks.core.db
 
+import eu.tintera.tasks.core.data.ExecutableTask
 import eu.tintera.tasks.core.data.ParentData
 import eu.tintera.tasks.core.data.TaskEvaluatorRepository
 import eu.tintera.tasks.db.dao.TaskEvaluatorDao
+import eu.tintera.tasks.db.toTaskBackoffCriteria
+import kotlin.collections.component1
+import kotlin.collections.component2
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
@@ -33,4 +37,19 @@ internal class TaskEvaluatorRepositoryImpl(
         progress = progress,
         version = version
     )
+
+    override suspend fun executableTask(id: Uuid): ExecutableTask? =
+        dao.getExecutableTasksById(id)?.map { (task, tags) ->
+            ExecutableTask(
+                identifier = task.identifier,
+                runAttemptCount = task.runAttemptCount,
+                version = task.version,
+                inputData = task.inputData,
+                outputData = task.outputData,
+                progressData = task.progressData,
+                tags = tags.map { it.name }.toSet(),
+                repeatInterval = task.repeatInterval,
+                backoffCriteria = task.backoffCriteria?.toTaskBackoffCriteria()
+            )
+        }?.firstOrNull()
 }

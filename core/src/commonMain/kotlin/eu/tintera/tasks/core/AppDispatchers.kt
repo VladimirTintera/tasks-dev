@@ -10,7 +10,7 @@ interface AppDispatchers {
     val default: CoroutineDispatcher
 }
 
-class RealDispatchers : AppDispatchers {
+internal class AppDispatchersImpl : AppDispatchers {
     override val main = Dispatchers.Main
     override val io = Dispatchers.IO
     override val default = Dispatchers.Default

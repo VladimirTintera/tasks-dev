@@ -18,7 +18,6 @@ fun BackoffCriteria.calculate(retryCount: Int): Duration {
 
         BackoffPolicy.Exponential -> {
             var currentDelay = baseDelay
-            // Změna: Opakujeme o jedenkrát méně. Pro attempt = 1 se repeat neprovede vůbec.
             repeat(retryCount) {
                 currentDelay *= 2
                 if (currentDelay >= MAX_BACKOFF_DELAY) {
