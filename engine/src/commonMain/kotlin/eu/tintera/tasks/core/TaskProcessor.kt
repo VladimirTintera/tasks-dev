@@ -24,7 +24,6 @@ internal class TaskProcessorImpl(
     private val executionContextProvider: ExecutionContextProvider,
     config: TaskProcessorConfig = TaskProcessorConfig(),
     private val preconditionController: ConstraintController,
-    private val taskResultProcessor: TaskResultProcessor,
     private val taskLifecycleObserver: CompositeTaskLifecycleObserver,
     private val repository: TaskProcessorRepository,
     private val clock: Clock,

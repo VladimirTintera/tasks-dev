@@ -1,9 +1,11 @@
 package eu.tintera.tasks.core
 
-import eu.tintera.tasks.*
-import eu.tintera.tasks.core.data.ExecutableTask
+import eu.tintera.tasks.EventBus
+import eu.tintera.tasks.ForegroundInfo
+import eu.tintera.tasks.ParentData
+import eu.tintera.tasks.TaskResult
+import eu.tintera.tasks.core.data.TaskEvaluationResult
 import eu.tintera.tasks.core.data.TaskEvaluatorRepository
-import eu.tintera.tasks.core.data.TaskProcessResult
 import eu.tintera.tasks.core.migrations.TaskMigrator
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.plus
@@ -34,7 +36,7 @@ class TaskEvaluatorImpl(
     private val dispatchers: AppDispatchers,
     private val tagMapper: TagMapper,
     private val repository: TaskEvaluatorRepository,
-    private val taskResultProcessor: TaskResultProcessor
+    private val taskResultHandler: TaskResultHandler
 ) : TaskEvaluator {
 
     override suspend fun handle(
@@ -42,11 +44,20 @@ class TaskEvaluatorImpl(
         onForegroundInfo: suspend (ForegroundInfo) -> Boolean
     ): TaskEvaluatorResult {
 
-        val task = repository.executableTask(id) ?: return TaskEvaluatorResult.FAILURE
+        val task = repository.executableTask(id) ?: return TaskEvaluatorResult.FAILURE.also {
+            println("Task $id not found")
+        }
 
         val registration = registryResolver.resolve<Any, Any, Any>(
             identifier = task.identifier
-        ) ?: return TaskEvaluatorResult.FAILURE
+        ) ?: return handleResult(
+            TaskEvaluationResult.Failed(
+                id = id,
+                repeatInterval = null
+            )
+        ).also {
+            println("No registration found for ask with id $id, identifier ${task.identifier}")
+        }
 
         val migrationResult = taskMigrator.migrate(
             data = task,
@@ -70,10 +81,10 @@ class TaskEvaluatorImpl(
         val typedInput = migrationResult?.input ?: task.inputData?.let {
             registration.inputSerializer.decodeFromBytes(it)
         } ?: return handleResult(
-            id = id,
-            task = task,
-            result = TaskResult.Failure,
-            registration = registration,
+            TaskEvaluationResult.Failed(
+                id = id,
+                repeatInterval = null
+            )
         )
 
         val parents = repository.parentsDataFor(id).mapNotNull { parentEntity ->
@@ -119,36 +130,42 @@ class TaskEvaluatorImpl(
         }
 
         return handleResult(
-            id = id,
-            task = task,
-            result = result,
-            registration = registration,
+            when (result) {
+                TaskResult.Failure -> TaskEvaluationResult.Failed(
+                    id = id,
+                    repeatInterval = task.repeatInterval
+                )
+
+                TaskResult.Retry -> TaskEvaluationResult.Retry(
+                    id = id,
+                    backoffCriteria = task.backoffCriteria,
+                    retryCount = task.runAttemptCount - 1
+                )
+
+                is TaskResult.Success -> TaskEvaluationResult.Success(
+                    id = id,
+                    registration = registration,
+                    repeatInterval = task.repeatInterval,
+                    outputData = result.outputData,
+                )
+            }
         )
     }
 
     private suspend fun handleResult(
-        id: Uuid,
-        task: ExecutableTask,
-        result: TaskResult<Any>,
-        registration: TaskRegistration<Any, Any, Any>
+        result: TaskEvaluationResult
     ): TaskEvaluatorResult {
 
         withContext(NonCancellable) {
-            taskResultProcessor.handleResult(
-                result = TaskProcessResult(
-                    id = id,
-                    result = result,
-                    repeatInterval = task.repeatInterval,
-                    backoffCriteria = task.backoffCriteria,
-                    retryCount = task.runAttemptCount - 1
-                ), registration
+            taskResultHandler.handleResult(
+                result
             )
         }
 
         return when (result) {
-            is TaskResult.Failure -> TaskEvaluatorResult.FAILURE
-            is TaskResult.Success -> TaskEvaluatorResult.SUCCESS
-            is TaskResult.Retry -> TaskEvaluatorResult.RETRY
+            is TaskEvaluationResult.Failed -> TaskEvaluatorResult.FAILURE
+            is TaskEvaluationResult.Success -> TaskEvaluatorResult.SUCCESS
+            is TaskEvaluationResult.Retry -> TaskEvaluatorResult.RETRY
         }
     }
 

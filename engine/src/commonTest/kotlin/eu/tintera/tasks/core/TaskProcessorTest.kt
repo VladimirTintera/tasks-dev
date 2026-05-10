@@ -54,7 +54,7 @@ class TaskProcessorTest {
             taskEvaluator = fakeEvaluator,
             executionContextProvider = fakeWakeLock,
             preconditionController = ConstraintController(emptyList()),
-            taskResultProcessor = TaskResultProcessorImpl(fakeRepository)
+            taskResultHandler = TaskResultHandlerImpl(fakeRepository)
         )
 
         // Vytvoříme testovací task, který vyžaduje iOS KeepAlive

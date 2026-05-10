@@ -13,7 +13,7 @@ import org.koin.dsl.module
 val coreModule = module {
     singleOf<AppDispatchers>(::AppDispatchersImpl)
     single { ApplicationScope(SupervisorJob()) }
-    factoryOf(::TaskResultProcessorImpl) bind TaskResultProcessor::class
+    factoryOf(::TaskResultHandlerImpl) bind TaskResultHandler::class
     factoryOf(::TaskEvaluatorImpl) bind TaskEvaluator::class
     singleOf(::DatabaseCleaner) {
         createdAtStart()
