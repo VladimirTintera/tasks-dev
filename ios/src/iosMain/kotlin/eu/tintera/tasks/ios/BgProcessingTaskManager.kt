@@ -38,8 +38,8 @@ internal class BgProcessingTaskManager(
 
     override fun hasConstraint(task: ProcessableTask) = if (isAppRefreshTaskAllowed) task.requiresDeviceIdle else false
 
-    override fun isValid(task: ProcessableTask) = currentToken.map {
-        if (it != null) ConstraintResult.Met else ConstraintResult.Unmet
+    override fun isValid(task: ProcessableTask) = pendingToken.map {
+        if (it.isNotEmpty()) ConstraintResult.Met else ConstraintResult.Unmet
     }
 
     override val monitorDuringExecution = true

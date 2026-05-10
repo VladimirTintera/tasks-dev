@@ -2,8 +2,8 @@ package eu.tintera.tasks.ios
 
 import eu.tintera.guard.AbstractToken
 import eu.tintera.guard.ExecutionContextObserver
+import eu.tintera.guard.PendingTokenProducer
 import eu.tintera.guard.Token
-import eu.tintera.guard.TokenProducer
 import eu.tintera.tasks.EventBus
 import eu.tintera.tasks.core.AppDispatchers
 import eu.tintera.tasks.core.ApplicationScope
@@ -29,8 +29,7 @@ internal abstract class BgTaskManager(
     private val appLifecycleObserver: AppLifecycleObserver,
     private val tag: String,
     private val clock: Clock
-) : TokenProducer, ExecutionContextObserver {
-    protected val currentToken = MutableStateFlow<BgTaskToken?>(null)
+) : PendingTokenProducer(scope), ExecutionContextObserver {
     protected var lastKnownTasks: List<BgTaskManagerTask> = emptyList()
         private set
 
@@ -46,8 +45,6 @@ internal abstract class BgTaskManager(
                 }
         }
     }
-
-    override fun token(): Flow<Token> = currentToken.filterNotNull()
 
     abstract fun List<BgTaskManagerTask>.filter(): List<BgTaskManagerTask>
 
@@ -70,9 +67,7 @@ internal abstract class BgTaskManager(
             EventBus.send(tag, "BGTask started")
 
             it?.also { task ->
-                currentToken.getAndUpdate {
-                    BgTaskToken(taskIdentifier, task)
-                }?.cancel()
+                produce(BgTaskToken(taskIdentifier, task))
             }
         }
     }

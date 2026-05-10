@@ -26,8 +26,4 @@ internal class AppRefreshTaskManager(
     }
 
     override fun createRequest() = BGAppRefreshTaskRequest(taskIdentifier)
-
-    companion object {
-        private const val TAG = "AppRefreshTaskManager"
-    }
 }
