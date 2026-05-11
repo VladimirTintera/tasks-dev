@@ -1,7 +1,7 @@
 package eu.tintera.tasks.db
 
-import androidx.room.immediateTransaction
-import androidx.room.useWriterConnection
+import androidx.room3.immediateTransaction
+import androidx.room3.useWriterConnection
 import eu.tintera.tasks.core.data.TransactionRunner
 
 internal class DatabaseTransactionRunner(

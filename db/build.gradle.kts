@@ -5,9 +5,9 @@ plugins {
     alias(libs.plugins.androidx.room)
     alias(libs.plugins.ksp)
 }
-room {
+
+room3 {
     schemaDirectory("$projectDir/schemas")
-    generateKotlin = true
 }
 
 kotlin {
@@ -27,7 +27,7 @@ kotlin {
         )
     }
 
-    iosX64()
+    //iosX64()
     iosArm64()
     iosSimulatorArm64()
 
@@ -75,7 +75,7 @@ android {
 dependencies {
     with(libs.androidx.room.compiler) {
         add("kspAndroid", this)
-        add("kspIosX64", this)
+        //add("kspIosX64", this)
         add("kspIosArm64", this)
         add("kspIosSimulatorArm64", this)
         add("kspJvm", this)

@@ -1,6 +1,6 @@
 package eu.tintera.tasks.db.entities
 
-import androidx.room.*
+import androidx.room3.*
 import kotlin.uuid.Uuid
 
 @Entity(

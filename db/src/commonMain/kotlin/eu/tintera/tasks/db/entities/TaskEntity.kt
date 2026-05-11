@@ -1,6 +1,6 @@
 package eu.tintera.tasks.db.entities
 
-import androidx.room.*
+import androidx.room3.*
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.db.BackoffCriteria
 import eu.tintera.tasks.db.State

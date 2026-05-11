@@ -1,6 +1,6 @@
 package eu.tintera.tasks.db
 
-import androidx.room.RoomRawQuery
+import androidx.room3.RoomRawQuery
 import kotlin.uuid.Uuid
 
 internal class TaskQuery(

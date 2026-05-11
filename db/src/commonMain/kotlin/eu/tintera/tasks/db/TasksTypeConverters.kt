@@ -1,6 +1,6 @@
 package eu.tintera.tasks.db
 
-import androidx.room.TypeConverter
+import androidx.room3.TypeConverter
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray

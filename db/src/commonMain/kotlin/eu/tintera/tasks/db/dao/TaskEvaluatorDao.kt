@@ -1,7 +1,7 @@
 package eu.tintera.tasks.db.dao
 
-import androidx.room.Dao
-import androidx.room.Query
+import androidx.room3.Dao
+import androidx.room3.Query
 import eu.tintera.tasks.db.entities.GetExecutableTaskByIdTag
 import eu.tintera.tasks.db.entities.GetExecutableTasksById
 import eu.tintera.tasks.db.entities.ParentDataEntity

@@ -2,11 +2,35 @@ package eu.tintera.tasks.core
 
 import eu.tintera.tasks.BackoffCriteria
 import eu.tintera.tasks.State
-import eu.tintera.tasks.core.data.TaskEvaluationResult
+import eu.tintera.tasks.TaskRegistration
 import kotlin.time.Clock
+import kotlin.time.Duration
+import kotlin.uuid.Uuid
 
 interface TaskResultHandler {
     suspend fun handleResult(result: TaskEvaluationResult)
+}
+
+sealed interface TaskEvaluationResult {
+    val id: Uuid
+
+    data class Failed(
+        override val id: Uuid,
+        val repeatInterval: Duration?,
+    ) : TaskEvaluationResult
+
+    data class Success(
+        override val id: Uuid,
+        val registration: TaskRegistration<Any, Any, Any>,
+        val repeatInterval: Duration?,
+        val outputData: Any,
+    ) : TaskEvaluationResult
+
+    data class Retry(
+        override val id: Uuid,
+        val backoffCriteria: BackoffCriteria?,
+        val retryCount: Int
+    ) : TaskEvaluationResult
 }
 
 internal class TaskResultHandlerImpl(

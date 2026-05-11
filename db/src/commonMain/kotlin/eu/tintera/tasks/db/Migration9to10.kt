@@ -1,11 +1,12 @@
 package eu.tintera.tasks.db
 
-import androidx.room.migration.Migration
+import androidx.room3.migration.Migration
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.execSQL
 
 internal object Migration9to10 : Migration(9, 10) {
-    override fun migrate(connection: SQLiteConnection) {
+
+    override suspend fun migrate(connection: SQLiteConnection) {
         // 1. Vytvoření pouze nové rodičovské tabulky Task_new
         connection.execSQL(
             """

@@ -1,7 +1,7 @@
 package eu.tintera.tasks.db
 
-import androidx.room.*
-import androidx.room.migration.AutoMigrationSpec
+import androidx.room3.*
+import androidx.room3.migration.AutoMigrationSpec
 import eu.tintera.tasks.db.dao.CleanableTaskDao
 import eu.tintera.tasks.db.dao.DispatchableTaskDao
 import eu.tintera.tasks.db.dao.OrphanTaskDao

@@ -1,6 +1,6 @@
 package eu.tintera.tasks.db.dao
 
-import androidx.room.*
+import androidx.room3.*
 import eu.tintera.tasks.db.State
 import eu.tintera.tasks.db.entities.InfoEntity
 import eu.tintera.tasks.db.entities.TaskEntity

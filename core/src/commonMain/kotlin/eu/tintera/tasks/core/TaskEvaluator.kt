@@ -4,7 +4,6 @@ import eu.tintera.tasks.EventBus
 import eu.tintera.tasks.ForegroundInfo
 import eu.tintera.tasks.ParentData
 import eu.tintera.tasks.TaskResult
-import eu.tintera.tasks.core.data.TaskEvaluationResult
 import eu.tintera.tasks.core.data.TaskEvaluatorRepository
 import eu.tintera.tasks.core.migrations.TaskMigrator
 import kotlinx.coroutines.NonCancellable
@@ -27,7 +26,6 @@ interface TaskEvaluator {
     ): TaskEvaluatorResult
 }
 
-@Suppress("UNCHECKED_CAST")
 class TaskEvaluatorImpl(
     private val registryResolver: RegistryResolver,
     private val taskMigrator: TaskMigrator,
@@ -101,8 +99,6 @@ class TaskEvaluatorImpl(
             }
         }
 
-        val tags = tagMapper.parse(tags = task.tags)
-
         val result = taskScopeFactory.createForTask(
             taskId = id,
             data = typedInput,
@@ -111,7 +107,7 @@ class TaskEvaluatorImpl(
             onForegroundInfoProvided = onForegroundInfo,
             progressSerializer = registration.progressSerializer,
             scope = applicationScope + dispatchers.default,
-            tags = tags.toSet(),
+            tags = tagMapper.parse(tags = task.tags).toSet(),
             saveDispatcher = dispatchers.io
         ).use { scope ->
             try {
