@@ -132,7 +132,7 @@ class RepositoryCoreTaskManager(
             finishedAt = null,
             repeatInterval = repeatInterval,
             initialDelay = initialDelay,
-            backoffCriteria = backoffCriteria ?: BackoffCriteria.DEFAULT,
+            backoffCriteria = backoffCriteria ?: defaultBackoffCriteria(),
             progressData = null,
             retentionDelay = keepResultsForAtLeast,
             requiresDeviceIdle = constraints.requiresDeviceIdle,

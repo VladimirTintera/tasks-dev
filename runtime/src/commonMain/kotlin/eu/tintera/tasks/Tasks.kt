@@ -10,7 +10,8 @@ object Tasks {
         get() = try {
             Resolver.get<TaskManager>()
         } catch (e: Throwable) {
-            throw IllegalStateException("TaskManager is not yet initialized!", e)
+            throw e
+            //throw IllegalStateException("TaskManager is not yet initialized!", e)
         }
 
     val registry: Registry get() = taskRegistry
@@ -19,6 +20,7 @@ object Tasks {
         get() = try {
             Resolver.get<ExecutionEnvironment>()
         } catch (e: Throwable) {
-            throw IllegalStateException("TaskManager is not yet initialized!")
+            throw e
+            //throw IllegalStateException("TaskManager is not yet initialized!", e)
         }
 }

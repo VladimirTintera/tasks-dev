@@ -60,7 +60,7 @@ internal class TaskResultHandlerImpl(
             }
 
             is TaskEvaluationResult.Retry -> {
-                val backoff = (result.backoffCriteria ?: BackoffCriteria.DEFAULT).calculate(result.retryCount).also {
+                val backoff = (result.backoffCriteria ?: defaultBackoffCriteria()).calculate(result.retryCount).also {
                     println("Backoff delay = $it")
                 }
                 repository.scheduleNext(

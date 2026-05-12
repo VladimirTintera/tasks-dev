@@ -10,6 +10,7 @@ import eu.tintera.tasks.db.entities.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
@@ -92,7 +93,9 @@ internal class RepositoryImpl(
 
     override fun taskInfosByTag(
         name: String
-    ): Flow<List<Info>> = taskDao.taskInfoByTag(name).distinctUntilChanged().map { map ->
+    ): Flow<List<Info>> = taskDao.taskInfoByTag(name).onEach {
+        println("Current tasks: $it")
+    }.distinctUntilChanged().map { map ->
         map.map { (value, tags) ->
             value.toInfo(tags.map { it.name }.toSet())
         }

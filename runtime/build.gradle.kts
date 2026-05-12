@@ -1,3 +1,7 @@
+@file:OptIn(ExperimentalWasmDsl::class)
+
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
@@ -22,6 +26,16 @@ kotlin {
     iosSimulatorArm64()
 
     jvm()
+
+    js {
+        browser()
+        useEsModules()
+    }
+
+    wasmJs {
+        browser()
+        useEsModules()
+    }
 
     sourceSets {
         commonMain.dependencies {
@@ -62,6 +76,19 @@ kotlin {
             implementation(libs.androidx.sqlite.bundled)
             implementation(projects.engine)
             implementation(projects.engineDb)
+        }
+
+        webMain.dependencies {
+            implementation(libs.androidx.sqlite.web)
+            implementation(
+                npm("sqlite-wasm-worker",  layout.projectDirectory.dir("worker").asFile)
+            )
+            implementation(projects.engine)
+            implementation(projects.engineDb)
+        }
+
+        wasmJsMain.dependencies {
+            implementation(libs.kotlinx.browser)
         }
     }
 }

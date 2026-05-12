@@ -1,3 +1,7 @@
+@file:OptIn(ExperimentalWasmDsl::class)
+
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
@@ -32,6 +36,14 @@ kotlin {
     iosSimulatorArm64()
 
     jvm()
+
+    js {
+        browser()
+    }
+
+    wasmJs {
+        browser()
+    }
 
     sourceSets {
         commonMain.dependencies {
@@ -79,5 +91,7 @@ dependencies {
         add("kspIosArm64", this)
         add("kspIosSimulatorArm64", this)
         add("kspJvm", this)
+        add("kspJs", this)
+        add("kspWasmJs", this)
     }
 }

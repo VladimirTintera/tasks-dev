@@ -29,11 +29,15 @@ fun BackoffCriteria.calculate(retryCount: Int): Duration {
     }
 }
 
-val BackoffCriteria.Companion.DEFAULT
-    get() = BackoffCriteria(
+fun defaultBackoffCriteria() : BackoffCriteria {
+
+    println("Default backoff criteria creating")
+    println("Default backoff criteria creating enum = ${BackoffPolicy.Exponential}")
+    return BackoffCriteria(
         backoffPolicy = BackoffPolicy.Exponential,
         delay = DEFAULT_BACKOFF_DELAY
     )
+}
 
 val MINIMAL_REPEAT_INTERVAL: Duration get() = 15.minutes
 val DEFAULT_BACKOFF_DELAY: Duration get() = 30.seconds

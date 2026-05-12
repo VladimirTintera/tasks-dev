@@ -67,13 +67,24 @@ internal object TasksTypeConverters {
     @TypeConverter
     @JvmStatic
     fun toBackoffCriteria(value: ByteArray?): BackoffCriteria? {
-        return value?.let { ProtoBuf.decodeFromByteArray<BackoffCriteria>(it) }
+        return try {
+            value?.let { ProtoBuf.decodeFromByteArray<BackoffCriteria>(it) }
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            throw e
+        }
     }
 
 
     @TypeConverter
     @JvmStatic
     fun fromBackoffCriteria(value: BackoffCriteria?): ByteArray? {
-        return value?.let { ProtoBuf.encodeToByteArray<BackoffCriteria>(it) }
+        return try {
+            value?.let { ProtoBuf.encodeToByteArray<BackoffCriteria>(it) }
+        }catch (e: Throwable) {
+            e.printStackTrace()
+            throw e
+        }
+
     }
 }

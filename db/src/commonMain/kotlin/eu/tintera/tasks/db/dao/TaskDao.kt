@@ -5,6 +5,7 @@ import eu.tintera.tasks.db.State
 import eu.tintera.tasks.db.entities.InfoEntity
 import eu.tintera.tasks.db.entities.TaskEntity
 import eu.tintera.tasks.db.entities.TaskTag
+import eu.tintera.tasks.db.entities.TaskWithTags
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
@@ -42,8 +43,12 @@ interface TaskDao {
     @Query("SELECT id, identifier, runAttemptCount, state, outputData, processTime, progressData, finishedAt, createdAt, version FROM Task WHERE id IN (:ids)")
     fun taskInfoByIds(ids: Set<Uuid>): Flow<List<InfoEntity>>
 
-    @Query("SELECT Task.id, Task.identifier, Task.runAttemptCount, Task.state, Task.outputData, Task.processTime, Task.progressData, Task.finishedAt, Task.createdAt, Task.version, TaskTag.taskId, TaskTag.name FROM Task LEFT JOIN TaskTag ON TaskTag.taskId = Task.id WHERE EXISTS(SELECT 1 FROM TaskTag tag WHERE tag.name = :name AND tag.taskId = Task.id)")
-    fun taskInfoByTag(name: String): Flow<Map<InfoEntity, List<TaskTag>>>
+    @Transaction // Nutné pro @Relation dotazy
+    @Query("""
+    SELECT id, identifier, runAttemptCount, state, outputData, processTime, progressData, finishedAt, createdAt, version FROM Task 
+    WHERE EXISTS(SELECT 1 FROM TaskTag tag WHERE tag.name = :name AND tag.taskId = Task.id)
+""")
+    fun taskInfoByTag(name: String): Flow<List<TaskWithTags>>
 
     @RawQuery(observedEntities = [TaskEntity::class, TaskTag::class])
     fun taskInfoByRawQuery(query: RoomRawQuery): Flow<Map<InfoEntity, List<TaskTag>>>

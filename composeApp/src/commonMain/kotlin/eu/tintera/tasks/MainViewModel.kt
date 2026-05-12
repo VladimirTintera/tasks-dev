@@ -2,15 +2,13 @@ package eu.tintera.tasks
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import eu.tintera.tasks.handlers.TestHandler
 import eu.tintera.tasks.handlers.scheduleTestHandler
 import eu.tintera.tasks.handlers.testTaskRequest
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
@@ -19,15 +17,7 @@ class MainViewModel(
     private val taskManager: TaskManager
 ) : ViewModel() {
 
-    val tasks = combine(
-        taskManager.taskInfosByTag(DEFAULT_TAG),
-        //taskManager.taskInfosByTag("sys:task_manager_cleanup"),
-        //taskManager.taskInfos {
-        //    addStates(State.Running)
-        //}
-    ) {
-        it.flatMap { it }
-    }.map {
+    val tasks = taskManager.taskInfosByTag(DEFAULT_TAG).map {
         val finished = it.filter {
             it.state == State.Succeeded || it.state == State.Failed || it.state == State.Cancelled
         }
@@ -35,9 +25,11 @@ class MainViewModel(
         TaskState(
             finished = finished.sortedByDescending { it.finishedAt },
             ongoing = (it - finished.toSet()).sortedWith(
-                compareBy({it.state != State.Running}, { it.nextScheduledTime ?: Instant.DISTANT_PAST })
+                compareBy({ it.state != State.Running }, { it.nextScheduledTime ?: Instant.DISTANT_PAST })
             )
         )
+    }.onEach {
+        println("Tasks: $it")
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.Eagerly,
