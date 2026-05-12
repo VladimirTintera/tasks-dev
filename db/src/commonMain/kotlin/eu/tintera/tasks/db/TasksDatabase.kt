@@ -24,8 +24,8 @@ internal expect object TasksDatabaseConstructor : RoomDatabaseConstructor<TasksD
 @Database(
     entities = [
         TaskEntity::class,
-        TaskParentTask::class,
-        TaskTag::class
+        TaskParentTaskEntity::class,
+        TaskTagEntity::class
     ],
     exportSchema = true,
     version = 10,

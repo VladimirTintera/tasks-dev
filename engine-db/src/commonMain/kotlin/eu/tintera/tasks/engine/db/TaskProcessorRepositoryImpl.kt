@@ -3,6 +3,7 @@ package eu.tintera.tasks.engine.db
 import eu.tintera.tasks.State
 import eu.tintera.tasks.core.ProcessableTask
 import eu.tintera.tasks.core.TaskProcessorRepository
+import eu.tintera.tasks.db.StateDb
 import eu.tintera.tasks.db.dao.TaskProcessorDao
 import eu.tintera.tasks.db.toEntityState
 import eu.tintera.tasks.db.toTaskBackoffCriteria
@@ -40,7 +41,7 @@ internal class TaskProcessorRepositoryImpl(
     ) {
         dao.run(
             id = id,
-            state = eu.tintera.tasks.db.State.Running,
+            state = StateDb.Running,
             allowedSourceStates = allowedSourceStates.map { it.toEntityState() }
         )
     }
@@ -49,7 +50,7 @@ internal class TaskProcessorRepositoryImpl(
         dao.updateEnqueuedState(
             id = id,
             allowedSourceStates = allowedSourceStates.map { it.toEntityState() },
-            state = eu.tintera.tasks.db.State.Enqueued
+            state = StateDb.Enqueued
         )
     }
 
@@ -60,14 +61,14 @@ internal class TaskProcessorRepositoryImpl(
     ) {
         dao.enqueue(
             id = id,
-            state = eu.tintera.tasks.db.State.Enqueued,
-            processTime =  processTime,
+            state = StateDb.Enqueued,
+            processTime = processTime,
             allowedSourceStates = allowedSourceStates.map { it.toEntityState() }
         )
     }
 
     override suspend fun fail(id: Uuid) = dao.fail(
         id = id,
-        state = eu.tintera.tasks.db.State.Failed
+        state = StateDb.Failed
     )
 }

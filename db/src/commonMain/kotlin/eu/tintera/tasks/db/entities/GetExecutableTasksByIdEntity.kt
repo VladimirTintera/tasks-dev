@@ -1,9 +1,9 @@
 package eu.tintera.tasks.db.entities
 
-import eu.tintera.tasks.db.BackoffCriteria
+import eu.tintera.tasks.db.BackoffCriteriaDb
 import kotlin.time.Duration
 
-data class GetExecutableTasksById(
+data class GetExecutableTasksByIdEntity(
     val identifier: String,
     val runAttemptCount: Int,
     val version: Int,
@@ -11,13 +11,13 @@ data class GetExecutableTasksById(
     val outputData: ByteArray?,
     val progressData: ByteArray?,
     val repeatInterval: Duration?,
-    val backoffCriteria: BackoffCriteria?
+    val backoffCriteria: BackoffCriteriaDb?
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || this::class != other::class) return false
 
-        other as GetExecutableTasksById
+        other as GetExecutableTasksByIdEntity
 
         if (runAttemptCount != other.runAttemptCount) return false
         if (version != other.version) return false

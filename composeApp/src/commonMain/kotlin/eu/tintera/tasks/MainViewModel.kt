@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import eu.tintera.tasks.handlers.scheduleTestHandler
 import eu.tintera.tasks.handlers.testTaskRequest
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
@@ -17,7 +18,10 @@ class MainViewModel(
     private val taskManager: TaskManager
 ) : ViewModel() {
 
-    val tasks = taskManager.taskInfosByTag(DEFAULT_TAG).map {
+    val tasks = taskManager.taskInfosByTag(DEFAULT_TAG).catch {
+        it.printStackTrace()
+        emit(emptyList())
+    }.map {
         val finished = it.filter {
             it.state == State.Succeeded || it.state == State.Failed || it.state == State.Cancelled
         }

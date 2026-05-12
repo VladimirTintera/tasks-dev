@@ -11,5 +11,5 @@ internal data class InfoEntityWithTags(
         parentColumn = "id", // Název sloupce id v InfoEntity (Task tabulce)
         entityColumn = "taskId" // Název sloupce taskId v TaskTag tabulce
     )
-    val tags: List<TaskTag>
+    val tags: List<TaskTagEntity>
 )

@@ -3,9 +3,9 @@ package eu.tintera.tasks.db
 import androidx.room3.RoomRawQuery
 import kotlin.uuid.Uuid
 
-internal class TaskQuery(
+internal class TaskQueryEntity(
     val ids: List<Uuid>,
-    val states: List<State>,
+    val states: List<StateDb>,
     val tags: List<String>,
     val uniqueNames: List<String>
 ) {

@@ -1,10 +1,8 @@
 package eu.tintera.tasks.db.entities
 
 import androidx.room3.*
-import eu.tintera.tasks.core.data.Task
-import eu.tintera.tasks.db.BackoffCriteria
-import eu.tintera.tasks.db.State
-import kotlinx.coroutines.flow.Flow
+import eu.tintera.tasks.db.BackoffCriteriaDb
+import eu.tintera.tasks.db.StateDb
 import kotlin.time.Duration
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
@@ -24,14 +22,14 @@ data class TaskEntity(
     val runAttemptCount: Int,
     val initialDelay: Duration,
     val processTime: Instant?,
-    val state: State,
+    val state: StateDb,
     val inputData: ByteArray?,
     val outputData: ByteArray?,
     val networkRequired: Boolean,
     val createdAt: Instant,
     val finishedAt: Instant?,
     val repeatInterval: Duration?,
-    val backoffCriteria: BackoffCriteria?,
+    val backoffCriteria: BackoffCriteriaDb?,
     val progressData: ByteArray?,
     @ColumnInfo(defaultValue = "86400000")
     val retentionDelay: Duration,

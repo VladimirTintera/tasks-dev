@@ -2,7 +2,7 @@ package eu.tintera.tasks.db.dao
 
 import androidx.room3.Dao
 import androidx.room3.Query
-import eu.tintera.tasks.db.State
+import eu.tintera.tasks.db.StateDb
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
@@ -27,16 +27,16 @@ interface TaskResultDao {
     )
     suspend fun finishTaskWithUnsuccess(
         taskId: Uuid,
-        state: State,
-        allowedSourceStates: List<State>,
+        state: StateDb,
+        allowedSourceStates: List<StateDb>,
         finishedAt: Instant
     )
 
     @Query("UPDATE Task set state = :state, finishedAt = :finishedAt, outputData = :outputData, processTime = NULL, progressData = null  WHERE id = :id AND state IN (:allowedSourceStates)")
     suspend fun finishTaskWithSuccess(
         id: Uuid,
-        state: State,
-        allowedSourceStates: List<State>,
+        state: StateDb,
+        allowedSourceStates: List<StateDb>,
         finishedAt: Instant,
         outputData: ByteArray
     )
@@ -45,15 +45,15 @@ interface TaskResultDao {
     suspend fun scheduleNextFromBeginning(
         id: Uuid,
         processTime: Instant,
-        state: State,
-        allowedSourceStates: List<State>
+        state: StateDb,
+        allowedSourceStates: List<StateDb>
     )
 
     @Query("UPDATE Task set state = :state, processTime = :processTime, progressData = null WHERE id = :id AND state IN (:allowedSourceStates) ")
     suspend fun scheduleNext(
         id: Uuid,
         processTime: Instant,
-        state: State,
-        allowedSourceStates: List<State>
+        state: StateDb,
+        allowedSourceStates: List<StateDb>
     )
 }

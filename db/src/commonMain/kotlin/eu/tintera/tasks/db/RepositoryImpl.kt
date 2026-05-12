@@ -1,7 +1,6 @@
 package eu.tintera.tasks.db
 
 import eu.tintera.tasks.State
-import eu.tintera.tasks.TaskInfoQuery
 import eu.tintera.tasks.core.data.*
 import eu.tintera.tasks.core.runningStates
 import eu.tintera.tasks.db.dao.TaskDao
@@ -55,7 +54,7 @@ internal class RepositoryImpl(
 
         if (tags.isNotEmpty()) taskTagDao.insert(
             tags.map {
-                TaskTag(
+                TaskTagEntity(
                     taskId = task.id,
                     name = it
                 )
@@ -64,7 +63,7 @@ internal class RepositoryImpl(
 
         parentIds.forEach {
             taskParentTaskDao.insert(
-                TaskParentTask(
+                TaskParentTaskEntity(
                     taskId = task.id,
                     parentTaskId = it
                 )
@@ -107,7 +106,7 @@ internal class RepositoryImpl(
         states: Set<State>,
         uniqueNames: Set<String>
     ): Flow<List<Info>> = taskDao.taskInfoByRawQuery(
-        query = TaskQuery(
+        query = TaskQueryEntity(
             ids = ids.toList(),
             tags = tags.toList(),
             states = states.map { it.toEntityState() },

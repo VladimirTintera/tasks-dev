@@ -15,7 +15,7 @@ import kotlin.uuid.Uuid
         )
     ]
 )
-data class TaskTag(
+data class TaskTagEntity(
     val taskId: Uuid,
     val name: String,
 )
@@ -23,5 +23,5 @@ data class TaskTag(
 @Dao
 interface TaskTagDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(taskTags: List<TaskTag>)
+    suspend fun insert(taskTags: List<TaskTagEntity>)
 }

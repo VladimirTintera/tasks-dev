@@ -1,5 +1,5 @@
 package eu.tintera.tasks.db.entities
 
-data class GetExecutableTaskByIdTag(
+data class GetExecutableTaskByIdTagEntity(
     val name: String
 )

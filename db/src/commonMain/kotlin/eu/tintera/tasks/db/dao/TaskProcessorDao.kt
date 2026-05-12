@@ -2,7 +2,7 @@ package eu.tintera.tasks.db.dao
 
 import androidx.room3.Dao
 import androidx.room3.Query
-import eu.tintera.tasks.db.State
+import eu.tintera.tasks.db.StateDb
 import eu.tintera.tasks.db.entities.ProcessableTaskEntity
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Instant
@@ -23,8 +23,8 @@ interface TaskProcessorDao {
     )
     suspend fun run(
         id: Uuid,
-        state: State,
-        allowedSourceStates: List<State>,
+        state: StateDb,
+        allowedSourceStates: List<StateDb>,
     )
 
     @Query(
@@ -36,21 +36,21 @@ interface TaskProcessorDao {
     )
     suspend fun updateEnqueuedState(
         id: Uuid,
-        state: State,
-        allowedSourceStates: List<State>
+        state: StateDb,
+        allowedSourceStates: List<StateDb>
     )
 
     @Query("UPDATE Task set state = :state, processTime = :processTime, progressData = null WHERE id = :id AND state IN (:allowedSourceStates) ")
     suspend fun enqueue(
         id: Uuid,
         processTime: Instant,
-        state: State,
-        allowedSourceStates: List<State>
+        state: StateDb,
+        allowedSourceStates: List<StateDb>
     )
 
     @Query("UPDATE Task set state = :state, processTime = null, progressData = null, outputData = null WHERE id = :id")
     suspend fun fail(
         id: Uuid,
-        state: State
+        state: StateDb
     )
 }

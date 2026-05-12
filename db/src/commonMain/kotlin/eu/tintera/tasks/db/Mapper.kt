@@ -1,7 +1,11 @@
 package eu.tintera.tasks.db
 
+import eu.tintera.tasks.BackoffCriteria
+import eu.tintera.tasks.BackoffPolicy
+import eu.tintera.tasks.State
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.db.entities.TaskEntity
+import kotlin.time.Duration.Companion.seconds
 
 internal fun TaskEntity.toTask() = Task(
     id = id,
@@ -32,54 +36,54 @@ internal fun Task.toTaskEntity() = TaskEntity(
     initialDelay = initialDelay,
     processTime = processTime,
     state = state.toEntityState(),
-    inputData = inputData,
-    outputData = outputData,
+    inputData = inputData?.takeIf { it.isNotEmpty() },
+    outputData = outputData?.takeIf { it.isNotEmpty() },
     networkRequired = networkRequired,
     createdAt = createdAt,
     finishedAt = finishedAt,
     repeatInterval = repeatInterval,
     backoffCriteria = backoffCriteria?.toEntityBackoffCriteria(),
-    progressData = progressData,
+    progressData = progressData?.takeIf { it.isNotEmpty() },
     retentionDelay = retentionDelay,
     requiresDeviceIdle = requiresDeviceIdle,
     version = version
 )
 
-fun State.toTaskState() = when (this) {
-    State.Enqueued -> eu.tintera.tasks.State.Enqueued
-    State.Running -> eu.tintera.tasks.State.Running
-    State.Succeeded -> eu.tintera.tasks.State.Succeeded
-    State.Failed -> eu.tintera.tasks.State.Failed
-    State.Cancelled -> eu.tintera.tasks.State.Cancelled
-    State.Blocked -> eu.tintera.tasks.State.Blocked
+fun StateDb.toTaskState() = when (this) {
+    StateDb.Enqueued -> State.Enqueued
+    StateDb.Running -> State.Running
+    StateDb.Succeeded -> State.Succeeded
+    StateDb.Failed -> State.Failed
+    StateDb.Cancelled -> State.Cancelled
+    StateDb.Blocked -> State.Blocked
 }
 
-fun eu.tintera.tasks.State.toEntityState() = when (this) {
-    eu.tintera.tasks.State.Enqueued -> State.Enqueued
-    eu.tintera.tasks.State.Failed -> State.Failed
-    eu.tintera.tasks.State.Running -> State.Running
+fun State.toEntityState() = when (this) {
+    State.Enqueued -> StateDb.Enqueued
+    State.Failed -> StateDb.Failed
+    State.Running -> StateDb.Running
 
-    eu.tintera.tasks.State.Succeeded -> State.Succeeded
-    eu.tintera.tasks.State.Cancelled -> State.Cancelled
-    eu.tintera.tasks.State.Blocked -> State.Blocked
+    State.Succeeded -> StateDb.Succeeded
+    State.Cancelled -> StateDb.Cancelled
+    State.Blocked -> StateDb.Blocked
 }
 
-fun BackoffPolicy.toTaskBackoffPolicy() = when (this) {
-    BackoffPolicy.Linear -> eu.tintera.tasks.BackoffPolicy.Linear
-    BackoffPolicy.Exponential -> eu.tintera.tasks.BackoffPolicy.Exponential
+fun BackoffPolicyDb.toTaskBackoffPolicy() = when (this) {
+    BackoffPolicyDb.Linear -> BackoffPolicy.Linear
+    BackoffPolicyDb.Exponential -> BackoffPolicy.Exponential
 }
 
-fun BackoffCriteria.toTaskBackoffCriteria() = eu.tintera.tasks.BackoffCriteria(
+fun BackoffCriteriaDb.toTaskBackoffCriteria()= BackoffCriteria(
     backoffPolicy = backoffPolicy.toTaskBackoffPolicy(),
     delay = delay
 )
 
-fun eu.tintera.tasks.BackoffPolicy.toEntityBackoffPolicy() = when (this) {
-    eu.tintera.tasks.BackoffPolicy.Linear -> BackoffPolicy.Linear
-    eu.tintera.tasks.BackoffPolicy.Exponential -> BackoffPolicy.Exponential
+fun BackoffPolicy.toEntityBackoffPolicy() = when (this) {
+    BackoffPolicy.Linear -> BackoffPolicyDb.Linear
+    BackoffPolicy.Exponential -> BackoffPolicyDb.Exponential
 }
 
-fun eu.tintera.tasks.BackoffCriteria.toEntityBackoffCriteria() = BackoffCriteria(
+fun BackoffCriteria.toEntityBackoffCriteria() = BackoffCriteriaDb(
     backoffPolicy = backoffPolicy.toEntityBackoffPolicy(),
     delay = delay
 )

@@ -1,11 +1,11 @@
 package eu.tintera.tasks.db.dao
 
 import androidx.room3.*
-import eu.tintera.tasks.db.State
+import eu.tintera.tasks.db.StateDb
 import eu.tintera.tasks.db.entities.InfoEntity
 import eu.tintera.tasks.db.entities.TaskEntity
-import eu.tintera.tasks.db.entities.TaskTag
-import eu.tintera.tasks.db.entities.TaskWithTags
+import eu.tintera.tasks.db.entities.TaskTagEntity
+import eu.tintera.tasks.db.entities.TaskWithTagsEntity
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
@@ -23,8 +23,8 @@ interface TaskDao {
     )
     suspend fun updateState(
         id: Uuid,
-        state: State,
-        allowedSourceStates: List<State>,
+        state: StateDb,
+        allowedSourceStates: List<StateDb>,
         resetProcessTime: Boolean,
         runAttemptCount: Int?
     )
@@ -32,13 +32,13 @@ interface TaskDao {
     @Query("UPDATE Task set state = :state, finishedAt = :finishedAt, outputData = :outputData, processTime = NULL, progressData = null  WHERE id = :id")
     suspend fun updateTerminatingState(
         id: Uuid,
-        state: State,
+        state: StateDb,
         finishedAt: Instant,
         outputData: ByteArray?
     )
 
     @Query("SELECT Task.id, Task.identifier, Task.runAttemptCount, Task.state, Task.outputData, Task.processTime, Task.progressData, Task.finishedAt, Task.createdAt, Task.version, TaskTag.taskId, TaskTag.name FROM Task JOIN TaskTag ON TaskTag.taskId = Task.id WHERE Task.id = :id")
-    fun taskInfoById(id: Uuid): Flow<Map<InfoEntity, List<TaskTag>>>
+    fun taskInfoById(id: Uuid): Flow<Map<InfoEntity, List<TaskTagEntity>>>
 
     @Query("SELECT id, identifier, runAttemptCount, state, outputData, processTime, progressData, finishedAt, createdAt, version FROM Task WHERE id IN (:ids)")
     fun taskInfoByIds(ids: Set<Uuid>): Flow<List<InfoEntity>>
@@ -48,15 +48,15 @@ interface TaskDao {
     SELECT id, identifier, runAttemptCount, state, outputData, processTime, progressData, finishedAt, createdAt, version FROM Task 
     WHERE EXISTS(SELECT 1 FROM TaskTag tag WHERE tag.name = :name AND tag.taskId = Task.id)
 """)
-    fun taskInfoByTag(name: String): Flow<List<TaskWithTags>>
+    fun taskInfoByTag(name: String): Flow<List<TaskWithTagsEntity>>
 
-    @RawQuery(observedEntities = [TaskEntity::class, TaskTag::class])
-    fun taskInfoByRawQuery(query: RoomRawQuery): Flow<Map<InfoEntity, List<TaskTag>>>
+    @RawQuery(observedEntities = [TaskEntity::class, TaskTagEntity::class])
+    fun taskInfoByRawQuery(query: RoomRawQuery): Flow<Map<InfoEntity, List<TaskTagEntity>>>
 
     @Query(
         "SELECT id FROM Task WHERE state IN (:states) AND EXISTS(SELECT * FROM TaskTag WHERE TaskTag.taskId = Task.id AND TaskTag.name = :tag)"
     )
-    suspend fun taskIdsByTagAndState(states: List<State>, tag: String): List<Uuid>
+    suspend fun taskIdsByTagAndState(states: List<StateDb>, tag: String): List<Uuid>
 
     @Query("SELECT * FROM Task WHERE id = :id")
     suspend fun task(id: Uuid): TaskEntity?
@@ -78,7 +78,7 @@ interface TaskDao {
                 AND pt.parentTaskId = Task.id AND child.state NOT IN (:states)
                 )"""
     )
-    suspend fun deleteByStateUniqueNameWithoutChildren(uniqueName: String, states: List<State>)
+    suspend fun deleteByStateUniqueNameWithoutChildren(uniqueName: String, states: List<StateDb>)
 
     @Query(
         """DELETE FROM Task WHERE
@@ -90,7 +90,7 @@ interface TaskDao {
             )
             AND (finishedAt + retentionDelay) <= :currentTimeMillis"""
     )
-    suspend fun cleanOld(currentTimeMillis: Long, states: List<State>)
+    suspend fun cleanOld(currentTimeMillis: Long, states: List<StateDb>)
 
 
 }

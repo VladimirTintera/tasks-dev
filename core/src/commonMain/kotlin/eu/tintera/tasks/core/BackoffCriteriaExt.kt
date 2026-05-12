@@ -29,10 +29,7 @@ fun BackoffCriteria.calculate(retryCount: Int): Duration {
     }
 }
 
-fun defaultBackoffCriteria() : BackoffCriteria {
-
-    println("Default backoff criteria creating")
-    println("Default backoff criteria creating enum = ${BackoffPolicy.Exponential}")
+fun defaultBackoffCriteria(): BackoffCriteria {
     return BackoffCriteria(
         backoffPolicy = BackoffPolicy.Exponential,
         delay = DEFAULT_BACKOFF_DELAY

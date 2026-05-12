@@ -5,7 +5,7 @@ import kotlinx.serialization.protobuf.ProtoNumber
 import kotlin.time.Duration
 
 @Serializable
-data class BackoffCriteria(
-    @ProtoNumber(1) val backoffPolicy: BackoffPolicy,
+data class BackoffCriteriaDb(
+    @ProtoNumber(1) val backoffPolicy: BackoffPolicyDb,
     @ProtoNumber(2) val delay: Duration
 )

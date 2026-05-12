@@ -27,7 +27,7 @@ import kotlin.uuid.Uuid
         )
     ]
 )
-data class TaskParentTask(
+data class TaskParentTaskEntity(
     @ColumnInfo("taskId", index = true)
     val taskId: Uuid,
     @ColumnInfo("parentTaskId", index = true)
@@ -37,7 +37,7 @@ data class TaskParentTask(
 @Dao
 interface TaskParentTaskDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(taskParentTask: TaskParentTask)
+    suspend fun insert(taskParentTask: TaskParentTaskEntity)
 
     @Query("SELECT taskId FROM TaskParentTask WHERE parentTaskId = :id")
     suspend fun childrenForTask(id: Uuid): List<Uuid>

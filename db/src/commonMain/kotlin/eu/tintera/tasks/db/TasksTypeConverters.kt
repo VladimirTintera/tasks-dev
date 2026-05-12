@@ -54,37 +54,26 @@ internal object TasksTypeConverters {
 
     @TypeConverter
     @JvmStatic
-    fun toState(value: String?): State? {
-        return State.entries.firstOrNull { it.name == value }
+    fun toState(value: String?): StateDb? {
+        return StateDb.entries.firstOrNull { it.name == value }
     }
 
     @TypeConverter
     @JvmStatic
-    fun fromState(value: State?): String? {
+    fun fromState(value: StateDb?): String? {
         return value?.name
     }
 
     @TypeConverter
     @JvmStatic
-    fun toBackoffCriteria(value: ByteArray?): BackoffCriteria? {
-        return try {
-            value?.let { ProtoBuf.decodeFromByteArray<BackoffCriteria>(it) }
-        } catch (e: Throwable) {
-            e.printStackTrace()
-            throw e
-        }
+    fun toBackoffCriteria(value: ByteArray?): BackoffCriteriaDb? {
+        return value?.let { ProtoBuf.decodeFromByteArray<BackoffCriteriaDb>(it) }
     }
 
 
     @TypeConverter
     @JvmStatic
-    fun fromBackoffCriteria(value: BackoffCriteria?): ByteArray? {
-        return try {
-            value?.let { ProtoBuf.encodeToByteArray<BackoffCriteria>(it) }
-        }catch (e: Throwable) {
-            e.printStackTrace()
-            throw e
-        }
-
+    fun fromBackoffCriteria(value: BackoffCriteriaDb?): ByteArray? {
+        return value?.let { ProtoBuf.encodeToByteArray<BackoffCriteriaDb>(it) }
     }
 }

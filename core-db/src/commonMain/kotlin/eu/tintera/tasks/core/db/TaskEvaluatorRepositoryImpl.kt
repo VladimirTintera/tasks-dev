@@ -39,7 +39,7 @@ internal class TaskEvaluatorRepositoryImpl(
     )
 
     override suspend fun executableTask(id: Uuid): ExecutableTask? =
-        dao.getExecutableTasksById(id)?.map { (task, tags) ->
+        dao.getExecutableTasksById(id).map { (task, tags) ->
             ExecutableTask(
                 identifier = task.identifier,
                 runAttemptCount = task.runAttemptCount,
@@ -51,5 +51,5 @@ internal class TaskEvaluatorRepositoryImpl(
                 repeatInterval = task.repeatInterval,
                 backoffCriteria = task.backoffCriteria?.toTaskBackoffCriteria()
             )
-        }?.firstOrNull()
+        }.firstOrNull()
 }

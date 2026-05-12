@@ -1,6 +1,6 @@
 package eu.tintera.tasks.db.entities
 
-import eu.tintera.tasks.db.State
+import eu.tintera.tasks.db.StateDb
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
@@ -8,7 +8,7 @@ data class InfoEntity(
     val id: Uuid,
     val identifier: String,
     val runAttemptCount: Int,
-    val state: State,
+    val state: StateDb,
     val outputData: ByteArray?,
     val progressData: ByteArray?,
     val processTime: Instant?,

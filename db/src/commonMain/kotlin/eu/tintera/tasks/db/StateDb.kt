@@ -1,6 +1,6 @@
 package eu.tintera.tasks.db
 
-enum class State {
+enum class StateDb {
     Enqueued,
     Blocked,
     Running,
