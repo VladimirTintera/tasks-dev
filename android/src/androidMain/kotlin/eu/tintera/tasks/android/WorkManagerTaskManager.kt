@@ -465,7 +465,7 @@ internal class WorkManagerTaskManager(
             finishedAt = null,
             repeatInterval = repeatInterval,
             initialDelay = task.initialDelay,
-            backoffCriteria = task.backoffCriteria ?: BackoffCriteria.DEFAULT,
+            backoffCriteria = task.backoffCriteria ?: defaultBackoffCriteria,
             progressData = null,
             retentionDelay = task.keepResultsForAtLeast,
             requiresDeviceIdle = task.constraints.requiresDeviceIdle,

@@ -17,7 +17,7 @@ interface Repository {
 
     suspend fun task(id: Uuid): Task?
 
-    suspend fun allByUniqueName(uniqueName: String): List<Task>
+    suspend fun allByUniqueName(uniqueName: String, states: Set<State>): List<Uuid>
     suspend fun delete(id: Uuid)
     suspend fun insert(task: Task, tags: Set<String>, parentIds: Set<Uuid>)
     suspend fun cleanOld(terminalStates: Set<State>)

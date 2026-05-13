@@ -29,8 +29,8 @@ fun BackoffCriteria.calculate(retryCount: Int): Duration {
     }
 }
 
-fun defaultBackoffCriteria(): BackoffCriteria {
-    return BackoffCriteria(
+val defaultBackoffCriteria by lazy {
+    BackoffCriteria(
         backoffPolicy = BackoffPolicy.Exponential,
         delay = DEFAULT_BACKOFF_DELAY
     )

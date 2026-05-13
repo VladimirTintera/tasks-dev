@@ -8,8 +8,8 @@ data class TaskWithTagsEntity(
     val info: InfoEntity,
 
     @Relation(
-        parentColumn = "id",     // ID z Task tabulky (obsažené v InfoEntity)
-        entityColumn = "taskId"  // Cizí klíč v tabulce TaskTag
+        parentColumn = "id",
+        entityColumn = "taskId"
     )
     val tags: List<TaskTagEntity>
 )

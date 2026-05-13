@@ -9,7 +9,6 @@ import eu.tintera.tasks.db.entities.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
@@ -39,8 +38,12 @@ internal class RepositoryImpl(
     ) = taskDao.task(id)?.toTask()
 
     override suspend fun allByUniqueName(
-        uniqueName: String
-    ) = taskDao.allByUniqueName(uniqueName).map { it.toTask() }
+        uniqueName: String,
+        states: Set<State>
+    ) = taskDao.allByUniqueName(
+        uniqueName = uniqueName,
+        states = states.map { it.toEntityState() }
+    )
 
     override suspend fun delete(id: Uuid) = taskDao.delete(id)
     override suspend fun insert(
@@ -92,11 +95,9 @@ internal class RepositoryImpl(
 
     override fun taskInfosByTag(
         name: String
-    ): Flow<List<Info>> = taskDao.taskInfoByTag(name).onEach {
-        println("Current tasks: $it")
-    }.distinctUntilChanged().map { map ->
-        map.map { (value, tags) ->
-            value.toInfo(tags.map { it.name }.toSet())
+    ): Flow<List<Info>> = taskDao.taskInfoByTag(name).distinctUntilChanged().map { map ->
+        map.map { item ->
+            item.info.toInfo(item.tags.map { it.name }.toSet())
         }
     }
 
@@ -118,10 +119,10 @@ internal class RepositoryImpl(
         }
     }
 
-    override fun taskInfoById(id: Uuid): Flow<Info?> = taskDao.taskInfoById(id).distinctUntilChanged().map { map ->
-        map.map { (value, tags) ->
-            value.toInfo(tags.map { it.name }.toSet())
-        }.firstOrNull()
+    override fun taskInfoById(id: Uuid): Flow<Info?> = taskDao.taskInfoById(id).distinctUntilChanged().map { item ->
+        item?.let {
+            item.info.toInfo(item.tags.map { it.name }.toSet())
+        }
     }
 
     override fun taskInfoByIds(ids: Set<Uuid>) = taskDao.taskInfoByIds(ids).distinctUntilChanged().map { tasks ->

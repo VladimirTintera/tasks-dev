@@ -5,7 +5,6 @@ import eu.tintera.tasks.BackoffPolicy
 import eu.tintera.tasks.State
 import eu.tintera.tasks.core.data.Task
 import eu.tintera.tasks.db.entities.TaskEntity
-import kotlin.time.Duration.Companion.seconds
 
 internal fun TaskEntity.toTask() = Task(
     id = id,
@@ -36,8 +35,8 @@ internal fun Task.toTaskEntity() = TaskEntity(
     initialDelay = initialDelay,
     processTime = processTime,
     state = state.toEntityState(),
-    inputData = inputData?.takeIf { it.isNotEmpty() },
-    outputData = outputData?.takeIf { it.isNotEmpty() },
+    inputData = inputData,
+    outputData = outputData,
     networkRequired = networkRequired,
     createdAt = createdAt,
     finishedAt = finishedAt,
@@ -73,7 +72,7 @@ fun BackoffPolicyDb.toTaskBackoffPolicy() = when (this) {
     BackoffPolicyDb.Exponential -> BackoffPolicy.Exponential
 }
 
-fun BackoffCriteriaDb.toTaskBackoffCriteria()= BackoffCriteria(
+fun BackoffCriteriaDb.toTaskBackoffCriteria() = BackoffCriteria(
     backoffPolicy = backoffPolicy.toTaskBackoffPolicy(),
     delay = delay
 )

@@ -2,6 +2,7 @@ package eu.tintera.tasks.core
 
 import eu.tintera.tasks.*
 import eu.tintera.tasks.core.data.*
+import eu.tintera.tasks.core.defaultBackoffCriteria
 import eu.tintera.tasks.core.migrations.TaskMigrator
 import kotlinx.coroutines.flow.*
 import kotlin.time.Clock
@@ -27,18 +28,18 @@ class RepositoryCoreTaskManager(
         val parentIds: List<Uuid> = when (existingTaskPolicy) {
             ExistingTaskPolicy.Keep -> {
                 if (existing.isNotEmpty())
-                    return@transactionRunner existing.first().id
+                    return@transactionRunner existing.first()
                 emptyList()
             }
 
             ExistingTaskPolicy.Replace -> {
                 existing.forEach {
-                    cancelTask(it.id)
+                    cancelTask(it)
                 }
                 emptyList()
             }
 
-            ExistingTaskPolicy.Append -> existing.map { it.id }
+            ExistingTaskPolicy.Append -> existing.map { it }
         }
 
         val t = task.toTask(
@@ -77,9 +78,10 @@ class RepositoryCoreTaskManager(
 
     private suspend fun allUndoneByUniqueName(
         uniqueName: String
-    ) = repository.allByUniqueName(uniqueName).let { list ->
-        list.filter { !it.state.terminal() }
-    }
+    ) = repository.allByUniqueName(
+        uniqueName = uniqueName,
+        states = runningStates
+    )
 
     override suspend fun enqueueUniqueContinuation(
         continuation: TaskContinuation,
@@ -91,19 +93,19 @@ class RepositoryCoreTaskManager(
 
         val parentIds: List<Uuid> = when (existingTaskPolicy) {
             ExistingTaskPolicy.Keep -> {
-                if (existing.any { !it.state.terminal() })
+                if (existing.isNotEmpty())
                     return@transactionRunner
                 emptyList()
             }
 
             ExistingTaskPolicy.Replace -> {
                 existing.forEach {
-                    cancelTask(it.id)
+                    cancelTask(it)
                 }
                 emptyList()
             }
 
-            ExistingTaskPolicy.Append -> existing.map { it.id }
+            ExistingTaskPolicy.Append -> existing.map { it }
         }
 
         repository.insertContinuation(continuation, uniqueName, parentIds.toSet())
@@ -132,7 +134,7 @@ class RepositoryCoreTaskManager(
             finishedAt = null,
             repeatInterval = repeatInterval,
             initialDelay = initialDelay,
-            backoffCriteria = backoffCriteria ?: defaultBackoffCriteria(),
+            backoffCriteria = backoffCriteria ?: defaultBackoffCriteria,
             progressData = null,
             retentionDelay = keepResultsForAtLeast,
             requiresDeviceIdle = constraints.requiresDeviceIdle,
@@ -182,18 +184,21 @@ class RepositoryCoreTaskManager(
         existingTaskPolicy: ExistingPeriodicTaskPolicy,
     ): Uuid = transactionRunner {
 
-        val existing = repository.allByUniqueName(uniqueName)
+        val existing = repository.allByUniqueName(
+            uniqueName = uniqueName,
+            states = runningStates
+        )
 
         when (existingTaskPolicy) {
             ExistingPeriodicTaskPolicy.Keep -> {
-                val notCompleted = existing.firstOrNull { !it.state.terminal() }
+                val notCompleted = existing.firstOrNull()
                 if (notCompleted != null)
-                    return@transactionRunner notCompleted.id
+                    return@transactionRunner notCompleted
             }
 
             ExistingPeriodicTaskPolicy.Replace -> {
                 existing.forEach {
-                    cancelTask(it.id)
+                    cancelTask(it)
                 }
             }
         }

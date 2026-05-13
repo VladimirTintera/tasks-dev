@@ -37,17 +37,19 @@ interface TaskDao {
         outputData: ByteArray?
     )
 
-    @Query("SELECT Task.id, Task.identifier, Task.runAttemptCount, Task.state, Task.outputData, Task.processTime, Task.progressData, Task.finishedAt, Task.createdAt, Task.version, TaskTag.taskId, TaskTag.name FROM Task JOIN TaskTag ON TaskTag.taskId = Task.id WHERE Task.id = :id")
-    fun taskInfoById(id: Uuid): Flow<Map<InfoEntity, List<TaskTagEntity>>>
+    @Query("SELECT id, identifier, runAttemptCount, state, outputData, processTime, progressData, finishedAt, createdAt, version FROM Task WHERE id = :id")
+    fun taskInfoById(id: Uuid): Flow<TaskWithTagsEntity?>
 
     @Query("SELECT id, identifier, runAttemptCount, state, outputData, processTime, progressData, finishedAt, createdAt, version FROM Task WHERE id IN (:ids)")
     fun taskInfoByIds(ids: Set<Uuid>): Flow<List<InfoEntity>>
 
     @Transaction // Nutné pro @Relation dotazy
-    @Query("""
+    @Query(
+        """
     SELECT id, identifier, runAttemptCount, state, outputData, processTime, progressData, finishedAt, createdAt, version FROM Task 
     WHERE EXISTS(SELECT 1 FROM TaskTag tag WHERE tag.name = :name AND tag.taskId = Task.id)
-""")
+"""
+    )
     fun taskInfoByTag(name: String): Flow<List<TaskWithTagsEntity>>
 
     @RawQuery(observedEntities = [TaskEntity::class, TaskTagEntity::class])
@@ -64,8 +66,8 @@ interface TaskDao {
     @Query("DELETE FROM Task WHERE id = :id")
     suspend fun delete(id: Uuid)
 
-    @Query("SELECT * FROM Task WHERE uniqueName = :uniqueName")
-    suspend fun allByUniqueName(uniqueName: String): List<TaskEntity>
+    @Query("SELECT id FROM Task WHERE uniqueName = :uniqueName AND state IN (:states)")
+    suspend fun allByUniqueName(uniqueName: String, states: List<StateDb>): List<Uuid>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(task: TaskEntity)
