@@ -5,7 +5,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 
 inline fun <reified T : TaskHandler<Data, *, *>> taskRequest(
-    identifier: String = T::class.fullName,
+    identifier: String,
     data: Data = Data.EMPTY,
     initialDelay: Duration = Duration.ZERO,
     constraints: Constraints = Constraints.EMPTY,

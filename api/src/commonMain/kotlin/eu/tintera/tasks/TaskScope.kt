@@ -6,12 +6,12 @@ open class TaskGraphException(message: String, cause: Throwable? = null) : Runti
 class ParentTaskNotFoundException(message: String) : TaskGraphException(message)
 class TaskTypeMismatchException(message: String) : TaskGraphException(message)
 
-interface TaskScope<Input: Any, Progress: Any> : InputTaskScope<Input> {
+interface TaskScope<Input : Any, Progress : Any> : InputTaskScope<Input> {
     suspend fun setProgress(data: Progress)
 }
 
-interface SimpleTaskScope: TaskScope<Unit, Unit>
-interface InputTaskScope<T: Any> {
+interface SimpleTaskScope : TaskScope<Unit, Unit>
+interface InputTaskScope<T : Any> {
     val taskId: Uuid
     val data: T
     val retryCount: Int
@@ -25,32 +25,26 @@ interface InputTaskScope<T: Any> {
 
 inline fun <reified T> TaskScope<*, *>.parentOutputs(
     identifier: String
-): List<T> = parents
-    .filter { it.identifier == identifier }
-    .map {
-        it.data as? T ?: throw TaskTypeMismatchException(
-            "Type mismatch in parent task '$identifier'! " +
-                    "Expected type '${T::class.simpleName}', but received '${it.data?.let { d -> d::class.simpleName } ?: "null"}'."
-        )
-    }
+): List<T> = parents.filter {
+    it.identifier == identifier
+}.mapNotNull {
+    it.data as? T
+}
+
+inline fun <reified T, reified R : TaskHandler<out Any, out Any, out Any>> TaskScope<*, *>.parentOutputs(): List<T> = parents.filter {
+    it.handlerType == R::class
+}.mapNotNull {
+    it.data as? T
+}
 
 inline fun <reified T> TaskScope<*, *>.parentOutput(
     identifier: String
 ): T = parentOutputs<T>(identifier).firstOrNull()
     ?: throw ParentTaskNotFoundException("Parent task '$identifier' not found. Make sure it is correctly connected in the graph!")
+
 inline fun <reified T> TaskScope<*, *>.parentOutputOrNull(
     identifier: String
 ): T? = parentOutputs<T>(identifier).firstOrNull()
-
-
-inline fun <reified T, reified R : TaskHandler<out Any, out Any, out Any>> TaskScope<*, *>.parentOutputs(): List<T> =
-    parentOutputs(R::class.fullName)
-
-inline fun <reified T, reified R : TaskHandler<out Any, out Any, out Any>> TaskScope<*, *>.parentOutput(): T =
-    parentOutput(R::class.fullName)
-
-inline fun <reified T, reified R : TaskHandler<out Any, out Any, out Any>> TaskScope<*, *>.parentOutputOrNull(): T? =
-    parentOutputOrNull(R::class.fullName)
 
 inline fun <reified T : Any> TaskScope<*, *>.parentOutputsOfType(): List<T> =
     parents.mapNotNull { it.data as? T }

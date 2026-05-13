@@ -2,7 +2,6 @@ package eu.tintera.tasks.core
 
 import eu.tintera.tasks.*
 import eu.tintera.tasks.core.data.*
-import eu.tintera.tasks.core.defaultBackoffCriteria
 import eu.tintera.tasks.core.migrations.TaskMigrator
 import kotlinx.coroutines.flow.*
 import kotlin.time.Clock
@@ -62,7 +61,7 @@ class RepositoryCoreTaskManager(
 
     private suspend fun <I : Any, O : Any, P : Any> findRegistration(
         identifier: String
-    ) = findRegistrationOrNull<I, O, P>(identifier) ?: error("Task '$identifier' is not registered!")
+    ) : TaskRegistration<I, O, P> = findRegistrationOrNull(identifier) ?: error("Task '$identifier' is not registered!")
 
 
     override suspend fun enqueueContinuation(
@@ -114,7 +113,7 @@ class RepositoryCoreTaskManager(
     private fun <T : Any> TaskRequest<T>.toTask(
         uniqueName: String,
         state: State,
-        registration: TaskRegistration<T, *, *>,
+        registration: TaskRegistration<T, Any, Any>,
         repeatInterval: Duration?
     ): Task {
         val now = Clock.System.now()

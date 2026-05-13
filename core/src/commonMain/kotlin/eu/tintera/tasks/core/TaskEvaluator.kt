@@ -94,7 +94,8 @@ class TaskEvaluatorImpl(
                     data = parentEntity.outputData?.let {
                         migratedData?.output ?: parentRegistration.outputSerializer.decodeFromBytes(it)
                     },
-                    finishedAt = parentEntity.finishedAt
+                    finishedAt = parentEntity.finishedAt,
+                    handlerType = parentRegistration.type
                 )
             }
         }

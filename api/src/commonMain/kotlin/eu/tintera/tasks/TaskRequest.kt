@@ -15,7 +15,7 @@ data class TaskRequest<I : Any>(
 
 inline fun <reified T : TaskHandler<I, *, *>, I : Any> taskRequest(
     data: I,
-    identifier: String = T::class.fullName,
+    identifier: String,
     initialDelay: Duration = Duration.ZERO,
     constraints: Constraints = Constraints.EMPTY,
     tags: Set<Tag> = emptySet(),

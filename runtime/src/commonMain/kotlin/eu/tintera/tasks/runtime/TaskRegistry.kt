@@ -2,6 +2,7 @@ package eu.tintera.tasks.runtime
 
 import eu.tintera.tasks.Registry
 import eu.tintera.tasks.Tag
+import eu.tintera.tasks.TaskHandler
 import eu.tintera.tasks.TaskRegistration
 import eu.tintera.tasks.core.RegistryResolver
 import eu.tintera.tasks.core.TagRegistration
@@ -26,6 +27,8 @@ internal class TaskRegistry(
 ) : Registry, RegistryResolver {
 
     private val registry = MutableStateFlow<Map<String, TaskRegistration<out Any, out Any, out Any>>>(emptyMap())
+    private val typeRegistry =
+        MutableStateFlow<Map<KClass<out TaskHandler<*, *, *>>, List<TaskRegistration<*, *, *>>>>(emptyMap())
     private val tagRegistry = MutableStateFlow<Map<String, TagRegistration<out Tag>>>(emptyMap())
     private val tagTypeRegistry = MutableStateFlow<Map<KClass<out Tag>, TagRegistration<out Tag>>>(emptyMap())
 
@@ -64,6 +67,10 @@ internal class TaskRegistry(
             }
             currentMap + (registration.identifier to registration)
         }
+
+        typeRegistry.update { currentMap ->
+            currentMap + (registration.type to (currentMap.getOrElse(registration.type) { emptyList() }) + registration)
+        }
     }
 
     override fun <T : Tag> registerTag(
@@ -90,6 +97,10 @@ internal class TaskRegistry(
         identifier: String
     ): TaskRegistration<I, O, P>? = registry.resolveWithWarmupCheck(identifier) as? TaskRegistration<I, O, P>
 
+    @Suppress("UNCHECKED_CAST")
+    override suspend fun <T : TaskHandler<I, O, P>, I : Any, O : Any, P : Any> resolve(
+        type: KClass<out T>
+    ): List<TaskRegistration<I, O, P>>? = typeRegistry.resolveWithWarmupCheck(type) as? List<TaskRegistration<I, O, P>>
 
     @Suppress("UNCHECKED_CAST")
     override suspend fun <T : Tag> resolveTag(

@@ -1,4 +1,4 @@
-package eu.tintera.tasks.runtime
+package eu.tintera.tasks.web
 
 import androidx.sqlite.driver.web.WebWorkerSQLiteDriver
 

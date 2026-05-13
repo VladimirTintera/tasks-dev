@@ -7,7 +7,6 @@ import eu.tintera.tasks.handlers.testTaskRequest
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -32,8 +31,6 @@ class MainViewModel(
                 compareBy({ it.state != State.Running }, { it.nextScheduledTime ?: Instant.DISTANT_PAST })
             )
         )
-    }.onEach {
-        println("Tasks: $it")
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.Eagerly,

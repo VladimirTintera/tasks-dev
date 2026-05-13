@@ -24,7 +24,8 @@ internal class DatabaseCleaner(
                 progressSerializer = UnitSerializer,
                 factory = { handler },
                 currentVersion = 1,
-                migrations = emptyList()
+                migrations = emptyList(),
+                type = DatabaseCleanupTaskHandler::class
             )
         )
 

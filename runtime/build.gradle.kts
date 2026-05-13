@@ -79,16 +79,9 @@ kotlin {
         }
 
         webMain.dependencies {
-            implementation(libs.androidx.sqlite.web)
-            implementation(
-                npm("sqlite-wasm-worker",  layout.projectDirectory.dir("worker").asFile)
-            )
             implementation(projects.engine)
             implementation(projects.engineDb)
-        }
-
-        wasmJsMain.dependencies {
-            implementation(libs.kotlinx.browser)
+            implementation(projects.web)
         }
     }
 }

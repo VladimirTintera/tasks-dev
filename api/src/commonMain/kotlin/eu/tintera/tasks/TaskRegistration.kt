@@ -2,8 +2,10 @@ package eu.tintera.tasks
 
 import eu.tintera.tasks.migrations.Migration
 import eu.tintera.tasks.serialization.Serializer
+import kotlin.reflect.KClass
 
 class TaskRegistration<I : Any, O : Any, P : Any>(
+    val type: KClass<out TaskHandler<I, O, P>>,
     val identifier: String,
     val currentVersion: Int,
     val factory: () -> TaskHandler<I, O, P>,

@@ -15,10 +15,3 @@ fun Registry.register(
         progressSerializer = legacySerializer()
     )
 }
-
-inline fun <reified T : LegacyTaskHandler> Registry.register(
-    noinline factory: () -> T
-) = register(
-    identifier = T::class.fullName,
-    factory = factory,
-)

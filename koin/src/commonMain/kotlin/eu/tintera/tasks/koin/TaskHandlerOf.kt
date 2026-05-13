@@ -10,7 +10,7 @@ import org.koin.core.qualifier.Qualifier
 
 inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>> Module.taskHandlerOf(
     crossinline constructor: () -> R,
-    identifier: String = "",
+    identifier: String,
     currentVersion: Int = 1,
     inputSerializer: Serializer<Input>,
     outputSerializer: Serializer<Output>,
@@ -29,7 +29,7 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
 
 inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>, reified T1> Module.taskHandlerOf(
     crossinline constructor: (T1) -> R,
-    identifier: String = "",
+    identifier: String,
     currentVersion: Int = 1,
     inputSerializer: Serializer<Input>,
     outputSerializer: Serializer<Output>,
@@ -48,7 +48,7 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
 
 inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>, reified T1, reified T2> Module.taskHandlerOf(
     crossinline constructor: (T1, T2) -> R,
-    identifier: String = "",
+    identifier: String,
     currentVersion: Int = 1,
     inputSerializer: Serializer<Input>,
     outputSerializer: Serializer<Output>,
@@ -67,7 +67,7 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
 
 inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>, reified T1, reified T2, reified T3> Module.taskHandlerOf(
     crossinline constructor: (T1, T2, T3) -> R,
-    identifier: String = "",
+    identifier: String,
     currentVersion: Int = 1,
     inputSerializer: Serializer<Input>,
     outputSerializer: Serializer<Output>,
@@ -86,7 +86,7 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
 
 inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>, reified T1, reified T2, reified T3, reified T4> Module.taskHandlerOf(
     crossinline constructor: (T1, T2, T3, T4) -> R,
-    identifier: String = "",
+    identifier: String,
     currentVersion: Int = 1,
     inputSerializer: Serializer<Input>,
     outputSerializer: Serializer<Output>,
@@ -105,7 +105,7 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
 
 inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>, reified T1, reified T2, reified T3, reified T4, reified T5> Module.taskHandlerOf(
     crossinline constructor: (T1, T2, T3, T4, T5) -> R,
-    identifier: String = "",
+    identifier: String,
     currentVersion: Int = 1,
     inputSerializer: Serializer<Input>,
     outputSerializer: Serializer<Output>,
@@ -124,7 +124,7 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
 
 inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>, reified T1, reified T2, reified T3, reified T4, reified T5, reified T6> Module.taskHandlerOf(
     crossinline constructor: (T1, T2, T3, T4, T5, T6) -> R,
-    identifier: String = "",
+    identifier: String,
     currentVersion: Int = 1,
     inputSerializer: Serializer<Input>,
     outputSerializer: Serializer<Output>,
@@ -142,7 +142,7 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
 }
 
 inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>> Module.taskHandler(
-    identifier: String = "",
+    identifier: String,
     currentVersion: Int = 1,
     migrations: List<Migration> = emptyList(),
     qualifier: Qualifier? = null,

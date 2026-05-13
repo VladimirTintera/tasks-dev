@@ -18,15 +18,16 @@ interface Registry {
 }
 
 inline fun <reified T : Tag> Registry.registerTag(
+    identifier: String,
     serializer: TagSerializer<T>
 ) = registerTag(
-    identifier = T::class.fullName,
+    identifier = identifier,
     type = T::class,
     serializer = serializer
 )
 
 inline fun <reified T : TaskHandler<I, O, P>, reified I : Any, reified O : Any, reified P : Any> Registry.register(
-    identifier: String = T::class.fullName,
+    identifier: String,
     currentVersion: Int = 1,
     inputSerializer: Serializer<I>,
     outputSerializer: Serializer<O>,
@@ -41,6 +42,7 @@ inline fun <reified T : TaskHandler<I, O, P>, reified I : Any, reified O : Any, 
         inputSerializer = inputSerializer,
         outputSerializer = outputSerializer,
         progressSerializer = progressSerializer,
-        migrations = migrations
+        migrations = migrations,
+        type = T::class
     )
 )

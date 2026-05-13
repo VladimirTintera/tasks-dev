@@ -57,9 +57,13 @@ fun koinApp(
 
             factoryOf(::TasksObserver) bind TaskLifecycleObserver::class
 
-            taskTag<TestTypedTag>(serializer = TestTypedTag.serializer)
+            taskTag<TestTypedTag>(
+                identifier = "eu.tintera.tasks.handlers.TestTypedTag",
+                serializer = TestTypedTag.serializer
+            )
             taskHandlerOf(
                 ::TestHandler,
+                identifier = "eu.tintera.tasks.handlers.TestHandler",
                 currentVersion = 2,
                 migrations = migrations {
                     migration(1, 2) {

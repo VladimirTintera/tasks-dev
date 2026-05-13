@@ -100,6 +100,7 @@ fun testTaskRequest(
         count = count,
         name = name
     ),
+    identifier = "eu.tintera.tasks.handlers.TestHandler",
     tags = tags {
         label(DEFAULT_TAG)
         tag(
@@ -113,7 +114,7 @@ fun testTaskRequest(
         requiresDeviceIdle = false,
         requiresNetwork = false
     ),
-    initialDelay = initialDelay
+    initialDelay = initialDelay,
 )
 
 suspend fun TaskManager.scheduleTestHandler(

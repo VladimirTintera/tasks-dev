@@ -2,7 +2,6 @@ package eu.tintera.tasks.koin
 
 import eu.tintera.tasks.TaskHandler
 import eu.tintera.tasks.TaskRegistration
-import eu.tintera.tasks.fullName
 import eu.tintera.tasks.migrations.Migration
 import eu.tintera.tasks.serialization.Serializer
 import org.koin.core.definition.KoinDefinition
@@ -23,12 +22,13 @@ inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, r
     single(named<R>()) {
         TaskRegistration(
             currentVersion = currentVersion,
-            identifier = identifier.ifEmpty { R::class.fullName },
+            identifier = identifier,
             migrations = migrations,
             inputSerializer = inputSerializer,
             outputSerializer = outputSerializer,
             progressSerializer = progressSerializer,
-            factory = { get<R>() }
+            factory = { get<R>() },
+            type = R::class
         )
     }
 

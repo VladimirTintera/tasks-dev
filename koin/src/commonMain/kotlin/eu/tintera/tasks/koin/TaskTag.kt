@@ -2,7 +2,6 @@ package eu.tintera.tasks.koin
 
 import eu.tintera.tasks.Tag
 import eu.tintera.tasks.Tasks
-import eu.tintera.tasks.fullName
 import eu.tintera.tasks.serialization.TagSerializer
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
@@ -10,7 +9,7 @@ import kotlin.reflect.KClass
 
 
 @PublishedApi
-internal class TagRegistration<T: Tag>(
+internal class TagRegistration<T : Tag>(
     val identifier: String,
     val serializer: TagSerializer<T>,
     val type: KClass<T>
@@ -25,8 +24,8 @@ internal class TagRegistration<T: Tag>(
     }
 }
 
-inline fun <reified T: Tag> Module.taskTag(
-    identifier: String = T::class.fullName,
+inline fun <reified T : Tag> Module.taskTag(
+    identifier: String,
     serializer: TagSerializer<T>
 ) {
     println("Trying to register tag with identifier: $identifier")

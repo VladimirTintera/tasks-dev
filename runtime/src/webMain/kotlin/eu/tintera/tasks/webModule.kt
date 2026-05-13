@@ -13,7 +13,7 @@ import eu.tintera.tasks.db.DatabaseConfiguration
 import eu.tintera.tasks.engine.db.engineDbModule
 import eu.tintera.tasks.runtime.WebAppStateObserver
 import eu.tintera.tasks.runtime.WebNetworkState
-import eu.tintera.tasks.runtime.createSQLiteWasmWorker
+import eu.tintera.tasks.web.sqliteDriver
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.bind
 import org.koin.dsl.module
@@ -49,7 +49,7 @@ internal fun webModule(
         DatabaseCleanupService {}
     } bind DatabaseCleanupService::class
 
-    single<SQLiteDriver> { config.sqLiteDriver ?: createSQLiteWasmWorker() }
+    single<SQLiteDriver> { config.sqLiteDriver ?: sqliteDriver() }
 
     single<DatabaseConfiguration> {
         object : DatabaseConfiguration {

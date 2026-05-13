@@ -48,6 +48,8 @@ include(":di")
 include(":ios")
 include(":ios-db")
 
+include(":web")
+
 include(":compat")
 
 include(":koin")
