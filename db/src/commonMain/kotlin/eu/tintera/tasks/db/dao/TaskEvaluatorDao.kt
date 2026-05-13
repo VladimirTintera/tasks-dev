@@ -2,6 +2,7 @@ package eu.tintera.tasks.db.dao
 
 import androidx.room3.Dao
 import androidx.room3.Query
+import androidx.room3.Transaction
 import eu.tintera.tasks.db.entities.GetExecutableTaskByIdTagEntity
 import eu.tintera.tasks.db.entities.GetExecutableTasksByIdEntity
 import eu.tintera.tasks.db.entities.ParentDataEntity
@@ -22,6 +23,7 @@ interface TaskEvaluatorDao {
         version: Int
     )
 
-    @Query("SELECT t.identifier, t.runAttemptCount, t.repeatInterval, t.backoffCriteria, t.version, t.inputData, t.outputData, t.progressData, tt.taskId, tt.name from Task t LEFT JOIN TaskTag tt ON tt.taskId = t.id where t.id = :id")
+    @Transaction
+    @Query("SELECT t.identifier, t.runAttemptCount, t.repeatInterval, t.backoffCriteria, t.version, t.inputData, t.outputData, t.progressData, tt.name from Task t LEFT JOIN TaskTag tt ON tt.taskId = t.id where t.id = :id")
     suspend fun getExecutableTasksById(id: Uuid): Map<GetExecutableTasksByIdEntity, List<GetExecutableTaskByIdTagEntity>>
 }

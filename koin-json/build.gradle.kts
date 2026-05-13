@@ -52,7 +52,7 @@ kotlin {
 }
 
 android {
-    namespace = "eu.tintera.tasks"
+    namespace = "eu.tintera.tasks.koin.json"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()

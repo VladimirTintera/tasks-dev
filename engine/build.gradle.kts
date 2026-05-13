@@ -55,7 +55,7 @@ kotlin {
 }
 
 android {
-    namespace = "eu.tintera.tasks.core"
+    namespace = "eu.tintera.tasks.engine"
     sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     defaultConfig {

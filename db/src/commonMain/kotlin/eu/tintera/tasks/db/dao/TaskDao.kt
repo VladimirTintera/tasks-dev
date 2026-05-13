@@ -37,13 +37,14 @@ interface TaskDao {
         outputData: ByteArray?
     )
 
+    @Transaction
     @Query("SELECT id, identifier, runAttemptCount, state, outputData, processTime, progressData, finishedAt, createdAt, version FROM Task WHERE id = :id")
     fun taskInfoById(id: Uuid): Flow<TaskWithTagsEntity?>
 
     @Query("SELECT id, identifier, runAttemptCount, state, outputData, processTime, progressData, finishedAt, createdAt, version FROM Task WHERE id IN (:ids)")
     fun taskInfoByIds(ids: Set<Uuid>): Flow<List<InfoEntity>>
 
-    @Transaction // Nutné pro @Relation dotazy
+    @Transaction
     @Query(
         """
     SELECT id, identifier, runAttemptCount, state, outputData, processTime, progressData, finishedAt, createdAt, version FROM Task 
