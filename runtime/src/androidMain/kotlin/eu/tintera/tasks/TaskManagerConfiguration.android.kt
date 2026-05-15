@@ -8,9 +8,9 @@ import kotlin.time.Duration.Companion.seconds
 
 actual class TaskManagerConfiguration(
     val context: Context,
-    val executionContextReleaseDebounce: Duration = 1.5.seconds,
+    actual val executionContextReleaseDebounce: Duration = 1.5.seconds,
     val compatTransformation: (Map<String, Any?>) -> ByteArray? = { null },
     val sqLiteDriver: SQLiteDriver? = null,
-    val databaseName: String = "",
-    val executionEnvironment: ExecutionEnvironment? = null,
+    actual val databaseName: String = "",
+    actual val executionEnvironment: ExecutionEnvironment? = null,
 )

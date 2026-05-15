@@ -1,11 +1,14 @@
 package eu.tintera.tasks.runtime
 
+import eu.tintera.guard.ExecutionEnvironmentConfig
 import eu.tintera.tasks.TaskLifecycleObserver
 import eu.tintera.tasks.TaskManager
 import eu.tintera.tasks.TaskManagerConfiguration
 import eu.tintera.tasks.Tasks
+import eu.tintera.tasks.core.guard.guardInit
 import org.koin.core.KoinApplication
 import org.koin.core.module.Module
+import org.koin.dsl.module
 
 abstract class TasksInitializerBase {
 
@@ -22,7 +25,17 @@ abstract class TasksInitializerBase {
             taskLifecycleObservers = taskLifecycleObservers
         ) {
             customInitialization(config)
-            modules(module(config))
+            modules(
+                module {
+                    guardInit(
+                        executionEnvironment = config.executionEnvironment,
+                        config = ExecutionEnvironmentConfig(
+                            releaseDebounce = config.executionContextReleaseDebounce
+                        )
+                    )
+                },
+                module(config)
+            )
         }
 
         return Tasks.taskManager

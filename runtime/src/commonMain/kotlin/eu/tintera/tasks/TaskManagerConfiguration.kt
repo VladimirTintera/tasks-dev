@@ -1,3 +1,10 @@
 package eu.tintera.tasks
 
-expect class TaskManagerConfiguration
+import eu.tintera.guard.ExecutionEnvironment
+import kotlin.time.Duration
+
+expect class TaskManagerConfiguration {
+    val executionEnvironment: ExecutionEnvironment?
+    val executionContextReleaseDebounce: Duration
+    val databaseName: String
+}

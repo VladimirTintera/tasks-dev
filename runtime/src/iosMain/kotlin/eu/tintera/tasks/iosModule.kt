@@ -36,13 +36,6 @@ internal fun iosModule(
 
     single { PlatformContext() }
 
-    guardInit(
-        executionEnvironment = config.executionEnvironment,
-        config = ExecutionEnvironmentConfig(
-            releaseDebounce = config.executionContextReleaseDebounce
-        )
-    )
-
     single {
         DatabaseCleanupService {}
     } bind DatabaseCleanupService::class

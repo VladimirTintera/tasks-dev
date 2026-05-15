@@ -7,12 +7,12 @@ import kotlin.time.Duration.Companion.seconds
 
 actual class TaskManagerConfiguration(
     val sqLiteDriver: SQLiteDriver? = null,
-    val databaseName: String = "",
+    actual val databaseName: String = "",
     val maxConcurrentTasks: Int = 10,
-    val executionContextReleaseDebounce: Duration = 1.5.seconds,
+    actual val executionContextReleaseDebounce: Duration = 1.5.seconds,
     val bgProcessingTaskIdentifier: String? = null,
     val appRefreshTaskIdentifier: String? = null,
-    val executionEnvironment: ExecutionEnvironment? = null,
+    actual val executionEnvironment: ExecutionEnvironment? = null,
 ) {
     init {
         bgProcessingTaskIdentifier?.also {

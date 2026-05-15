@@ -8,10 +8,10 @@ import kotlin.time.Duration.Companion.seconds
 
 actual class TaskManagerConfiguration(
     val databasePath: String,
-    val databaseName: String = "",
+    actual val databaseName: String = "",
     val maxConcurrentTasks: Int = 10,
-    val executionContextReleaseDebounce: Duration = 1.5.seconds,
-    val executionEnvironment: ExecutionEnvironment? = null
+    actual val executionContextReleaseDebounce: Duration = 1.5.seconds,
+    actual val executionEnvironment: ExecutionEnvironment? = null
 ) {
     constructor(
         appName: String,

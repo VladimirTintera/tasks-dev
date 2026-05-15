@@ -40,11 +40,4 @@ internal fun androidModule(
     }
 
     single { PlatformContext(get()) }
-
-    guardInit(
-        executionEnvironment = config.executionEnvironment,
-        config = ExecutionEnvironmentConfig(
-            releaseDebounce = config.executionContextReleaseDebounce
-        )
-    )
 }

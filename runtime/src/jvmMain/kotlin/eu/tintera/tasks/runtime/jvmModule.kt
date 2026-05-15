@@ -46,13 +46,6 @@ internal fun jvmModule(
 
     single { PlatformContext() }
 
-    guardInit(
-        executionEnvironment = config.executionEnvironment,
-        config = ExecutionEnvironmentConfig(
-            releaseDebounce = config.executionContextReleaseDebounce
-        )
-    )
-
     single<SQLiteDriver> { BundledSQLiteDriver() }
 
     single {
