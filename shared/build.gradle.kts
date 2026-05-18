@@ -88,7 +88,7 @@ kotlin {
 }
 
 android {
-    namespace = "eu.tintera.tasks"
+    namespace = "eu.tintera.tasks.shared"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
