@@ -34,6 +34,7 @@ plugins {
 
 include(":composeApp")
 include(":androidApp")
+include(":desktopApp")
 
 include(":runtime")
 include(":infrastructure")

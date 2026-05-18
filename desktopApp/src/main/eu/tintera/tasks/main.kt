@@ -8,17 +8,7 @@ import org.koin.dsl.module
 fun main() {
 
     koinApp {
-        modules(
-            module {
-                single {
-                    TaskManagerConfiguration("ComposeApp")
-                }
-
-                taskManagerBootstrapper {
-                    koin.loadModules(listOf(logModule), createEagerInstances = true)
-                }
-            }
-        )
+        modules(jvmModule)
     }
 
 
