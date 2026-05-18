@@ -33,6 +33,7 @@ plugins {
 }
 
 include(":composeApp")
+include(":androidApp")
 
 include(":runtime")
 include(":infrastructure")
