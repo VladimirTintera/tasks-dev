@@ -12,6 +12,8 @@ kotlin {
         implementation(compose.desktop.currentOs)
         implementation(libs.kotlinx.coroutines.swing)
         implementation(projects.composeApp)
+        implementation(project.dependencies.platform(libs.koin.bom))
+        implementation(libs.koin.core)
     }
 }
 
