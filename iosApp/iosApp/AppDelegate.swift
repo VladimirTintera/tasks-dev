@@ -7,7 +7,7 @@
 
 import Foundation
 import UIKit
-import ComposeApp
+import Shared
 
 class AppDelegate : NSObject, UIApplicationDelegate {
     

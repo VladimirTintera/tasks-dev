@@ -19,9 +19,9 @@ import eu.tintera.tasks.handlers.TestHandlerData
 import eu.tintera.tasks.handlers.TestHandlerProgress
 import eu.tintera.tasks.handlers.TestTypedTag
 import org.jetbrains.compose.resources.painterResource
-import taskmanager.composeapp.generated.resources.Res
-import taskmanager.composeapp.generated.resources.check_24dp_1f1f1f_fill0_wght400_grad0_opsz24
-import taskmanager.composeapp.generated.resources.schedule_24dp_1f1f1f_fill0_wght400_grad0_opsz24
+import taskmanager.shared.generated.resources.Res
+import taskmanager.shared.generated.resources.check_24dp_1f1f1f_fill0_wght400_grad0_opsz24
+import taskmanager.shared.generated.resources.schedule_24dp_1f1f1f_fill0_wght400_grad0_opsz24
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable

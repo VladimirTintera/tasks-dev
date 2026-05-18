@@ -3,11 +3,7 @@ package eu.tintera.tasks
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,8 +15,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import eu.tintera.tasks.handlers.TestHandler
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
-import taskmanager.composeapp.generated.resources.Res
-import taskmanager.composeapp.generated.resources.close_24dp_1f1f1f_fill0_wght400_grad0_opsz24
+import taskmanager.shared.generated.resources.Res
+import taskmanager.shared.generated.resources.close_24dp_1f1f1f_fill0_wght400_grad0_opsz24
 import kotlin.uuid.Uuid
 
 

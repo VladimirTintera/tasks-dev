@@ -6,7 +6,7 @@ import org.koin.dsl.module
 
 val KoinApplication.jvmModule get() = module {
     single {
-        TaskManagerConfiguration("ComposeApp")
+        TaskManagerConfiguration("TasksApp")
     }
 
     taskManagerBootstrapper {

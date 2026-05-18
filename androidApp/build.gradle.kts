@@ -20,7 +20,7 @@ kotlin {
         implementation(project.dependencies.platform(libs.koin.bom))
         implementation(libs.koin.android)
         implementation(libs.koin.core)
-        implementation(projects.composeApp)
+        implementation(projects.shared)
     }
 }
 

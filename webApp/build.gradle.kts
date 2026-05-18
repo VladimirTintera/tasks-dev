@@ -21,7 +21,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(projects.composeApp)
+            implementation(projects.shared)
             implementation(libs.compose.ui)
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
