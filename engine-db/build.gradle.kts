@@ -1,16 +1,15 @@
 @file:OptIn(ExperimentalWasmDsl::class)
 
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidLibrary)
+    id("tasks.android-library")
 }
 kotlin {
 
     jvmToolchain(11)
-
-    androidTarget()
 
     compilerOptions {
         freeCompilerArgs.addAll(
@@ -43,18 +42,5 @@ kotlin {
             implementation(projects.engine)
             implementation(projects.db)
         }
-    }
-}
-
-android {
-    namespace = "eu.tintera.tasks.engine.db"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
-    defaultConfig {
-        minSdk = libs.versions.android.minSdk.get().toInt()
-        consumerProguardFiles("consumer-rules.pro")
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
     }
 }

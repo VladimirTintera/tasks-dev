@@ -1,13 +1,14 @@
 @file:OptIn(ExperimentalWasmDsl::class)
 
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidLibrary)
     alias(libs.plugins.serialization)
     alias(libs.plugins.androidx.room)
     alias(libs.plugins.ksp)
+    id("tasks.android-library")
 }
 
 room3 {
@@ -17,8 +18,6 @@ room3 {
 kotlin {
 
     jvmToolchain(11)
-
-    androidTarget()
 
     compilerOptions {
         freeCompilerArgs.addAll(
@@ -59,28 +58,6 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
-        androidMain.dependencies {
-        }
-        iosMain.dependencies {
-
-        }
-        jvmMain.dependencies {
-
-        }
-    }
-}
-
-android {
-    namespace = "eu.tintera.tasks.db"
-    sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
-    defaultConfig {
-        minSdk = libs.versions.android.minSdk.get().toInt()
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
     }
 }
 
