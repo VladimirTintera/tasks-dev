@@ -2,7 +2,11 @@ plugins {
     `kotlin-dsl`
 }
 
+val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
+
 dependencies {
-    implementation("com.android.tools.build:gradle:9.0.1")
-    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.21")
+    val agpVersion = libs.findVersion("agp").get().requiredVersion
+    val kotlinVersion = libs.findVersion("kotlin").get().requiredVersion
+    implementation("com.android.tools.build:gradle:$agpVersion")
+    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
 }

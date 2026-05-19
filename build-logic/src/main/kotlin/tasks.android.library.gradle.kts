@@ -1,5 +1,6 @@
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import eu.tintera.tasks.buildlogic.TasksAndroidLibraryExtension
+import eu.tintera.tasks.buildlogic.libs
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
@@ -8,8 +9,6 @@ plugins {
     id("com.android.kotlin.multiplatform.library")
 }
 
-val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
-
 kotlin {
 
     jvmToolchain(11)
@@ -17,7 +16,7 @@ kotlin {
     androidLibrary {
 
         val formattedProjectName = project.name.replace("-", ".")
-        namespace = "eu.tintera.tasks.android.$formattedProjectName"
+        namespace = "eu.tintera.tasks.$formattedProjectName"
 
         compileSdk = libs.findVersion("android.compileSdk").get().requiredVersion.toInt()
         minSdk = libs.findVersion("android.minSdk").get().requiredVersion.toInt()

@@ -1,8 +1,6 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    id("tasks.android-library")
+    id("tasks.android.library")
 }
 kotlin {
     jvmToolchain(11)
