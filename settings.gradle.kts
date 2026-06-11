@@ -38,8 +38,9 @@ include(":androidApp")
 include(":desktopApp")
 include(":webApp")
 
+include(":guard")
+
 include(":runtime")
-include(":infrastructure")
 include(":core")
 include(":core-db")
 include(":engine")
@@ -65,8 +66,8 @@ include(":serialization-json")
 include(":serialization-protobuf")
 include(":serialization-compat")
 
-includeBuild("external/guard") {
-    dependencySubstitution {
-        substitute(module("eu.tintera:guard")).using(project(":guard"))
-    }
-}
+//includeBuild("external/guard") {
+//    dependencySubstitution {
+//        substitute(module("eu.tintera:guard")).using(project(":guard"))
+//    }
+//}

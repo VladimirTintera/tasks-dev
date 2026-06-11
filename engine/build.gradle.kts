@@ -43,7 +43,7 @@ kotlin {
             implementation(projects.coreDb)
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
-            api(libs.guard)
+            api(projects.guard)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

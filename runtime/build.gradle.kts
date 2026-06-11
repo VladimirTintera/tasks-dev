@@ -46,7 +46,7 @@ kotlin {
 
             api(projects.api)
             api(libs.androidx.sqlite)
-            api(libs.guard)
+            api(projects.guard)
             implementation(projects.di)
         }
 

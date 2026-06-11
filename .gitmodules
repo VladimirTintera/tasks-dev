@@ -1,3 +1,0 @@
-[submodule "external/guard"]
-	path = external/guard
-	url = https://github.com/VladimirTintera/guard-dev

@@ -28,6 +28,8 @@ datetime ="0.8.0"
 androidx-work = "2.11.2"
 serialization="1.11.0"
 startupRuntime = "1.2.0"
+turbine = "1.2.1"
+time="1.0.1"
 
 [libraries]
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycleProcess" }
@@ -78,7 +80,9 @@ kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 kotlinx-serialization-protobuf = {module = "org.jetbrains.kotlinx:kotlinx-serialization-protobuf", version.ref = "serialization"}
 androidx-work-runtime-ktx = {module = "androidx.work:work-runtime-ktx", version.ref = "androidx-work"}
 
-guard = { module = "eu.tintera:guard", version = "1.0.0" }
+turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
+time-format = { module = "eu.tintera.time:time-core", version.ref="time" }
+time-format-context = { module = "eu.tintera.time:time-format-context", version.ref="time" }
 
 
 [plugins]

@@ -9,27 +9,40 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import eu.tintera.locale.AppLocale
 import eu.tintera.tasks.handlers.TestHandlerData
 import eu.tintera.tasks.handlers.TestHandlerProgress
 import eu.tintera.tasks.handlers.TestTypedTag
+import eu.tintera.time.format.DateTimeFormat
+import eu.tintera.time.format.context.format
+import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.painterResource
 import taskmanager.shared.generated.resources.Res
 import taskmanager.shared.generated.resources.check_24dp_1f1f1f_fill0_wght400_grad0_opsz24
 import taskmanager.shared.generated.resources.schedule_24dp_1f1f1f_fill0_wght400_grad0_opsz24
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
+context(locale: AppLocale, timeZone: TimeZone)
 fun TaskRow(
     modifier: Modifier = Modifier,
     info: TaskInfo,
     actions: @Composable () -> Unit = {}
 ) {
+
+    val timeFormat = remember {
+        DateTimeFormat {
+            date { full() }
+            time { full() }
+        }
+    }
+
     val stateColor = when (info.state) {
         State.Running -> Color(0xFF4CAF50)
         State.Enqueued -> Color(0xFFFF9800)
@@ -122,7 +135,7 @@ fun TaskRow(
                             contentDescription = "Scheduled at"
                         )
                         Text(
-                            text = info.nextScheduledTime.toString(),
+                            text = info.nextScheduledTime?.format(timeFormat) ?: "",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -140,7 +153,7 @@ fun TaskRow(
                             contentDescription = "Finished at"
                         )
                         Text(
-                            text = info.finishedAt.toString(),
+                            text = info.finishedAt?.format(timeFormat) ?: "",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

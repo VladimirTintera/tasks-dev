@@ -13,6 +13,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import eu.tintera.tasks.handlers.TestHandler
+import eu.tintera.time.format.context.withRegionalContext
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
 import taskmanager.shared.generated.resources.Res
@@ -23,7 +24,7 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview
-fun App() {
+fun App() = withRegionalContext {
     MaterialTheme {
 
         val viewModel = koinViewModel<MainViewModel>()

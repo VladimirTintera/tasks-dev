@@ -16,12 +16,15 @@ kotlin {
 
     compilerOptions {
         freeCompilerArgs.addAll(
-            "-Xexpect-actual-classes"
+            "-Xexpect-actual-classes",
+            "-Xcontext-parameters"
         )
         optIn.addAll(
             "kotlin.uuid.ExperimentalUuidApi",
             "kotlin.concurrent.atomics.ExperimentalAtomicApi",
-            "kotlinx.coroutines.ExperimentalCoroutinesApi"
+            "kotlinx.coroutines.ExperimentalCoroutinesApi",
+            "androidx.compose.material3.ExperimentalMaterial3Api",
+            "androidx.compose.material3.ExperimentalMaterial3ExpressiveApi",
         )
     }
 
@@ -70,6 +73,9 @@ kotlin {
             implementation(projects.koinJson)
             implementation(projects.serializationCompat)
             implementation(projects.serializationJson)
+
+            implementation(libs.time.format)
+            implementation(libs.time.format.context)
 
         }
         commonTest.dependencies {
