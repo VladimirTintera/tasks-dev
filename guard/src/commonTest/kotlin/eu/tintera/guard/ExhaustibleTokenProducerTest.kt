@@ -10,7 +10,7 @@ import kotlin.test.assertTrue
 class ExhaustibleTokenProducerTest {
 
     @Test
-    fun `emits token initially, exhausts on expire, and produces new token when onStarted is called`() = runTest {
+    fun `emits token initially, exhausts on expire and produces new token when onStarted is called`() = runTest {
         val producer = TestExhaustibleTokenProducer()
         var parentExpireCallCount = 0
 

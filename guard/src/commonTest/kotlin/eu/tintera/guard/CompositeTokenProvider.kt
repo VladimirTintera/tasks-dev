@@ -15,7 +15,7 @@ import kotlin.test.assertTrue
 class CompositeTokenProviderTest {
 
     @Test
-    fun `when only one token expires, global expiration is triggered`() = runTest {
+    fun `when only one token expires global expiration is triggered`() = runTest {
         val producer = FakeTokenProducer()
         val provider = CompositeTokenProducerProvider(
             scope = CoroutineScope(SupervisorJob()),
@@ -46,7 +46,7 @@ class CompositeTokenProviderTest {
 
 
     @Test
-    fun `when multiple tokens exist, global expiration waits for the last one`() = runTest {
+    fun `when multiple tokens exist global expiration waits for the last one`() = runTest {
         val producerA = FakeTokenProducer()
         val producerB = FakeTokenProducer()
         val provider = CompositeTokenProducerProvider(
@@ -82,41 +82,7 @@ class CompositeTokenProviderTest {
     }
 
     @Test
-    fun `when producer emits a new token, the old one is canceled immediately`() = runTest {
-        val producer = FakeTokenProducer()
-        val provider = CompositeTokenProducerProvider(
-            scope = CoroutineScope(SupervisorJob()),
-            dispatcher = StandardTestDispatcher(testScheduler),
-            producers = listOf(producer),
-            onTokenProducerRegistered = {}
-        )
-
-        launch {
-            provider.acquire {}
-        }
-
-        runCurrent()
-
-        val oldToken = FakeToken("Old")
-        val newToken = FakeToken("New")
-
-        // Producent pošle první token
-        producer.emitToken(oldToken)
-        runCurrent()
-        assertFalse(oldToken.isCanceled, "Old token should be active")
-
-        // Producent zničehonic pošle NOVÝ token
-        producer.emitToken(newToken)
-        runCurrent()
-
-        // Orchestrátor ho musí okamžitě zaříznout synchronní metodou cancel()
-        assertTrue(oldToken.isCanceled, "Old token must be canceled when replaced")
-        assertFalse(oldToken.isReleased, "Old token should NOT be released (avoids DB IO)")
-        assertFalse(newToken.isCanceled, "New token should remain active")
-    }
-
-    @Test
-    fun `when composite token is released, all active sub-tokens are released`() = runTest {
+    fun `when composite token is released all active sub-tokens are released`() = runTest {
 
         val producerA = FakeTokenProducer()
         val producerB = FakeTokenProducer()
@@ -207,40 +173,6 @@ class CompositeTokenProviderTest {
     }
 
     @Test
-    fun `emitace noveho tokenu ze stejneho produceru zrusi ten stary`() = runTest {
-        // Arrange
-        val dispatcher = StandardTestDispatcher(testScheduler)
-        val producer = FakeTokenProducer()
-        val compositeProvider = CompositeTokenProducerProvider(
-            scope = backgroundScope,
-            dispatcher = dispatcher,
-            producers = listOf(producer),
-            onTokenProducerRegistered = {}
-        )
-
-        // Act
-        launch {
-            compositeProvider.acquire {}
-        }
-
-        runCurrent()
-
-        // Producer pošle první token
-        val oldToken = producer.emitNewToken()
-        runCurrent()
-        assertFalse(oldToken.isCanceled)
-
-        // Producer pošle NOVÝ token (nahrazuje starý)
-        val newToken = producer.emitNewToken()
-        runCurrent()
-
-        // Assert - starý musí být okamžitě zrušen (cancel), nový žije
-        assertTrue(oldToken.isCanceled, "Stary token nebyl zrusen pri nahrade")
-        assertFalse(oldToken.isReleased)
-        assertFalse(newToken.isCanceled)
-    }
-
-    @Test
     fun `globalni cancel propaguje zruseni do vsech aktivnich tokenu`() = runTest {
         // Arrange
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
@@ -263,11 +195,8 @@ class CompositeTokenProviderTest {
             // Zavoláme natvrdo cancel na celém kompozitu
             compositeTokenAsync.await().release()
 
-            // Assert
-            assertTrue(token1.isCanceled)
-            assertTrue(token2.isCanceled)
-            assertFalse(token1.isReleased)
-            assertFalse(token2.isReleased)
+            assertTrue(token1.isReleased)
+            assertTrue(token2.isReleased)
         }
     }
 

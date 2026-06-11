@@ -1,5 +1,6 @@
-package eu.tintera.tasks.core.fakes
+package eu.tintera.guard.fakes
 
+import eu.tintera.guard.AbstractToken
 import eu.tintera.guard.Token
 import eu.tintera.guard.TokenProvider
 
@@ -19,9 +20,9 @@ class FakeTokenProvider : TokenProvider {
     : Token {
         acquireCount++
 
-        this.expirationHandler = expirationHandler
-
-        val token = object : Token("FakeToken") {
+        val token = object : AbstractToken() {
+            override val tag: String
+                get() = "FakeToken"
 
             override suspend fun onRelease() {
                 releaseCount++

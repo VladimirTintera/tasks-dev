@@ -1,7 +1,7 @@
 package eu.tintera.guard
 
 import eu.tintera.guard.fakes.SpyExecutionContextObserver
-import eu.tintera.tasks.core.fakes.FakeTokenProvider
+import eu.tintera.guard.fakes.FakeTokenProvider
 import kotlinx.coroutines.*
 import kotlinx.coroutines.test.*
 import kotlin.test.Test
@@ -15,20 +15,21 @@ import kotlin.time.Duration.Companion.seconds
 
 val defaultReleaseDebounce = 1.5.seconds
 
-fun TestScope.executionContextProvider(
+internal fun TestScope.executionContextProvider(
     tokenProvider: TokenProvider,
     releaseDebounce: Duration = defaultReleaseDebounce
 ) = SharedExecutionContextProvider(
     tokenProvider = tokenProvider,
     scope = CoroutineScope(SupervisorJob()),
     dispatcher = StandardTestDispatcher(testScheduler),
-    config = ExecutionEnvironmentConfig(releaseDebounce)
+    config = ExecutionEnvironmentConfig(releaseDebounce),
+    lifecycleObserver = object : ExecutionContextObserver {}
 )
 
 class SharedExecutionContextProviderTest {
 
     @Test
-    fun `when first token is acquired, system lock is acquired`() = runTest {
+    fun `when first token is acquired system lock is acquired`() = runTest {
         val fakeSystemLock = FakeTokenProvider()
         val wakeLock = executionContextProvider(fakeSystemLock)
 
@@ -40,7 +41,7 @@ class SharedExecutionContextProviderTest {
     }
 
     @Test
-    fun `when second token is acquired, system lock is NOT acquired again`() = runTest {
+    fun `when second token is acquired system lock is NOT acquired again`() = runTest {
         val fakeSystemLock = FakeTokenProvider()
         val wakeLock = executionContextProvider(fakeSystemLock)
 
@@ -52,7 +53,7 @@ class SharedExecutionContextProviderTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `when acquire is called during debounce, system lock is not released`() = runTest {
+    fun `when acquire is called during debounce system lock is not released`() = runTest {
         val fakeSystemLock = FakeTokenProvider()
         val wakeLock = executionContextProvider(fakeSystemLock)
 
@@ -76,7 +77,7 @@ class SharedExecutionContextProviderTest {
 
 
     @Test
-    fun `when all tokens are released, system lock is released`() = runTest {
+    fun `when all tokens are released system lock is released`() = runTest {
         val fakeSystemLock = FakeTokenProvider()
         val wakeLock = executionContextProvider(fakeSystemLock)
 
@@ -98,7 +99,7 @@ class SharedExecutionContextProviderTest {
     }
 
     @Test
-    fun `when system lock expires, all tokens are marked expired`() = runTest {
+    fun `when system lock expires all tokens are marked expired`() = runTest {
         val fakeSystemLock = FakeTokenProvider()
         val wakeLock = executionContextProvider(fakeSystemLock)
 
@@ -116,20 +117,21 @@ class SharedExecutionContextProviderTest {
     }
 
     @Test
-    fun `when expired, releasing tokens does not crash or double release`() = runTest {
-        val fakeSystemLock = FakeTokenProvider()
-        val wakeLock = executionContextProvider(fakeSystemLock)
+    fun `when expired releasing tokens does not crash or double release`() = runTest {
 
-        val token1 = wakeLock.acquire()
+        val tokenProvider = FakeTokenProvider()
+        val executionContextProvider = executionContextProvider(tokenProvider)
 
-        fakeSystemLock.triggerExpiration()
+        val executionContext = executionContextProvider.acquire()
+
+        tokenProvider.triggerExpiration()
 
         // Release after expiration should be safe and ignored
-        token1.release()
+        executionContext.release()
 
         // Release count should still be 0 because it was cancelled, not released normally
-        assertEquals(0, fakeSystemLock.releaseCount)
-        assertEquals(1, fakeSystemLock.cancelCount)
+        assertEquals(0, tokenProvider.releaseCount)
+        assertEquals(1, tokenProvider.cancelCount)
     }
 
     @Test
