@@ -1,17 +1,16 @@
+package eu.tintera.tasks.android
+
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
-import eu.tintera.tasks.buildlogic.TasksAndroidLibraryExtension
-import eu.tintera.tasks.buildlogic.libs
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import eu.tintera.tasks.android.LibraryExtension
+import eu.tintera.tasks.common.libs
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 plugins {
-    id("org.jetbrains.kotlin.multiplatform")
+    id("eu.tintera.tasks.kmp.library")
     id("com.android.kotlin.multiplatform.library")
 }
 
 kotlin {
-
-    jvmToolchain(11)
 
     androidLibrary {
 
@@ -20,10 +19,6 @@ kotlin {
 
         compileSdk = libs.findVersion("android.compileSdk").get().requiredVersion.toInt()
         minSdk = libs.findVersion("android.minSdk").get().requiredVersion.toInt()
-
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
-        }
     }
 }
 
@@ -31,4 +26,4 @@ val androidLibraryExtension = extensions.getByType(KotlinMultiplatformExtension:
     (it as ExtensionAware).extensions.getByType(KotlinMultiplatformAndroidLibraryExtension::class.java)
 }
 
-extensions.create("androidLibrary", TasksAndroidLibraryExtension::class.java, androidLibraryExtension)
+extensions.create("androidLibrary", LibraryExtension::class.java, androidLibraryExtension)

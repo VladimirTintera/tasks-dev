@@ -53,28 +53,28 @@ graph TD
 ```
 
 ### 1. Guard (Execution Context & Tokens)
-[guard](file:///Users/vladimirtintera/Develop/tasks-dev/guard) defines the lower-level execution environment for concurrent asynchronous work. It behaves as a multiplexer that manages background execution permissions using system constraints:
+[guard](../guard) defines the lower-level execution environment for concurrent asynchronous work. It behaves as a multiplexer that manages background execution permissions using system constraints:
 - **`Token` / `TokenProducer`**: Abstract representations of system permissions/locks. Platform-specific implementations prevent the OS from suspending the application (e.g., `WakeLock` and `ForegroundService` on Android, `UIBackgroundTask` or HealthKit observer queries on iOS).
 - **`ExecutionContext`**: Represents a safe running context. Running code inside `ExecutionContext.use { ... }` ensures that if the system's background execution time limit is reached (or context expires), the coroutine scope is cancelled cleanly and resources are released.
 
 ### 2. Public API
-[api](file:///Users/vladimirtintera/Develop/tasks-dev/api) is the public-facing entry point for using the TaskManager. It contains no implementation logic, only:
+[api](../api) is the public-facing entry point for using the TaskManager. It contains no implementation logic, only:
 - Public contracts: `TaskManager`, `TaskRequest`, `TaskResult`, `TaskHandler`, `Constraints`.
 - Data classes and serialization contracts: `TaskInfo`, `Tag`, `Serializer`.
 - Migration helpers: `Migration`, `Migrator`.
 
 ### 3. Core Business Logic & Engine
-- [core](file:///Users/vladimirtintera/Develop/tasks-dev/core) handles internal business models, task evaluations, migrations, database cleanup services, and integrates `guard`'s execution contexts.
-- [engine](file:///Users/vladimirtintera/Develop/tasks-dev/engine) is the execution engine. It contains the logic to dispatch and process tasks (`TaskDispatcher`, `TaskProcessor`), track currently active tasks (`ActiveTaskTracker`), clean up abandoned tasks (`OrphanTaskSweeper`), and evaluate execution constraints (`NetworkStateConstraint`, `InitialDelayConstraint`, `ParentsConstraint`).
+- [core](../core) handles internal business models, task evaluations, migrations, database cleanup services, and integrates `guard`'s execution contexts.
+- [engine](../engine) is the execution engine. It contains the logic to dispatch and process tasks (`TaskDispatcher`, `TaskProcessor`), track currently active tasks (`ActiveTaskTracker`), clean up abandoned tasks (`OrphanTaskSweeper`), and evaluate execution constraints (`NetworkStateConstraint`, `InitialDelayConstraint`, `ParentsConstraint`).
 
 ### 4. Database & Storage Separation
 The database is structured to separate interfaces from database-specific entities using **Room** for Kotlin Multiplatform:
-- [db](file:///Users/vladimirtintera/Develop/tasks-dev/db) defines the SQLite database schema (`TasksDatabase`), entities (`TaskEntity`, `TaskTagEntity`), and DAOs (`TaskDao`, `TaskResultDao`).
-- [core-db](file:///Users/vladimirtintera/Develop/tasks-dev/core-db) implements the repository interfaces defined in `core` (e.g., `TaskScopeRepository`, `TaskEvaluatorRepository`) using the DAOs from `db`.
-- [engine-db](file:///Users/vladimirtintera/Develop/tasks-dev/engine-db) implements the repository interfaces defined in `engine` (e.g., `TaskDispatcherRepository`, `TaskProcessorRepository`) using `db`.
+- [db](../db) defines the SQLite database schema (`TasksDatabase`), entities (`TaskEntity`, `TaskTagEntity`), and DAOs (`TaskDao`, `TaskResultDao`).
+- [core-db](../core-db) implements the repository interfaces defined in `core` (e.g., `TaskScopeRepository`, `TaskEvaluatorRepository`) using the DAOs from `db`.
+- [engine-db](../engine-db) implements the repository interfaces defined in `engine` (e.g., `TaskDispatcherRepository`, `TaskProcessorRepository`) using `db`.
 
 ### 5. Runtime / Bootstrap
-- [runtime](file:///Users/vladimirtintera/Develop/tasks-dev/runtime) serves as the library's orchestrator and bootstrap layer. It exposes the public `Tasks` singleton used for initialization, handles warm-ups, and registers platform-specific observers (like network state and app background/foreground state).
+- [runtime](../runtime) serves as the library's orchestrator and bootstrap layer. It exposes the public `Tasks` singleton used for initialization, handles warm-ups, and registers platform-specific observers (like network state and app background/foreground state).
 
 ---
 

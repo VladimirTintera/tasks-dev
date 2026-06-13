@@ -1,4 +1,4 @@
-package eu.tintera.tasks.buildlogic
+package eu.tintera.tasks.common
 
 
 import org.gradle.api.Project

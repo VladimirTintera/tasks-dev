@@ -3,18 +3,12 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
-    alias(libs.plugins.kotlinMultiplatform)
-    id("tasks.android.library")
+    id("eu.tintera.tasks.android.library")
 }
 kotlin {
-    jvmToolchain(11)
 
     compilerOptions {
-        freeCompilerArgs.addAll(
-            "-Xexpect-actual-classes"
-        )
         optIn.addAll(
-            "kotlin.uuid.ExperimentalUuidApi",
             "kotlin.concurrent.atomics.ExperimentalAtomicApi"
         )
     }

@@ -94,7 +94,7 @@ Testing is modularized. You can run all tests or focus on specific modules:
 
 The project uses **Room for Kotlin Multiplatform** (version `3.0.0-alpha04`) and KSP for schema compilation and DAO implementation generation.
 - The generated code is compiled automatically when running any build or test target.
-- If you change any entity in [db](file:///Users/vladimirtintera/Develop/tasks-dev/db), compile or clean-build the project to regenerate the database bindings:
+- If you change any entity in [db](../db), compile or clean-build the project to regenerate the database bindings:
   ```bash
   ./gradlew :db:kspCommonMainKotlinMetadata
   ```

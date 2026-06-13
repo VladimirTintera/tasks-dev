@@ -1,8 +1,8 @@
-package eu.tintera.tasks.buildlogic
+package eu.tintera.tasks.android
 
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 
-abstract class TasksAndroidLibraryExtension(private val extension: KotlinMultiplatformAndroidLibraryExtension) {
+abstract class LibraryExtension(private val extension: KotlinMultiplatformAndroidLibraryExtension) {
 
     fun namespace(name: String) {
         extension.namespace = name

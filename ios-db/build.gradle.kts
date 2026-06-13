@@ -1,13 +1,7 @@
 plugins {
-    alias(libs.plugins.kotlinMultiplatform)
+    id("eu.tintera.tasks.kmp.library")
 }
 kotlin {
-
-    jvmToolchain(11)
-
-    compilerOptions {
-        optIn.addAll("kotlin.uuid.ExperimentalUuidApi")
-    }
 
     iosArm64()
     iosSimulatorArm64()
