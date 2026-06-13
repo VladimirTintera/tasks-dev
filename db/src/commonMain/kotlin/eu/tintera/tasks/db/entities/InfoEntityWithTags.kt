@@ -8,8 +8,8 @@ internal data class InfoEntityWithTags(
     val info: InfoEntity,
 
     @Relation(
-        parentColumn = "id", // Název sloupce id v InfoEntity (Task tabulce)
-        entityColumn = "taskId" // Název sloupce taskId v TaskTag tabulce
+        parentColumns = ["id"], // Název sloupce id v InfoEntity (Task tabulce)
+        entityColumns = ["taskId"] // Název sloupce taskId v TaskTag tabulce
     )
     val tags: List<TaskTagEntity>
 )

@@ -20,7 +20,6 @@ kotlin {
         )
     }
 
-    //iosX64()
     iosArm64()
     iosSimulatorArm64()
 
@@ -42,9 +41,6 @@ kotlin {
             api(projects.api)
             api(projects.koin)
             implementation(projects.serializationCompat)
-        }
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
         }
     }
 }

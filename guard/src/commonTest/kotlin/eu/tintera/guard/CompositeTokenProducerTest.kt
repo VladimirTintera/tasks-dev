@@ -3,21 +3,23 @@ package eu.tintera.guard
 import eu.tintera.guard.fakes.FakeToken
 import eu.tintera.tasks.core.fakes.FakeTokenProducer
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class CompositeTokenProviderTest {
+class CompositeTokenProducerTest {
 
     @Test
     fun `when only one token expires global expiration is triggered`() = runTest {
         val producer = FakeTokenProducer()
-        val provider = CompositeTokenProducerProvider(
+        val compositeProducer = CompositeTokenProducer(
             scope = CoroutineScope(SupervisorJob()),
             dispatcher = StandardTestDispatcher(testScheduler),
             producers = listOf(producer),
@@ -25,8 +27,10 @@ class CompositeTokenProviderTest {
         )
 
         var globalExpired = false
-        launch {
-            provider.acquire { globalExpired = true }
+        val compositeTokenAsync = async {
+            val token = compositeProducer.token().first()
+            token.invokeOnPreCancel { globalExpired = true }
+            token
         }
         runCurrent()
 
@@ -44,12 +48,11 @@ class CompositeTokenProviderTest {
         assertTrue(globalExpired, "Global expiration should be triggered when the last token dies")
     }
 
-
     @Test
     fun `when multiple tokens exist global expiration waits for the last one`() = runTest {
         val producerA = FakeTokenProducer()
         val producerB = FakeTokenProducer()
-        val provider = CompositeTokenProducerProvider(
+        val compositeProducer = CompositeTokenProducer(
             scope = CoroutineScope(SupervisorJob()),
             dispatcher = StandardTestDispatcher(testScheduler),
             producers = listOf(producerA, producerB),
@@ -57,10 +60,10 @@ class CompositeTokenProviderTest {
         )
 
         var globalExpired = false
-        launch {
-            provider.acquire {
-                globalExpired = true
-            }
+        val compositeTokenAsync = async {
+            val token = compositeProducer.token().first()
+            token.invokeOnPreCancel { globalExpired = true }
+            token
         }
 
         // Oba producenti dodají své štíty (máme dvojitý štít)
@@ -83,10 +86,9 @@ class CompositeTokenProviderTest {
 
     @Test
     fun `when composite token is released all active sub-tokens are released`() = runTest {
-
         val producerA = FakeTokenProducer()
         val producerB = FakeTokenProducer()
-        val provider = CompositeTokenProducerProvider(
+        val compositeProducer = CompositeTokenProducer(
             scope = this,
             dispatcher = StandardTestDispatcher(testScheduler),
             producers = listOf(producerA, producerB),
@@ -94,7 +96,7 @@ class CompositeTokenProviderTest {
         )
 
         // Získáme ten náš orchestrální CompositeToken
-        val compositeTokenAsync = async { provider.acquire {} }
+        val compositeTokenAsync = async { compositeProducer.token().first() }
         runCurrent()
 
         val tokenA = FakeToken("A")
@@ -123,7 +125,7 @@ class CompositeTokenProviderTest {
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
         val producer1 = FakeTokenProducer()
 
-        val compositeProvider = CompositeTokenProducerProvider(
+        val compositeProducer = CompositeTokenProducer(
             scope = backgroundScope, // Poskytuje coroutines-test pro background joby
             dispatcher = dispatcher,
             producers = listOf(producer1),
@@ -131,7 +133,7 @@ class CompositeTokenProviderTest {
         )
 
         // Act
-        val compositeTokenAsync = async { compositeProvider.acquire {} }
+        val compositeTokenAsync = async { compositeProducer.token().first() }
         launch {
             val fakeToken = producer1.emitNewToken()
 
@@ -152,7 +154,7 @@ class CompositeTokenProviderTest {
     fun `dynamicky pridany producer po acquire je korektne sledovan`() = runTest {
         // Arrange
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
-        val compositeProvider = CompositeTokenProducerProvider(
+        val compositeProducer = CompositeTokenProducer(
             scope = backgroundScope,
             dispatcher = dispatcher,
             producers = emptyList(),// Startujeme prázdní!
@@ -161,10 +163,10 @@ class CompositeTokenProviderTest {
 
         val dynamicProducer = FakeTokenProducer()
 
-        val compositeTokenAsync = async { compositeProvider.acquire {} }
+        val compositeTokenAsync = async { compositeProducer.token().first() }
 
         launch {
-            compositeProvider.registerProducer(dynamicProducer)
+            compositeProducer.registerProducer(dynamicProducer)
             val fakeToken = dynamicProducer.emitNewToken()
             val compositeToken = compositeTokenAsync.await()
             compositeToken.release()
@@ -178,7 +180,7 @@ class CompositeTokenProviderTest {
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
         val producer1 = FakeTokenProducer()
         val producer2 = FakeTokenProducer()
-        val compositeProvider = CompositeTokenProducerProvider(
+        val compositeProducer = CompositeTokenProducer(
             scope = backgroundScope,
             dispatcher = dispatcher,
             producers = listOf(producer1, producer2),
@@ -186,7 +188,7 @@ class CompositeTokenProviderTest {
         )
 
         // Act
-        val compositeTokenAsync = async { compositeProvider.acquire {} }
+        val compositeTokenAsync = async { compositeProducer.token().first() }
 
         launch {
             val token1 = producer1.emitNewToken()
@@ -205,7 +207,7 @@ class CompositeTokenProviderTest {
         // Arrange
         val dispatcher = StandardTestDispatcher(testScheduler)
         val producer = FakeTokenProducer()
-        val compositeProvider = CompositeTokenProducerProvider(
+        val compositeProducer = CompositeTokenProducer(
             scope = backgroundScope,
             dispatcher = dispatcher,
             producers = listOf(producer),
@@ -214,7 +216,8 @@ class CompositeTokenProviderTest {
 
         var globalExpirationCalled = false
         launch {
-            compositeProvider.acquire {
+            val token = compositeProducer.token().first()
+            token.invokeOnPreCancel {
                 globalExpirationCalled = true
             }
         }
@@ -232,6 +235,56 @@ class CompositeTokenProviderTest {
 
         // Assert - globální handler se musel zavolat, protože to byl poslední (a jediný) token
         assertTrue(globalExpirationCalled, "Globalni expiration handler nebyl zavolan")
+    }
 
+    @Test
+    fun `synchronous execution order of preCancel and onCancel is correct`() = runTest {
+        var preCancelOrder = -1
+        var cancelOrder = -1
+        var counter = 0
+
+        class OrderedCancelToken(
+            val onCancelAction: () -> Unit
+        ) : AbstractToken() {
+            override val tag = "OrderedCancelToken"
+            override suspend fun onRelease() {}
+            override fun onCancel() {
+                onCancelAction()
+            }
+            fun triggerExpiration() {
+                finishWithCancel()
+            }
+        }
+
+        val testToken = OrderedCancelToken(
+            onCancelAction = {
+                cancelOrder = ++counter
+            }
+        )
+
+        val testProducer = TokenProducer {
+            kotlinx.coroutines.flow.flowOf(testToken)
+        }
+
+        val compositeProducer = CompositeTokenProducer(
+            scope = backgroundScope,
+            dispatcher = StandardTestDispatcher(testScheduler),
+            producers = listOf(testProducer),
+            onTokenProducerRegistered = {}
+        )
+
+        val compositeToken = compositeProducer.token().first()
+        compositeToken.invokeOnPreCancel {
+            preCancelOrder = ++counter
+        }
+
+        // Act: trigger expiration on the underlying token
+        testToken.triggerExpiration()
+
+        println("preCancelOrder: $preCancelOrder, cancelOrder: $cancelOrder")
+
+        // Assert: pre-cancel MUST execute before the underlying token's onCancel
+        assertEquals(1, preCancelOrder, "preCancel hook of combined token should execute first")
+        assertEquals(2, cancelOrder, "onCancel of the platform token should execute after preCancel hooks")
     }
 }

@@ -27,7 +27,7 @@ object ExecutionEnvironmentFactory {
             observers + tokenProducers.flatMap { it.providedObservers }
         )
 
-        val tokenProvider = CompositeTokenProducerProvider(
+        val tokenProducer = CompositeTokenProducer(
             scope = scope,
             producers = tokenProducers,
             dispatcher = dispatcher
@@ -39,7 +39,7 @@ object ExecutionEnvironmentFactory {
         }
 
         val contextProvider = SharedExecutionContextProvider(
-            tokenProvider = tokenProvider,
+            tokenProducer = tokenProducer,
             scope = scope,
             config = config,
             lifecycleObserver = observerRegistry,
@@ -48,8 +48,8 @@ object ExecutionEnvironmentFactory {
 
         return object : ExecutionEnvironment,
             ExecutionContextProvider by contextProvider,
-            TokenProducerRegistry by tokenProvider,
-            TokenObservable by tokenProvider,
+            TokenProducerRegistry by tokenProducer,
+            TokenObservable by tokenProducer,
             ExhaustibleObservable by observableRegistry,
             PendingTokenObservable by observableRegistry,
             MultiplexerObservable by contextProvider,

@@ -18,7 +18,6 @@ kotlin {
         optIn.addAll("kotlin.uuid.ExperimentalUuidApi")
     }
 
-    //iosX64()
     iosArm64()
     iosSimulatorArm64()
 
@@ -39,9 +38,6 @@ kotlin {
             api(libs.koin.core)
             implementation(projects.runtime)
             api(projects.api)
-        }
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
         }
     }
 }

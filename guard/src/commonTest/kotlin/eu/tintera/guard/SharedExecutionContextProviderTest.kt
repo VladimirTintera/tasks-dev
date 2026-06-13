@@ -16,10 +16,10 @@ import kotlin.time.Duration.Companion.seconds
 val defaultReleaseDebounce = 1.5.seconds
 
 internal fun TestScope.executionContextProvider(
-    tokenProvider: TokenProvider,
+    tokenProducer: TokenProducer,
     releaseDebounce: Duration = defaultReleaseDebounce
 ) = SharedExecutionContextProvider(
-    tokenProvider = tokenProvider,
+    tokenProducer = tokenProducer,
     scope = CoroutineScope(SupervisorJob()),
     dispatcher = StandardTestDispatcher(testScheduler),
     config = ExecutionEnvironmentConfig(releaseDebounce),
@@ -209,8 +209,8 @@ class SharedExecutionContextProviderTest {
         // Protože expiration handler proběhl DŘÍV, než se uložil token do session,
         // callback token nemohl zrušit.
         // Zrušil ho až defenzivní check po uložení!
-        assertEquals(1, fakeSystemLock.releaseCount, "Defenzivní check musel token okamžitě zrušit")
-        assertEquals(0, fakeSystemLock.cancelCount, "Standardní cancel se vůbec nevolá")
+        assertEquals(0, fakeSystemLock.releaseCount, "Defenzivní check nemůže volat release na již zrušeném tokenu")
+        assertEquals(1, fakeSystemLock.cancelCount, "Standardní cancel se volá při expiraci")
 
         // Vrácený token musí pochopitelně rovnou hlásit, že je expirovaný
         assertTrue(token.isExpired.value, "Token musí být okamžitě ve stavu expirace")
@@ -221,8 +221,8 @@ class SharedExecutionContextProviderTest {
         token.release()
 
         // Assert 2
-        assertEquals(1, fakeSystemLock.releaseCount, "Počet release by měl zůstat 1")
-        assertEquals(0, fakeSystemLock.cancelCount, "Cancel na zrušeném tokenu nesmí volat systémový cancel")
+        assertEquals(0, fakeSystemLock.releaseCount, "Počet release by měl zůstat 0")
+        assertEquals(1, fakeSystemLock.cancelCount, "Cancel na zrušeném tokenu nesmí volat systémový cancel znovu")
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -231,7 +231,7 @@ class SharedExecutionContextProviderTest {
         // 1. Příprava
         val fakePlatformProvider = FakeTokenProvider()
         val countingProvider = executionContextProvider(
-            tokenProvider = fakePlatformProvider,
+            tokenProducer = fakePlatformProvider,
             releaseDebounce = Duration.ZERO
         )
 
@@ -273,8 +273,9 @@ class SharedExecutionContextProviderTest {
         // Assert: Zámek musí vědět, že je mrtvý
         assertTrue(token.isExpired.value, "Token by měl být rovnou expirovaný")
 
-        // Assert: Náš defenzivní kód (ÚPRAVA 2) musel okamžitě zavolat release!
-        assertEquals(1, fakeProvider.releaseCount, "Provider musel okamžitě zrušit neplatný token")
+        // Assert: Náš defenzivní kód musel zrušit neplatný token
+        assertEquals(0, fakeProvider.releaseCount)
+        assertEquals(1, fakeProvider.cancelCount)
     }
 
     @Test
@@ -285,7 +286,7 @@ class SharedExecutionContextProviderTest {
         val observer = SpyExecutionContextObserver()
 
         val contextProvider = SharedExecutionContextProvider(
-            tokenProvider = tokenProvider,
+            tokenProducer = tokenProvider,
             scope = backgroundScope, // Poskytuje runTest, automaticky se uklidí
             dispatcher = StandardTestDispatcher(testScheduler),
             config = ExecutionEnvironmentConfig(releaseDebounce = 5.seconds),
@@ -321,7 +322,7 @@ class SharedExecutionContextProviderTest {
         val observer = SpyExecutionContextObserver()
 
         val contextProvider = SharedExecutionContextProvider(
-            tokenProvider = tokenProvider,
+            tokenProducer = tokenProvider,
             scope = backgroundScope,
             dispatcher = StandardTestDispatcher(testScheduler),
             config = ExecutionEnvironmentConfig(releaseDebounce = 5.seconds),
@@ -352,7 +353,7 @@ class SharedExecutionContextProviderTest {
         }
 
         val contextProvider = SharedExecutionContextProvider(
-            tokenProvider = tokenProvider,
+            tokenProducer = tokenProvider,
             scope = backgroundScope,
             dispatcher = StandardTestDispatcher(testScheduler),
             config = ExecutionEnvironmentConfig(releaseDebounce = 5.seconds),

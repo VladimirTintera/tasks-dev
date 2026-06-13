@@ -22,7 +22,6 @@ kotlin {
         )
     }
 
-    //iosX64()
     iosArm64()
     iosSimulatorArm64()
 
@@ -44,9 +43,6 @@ kotlin {
             api(projects.api)
             implementation(libs.kotlinx.serialization.protobuf)
             api(projects.compat)
-        }
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
         }
     }
 }

@@ -4,6 +4,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -14,7 +15,7 @@ import kotlin.concurrent.atomics.incrementAndFetch
 import kotlin.time.Duration.Companion.seconds
 
 internal class SharedExecutionContextProvider(
-    private val tokenProvider: TokenProvider,
+    private val tokenProducer: TokenProducer,
     private val scope: CoroutineScope,
     private val config: ExecutionEnvironmentConfig,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
@@ -36,19 +37,16 @@ internal class SharedExecutionContextProvider(
             val expirationFlow = MutableStateFlow(false)
             val newSession = Session(expirationFlow)
 
+            // Získáme systémový zámek ze sjednoceného TokenProducer
+            val sysToken = tokenProducer.token().first()
 
-            // Získáme systémový zámek
-            val sysToken = tokenProvider.acquire(
-                onPreCancel = {
-                    lifecycleObserver.onPreCancel()
-                },
-                onCancel = {
-                    cancelDebounce()
-                    newSession.isExpired.value = true
-                    currentSession.compareAndSet(newSession, null)
-                    newSession.systemToken.exchange(null)
-                }
-            )
+            sysToken.invokeOnPreCancel {
+                lifecycleObserver.onPreCancel()
+                cancelDebounce()
+                newSession.isExpired.value = true
+                currentSession.compareAndSet(newSession, null)
+                newSession.systemToken.exchange(null)
+            }
 
             newSession.systemToken.store(sysToken)
 

@@ -1,8 +1,9 @@
 package eu.tintera.tasks.core
 
 import eu.tintera.guard.ExecutionEnvironmentConfig
-import eu.tintera.guard.SharedExecutionContextProvider
-import eu.tintera.guard.TokenProvider
+import eu.tintera.guard.ExecutionEnvironmentFactory
+import eu.tintera.guard.ExecutionContextProvider
+import eu.tintera.guard.TokenProducer
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -18,13 +19,10 @@ fun TestScope.dispatchers() = object : AppDispatchers {
 val defaultReleaseDebounce = 1.5.seconds
 
 fun TestScope.executionContextProvider(
-    tokenProvider: TokenProvider,
+    tokenProducer: TokenProducer,
     releaseDebounce: Duration = defaultReleaseDebounce
-) = dispatchers().let {
-    SharedExecutionContextProvider(
-        tokenProvider = tokenProvider,
-        scope = ApplicationScope(SupervisorJob()),
-        dispatcher = it.default,
-        config = ExecutionEnvironmentConfig(releaseDebounce)
-    )
-}
+): ExecutionContextProvider = ExecutionEnvironmentFactory.create(
+    scope = this,
+    tokenProducers = listOf(tokenProducer),
+    config = ExecutionEnvironmentConfig(releaseDebounce)
+)

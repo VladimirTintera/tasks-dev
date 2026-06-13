@@ -1,46 +1,65 @@
 package eu.tintera.tasks.core.fakes
 
+import eu.tintera.guard.AbstractToken
 import eu.tintera.guard.Token
-import eu.tintera.guard.TokenProvider
+import eu.tintera.guard.TokenProducer
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
-class FakeTokenProvider : TokenProvider {
+class FakeTokenProvider : TokenProducer {
     var acquireCount = 0
     var releaseCount = 0
     var cancelCount = 0
 
     var simulateInstantExpiration = false
 
-    private var expirationHandler: (() -> Unit)? = null
-    private val activeTokens = mutableListOf<Token>()
+    private val activeTokens = mutableListOf<FakeTokenImpl>()
 
-    override suspend fun acquire(expirationHandler: () -> Unit): Token {
+    override fun token(): Flow<Token> = flow {
         acquireCount++
-        this.expirationHandler = expirationHandler
 
-        val token = object : Token {
-            override suspend fun release() {
+        val token = FakeTokenImpl(
+            onReleaseAction = {
                 releaseCount++
-                activeTokens.remove(this)
-            }
-
-            override fun cancel() {
+                activeTokens.remove(it)
+            },
+            onCancelAction = {
                 cancelCount++
-                activeTokens.remove(this)
+                activeTokens.remove(it)
             }
+        )
 
-        }
         activeTokens.add(token)
 
         if (simulateInstantExpiration) {
-            // BUM! Operační systém nám vzal čas přesně v milisekundě,
-            // kdy jsme o něj požádali, JEŠTĚ PŘEDTÍM než stihneme vrátit token.
-            expirationHandler()
+            token.cancel()
         }
 
-        return token
+        emit(token)
     }
 
     fun triggerExpiration() {
-        expirationHandler?.invoke()
+        activeTokens.toList().forEach { it.cancel() }
+    }
+}
+
+class FakeTokenImpl(
+    private val onReleaseAction: (FakeTokenImpl) -> Unit,
+    private val onCancelAction: (FakeTokenImpl) -> Unit
+) : AbstractToken() {
+
+    override val tag: String
+        get() = "FakeToken"
+
+    override suspend fun onRelease() {
+        onReleaseAction(this)
+    }
+
+    override fun onCancel() {
+        onCancelAction(this)
+    }
+
+    fun cancel() {
+        finishWithCancel()
     }
 }

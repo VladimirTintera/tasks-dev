@@ -29,7 +29,6 @@ kotlin {
         )
     }
 
-    //iosX64()
     iosArm64()
     iosSimulatorArm64()
 
@@ -54,16 +53,12 @@ kotlin {
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
         }
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
-        }
     }
 }
 
 dependencies {
     with(libs.androidx.room.compiler) {
         add("kspAndroid", this)
-        //add("kspIosX64", this)
         add("kspIosArm64", this)
         add("kspIosSimulatorArm64", this)
         add("kspJvm", this)

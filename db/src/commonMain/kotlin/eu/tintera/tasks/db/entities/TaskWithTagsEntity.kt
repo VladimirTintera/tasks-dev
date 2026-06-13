@@ -8,8 +8,8 @@ data class TaskWithTagsEntity(
     val info: InfoEntity,
 
     @Relation(
-        parentColumn = "id",
-        entityColumn = "taskId"
+        parentColumns = ["id"],
+        entityColumns = ["taskId"]
     )
     val tags: List<TaskTagEntity>
 )

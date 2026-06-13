@@ -4,12 +4,12 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.*
 
-internal class CompositeTokenProducerProvider(
+internal class CompositeTokenProducer(
     private val scope: CoroutineScope,
     producers: List<TokenProducer>,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val onTokenProducerRegistered: (TokenProducer) -> Unit
-) : TokenProvider, TokenProducerRegistry, TokenObservable {
+) : TokenProducer, TokenProducerRegistry, TokenObservable {
 
     private val _acquiredTokens = MutableSharedFlow<Token>(
         extraBufferCapacity = 64,
@@ -25,12 +25,9 @@ internal class CompositeTokenProducerProvider(
         onTokenProducerRegistered(producer)
     }
 
-    override suspend fun acquire(
-        onPreCancel: () -> Unit,
-        onCancel: () -> Unit
-    ): Token {
-
+    override fun token(): Flow<Token> = flow {
         val activeTokens = MutableStateFlow<Set<Token>>(emptySet())
+        var combinedTokenRef: CompositeToken? = null
 
         val mergedFlow = flow {
             val seen = mutableSetOf<TokenProducer>()
@@ -43,29 +40,23 @@ internal class CompositeTokenProducerProvider(
             concurrency = Int.MAX_VALUE
         ) { it.token() }
 
-        scope.launch(dispatcher) collectionScope@{
-
+        val collectionJob = scope.launch(dispatcher) collectionScope@{
             mergedFlow.collect { token ->
-
                 activeTokens.update { it + token }
-
                 _acquiredTokens.tryEmit(token)
-
                 token.markAsActive()
 
                 token.invokeOnPreCancel {
                     val current = activeTokens.value
                     if (current.size == 1 && current.contains(token)) {
-                        onPreCancel()
+                        combinedTokenRef?.triggerCancel()
                     }
                 }
 
                 launch {
                     token.state.first { it.isFinal }
-
                     activeTokens.updateAndGet { it - token }.also {
                         if (it.isEmpty()) {
-                            onCancel()
                             this@collectionScope.cancel()
                         }
                     }
@@ -75,29 +66,45 @@ internal class CompositeTokenProducerProvider(
 
         activeTokens.first { it.isNotEmpty() }
 
-        return ExecutionContextLock {
-            coroutineScope {
-                activeTokens.getAndUpdate { emptySet() }.forEach {
-                    launch { it.release() }
+        val combinedToken = CompositeToken(
+            releaseAction = {
+                collectionJob.cancel()
+                coroutineScope {
+                    activeTokens.getAndUpdate { emptySet() }.forEach {
+                        launch { it.release() }
+                    }
+                }
+            },
+            cancelAction = {
+                collectionJob.cancel()
+                scope.launch {
+                    activeTokens.getAndUpdate { emptySet() }.forEach {
+                        launch { it.release() }
+                    }
                 }
             }
-        }
-    }
+        )
 
-    companion object {
-        private const val TAG = "CompositeTokenProducerProvider"
+        combinedTokenRef = combinedToken
+        emit(combinedToken)
     }
 }
 
-private class ExecutionContextLock(
-    private val releaseAction: suspend () -> Unit
+private class CompositeToken(
+    private val releaseAction: suspend () -> Unit,
+    private val cancelAction: () -> Unit
 ) : AbstractToken() {
-
     override val tag = "CompositeToken"
 
     override suspend fun onRelease() {
         releaseAction()
     }
 
-    override fun onCancel() {}
+    override fun onCancel() {
+        cancelAction()
+    }
+
+    fun triggerCancel() {
+        finishWithCancel()
+    }
 }
