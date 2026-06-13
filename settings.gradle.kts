@@ -1,4 +1,4 @@
-rootProject.name = "TaskManager"
+rootProject.name = "Background"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {

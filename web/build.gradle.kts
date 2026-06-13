@@ -3,7 +3,7 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
-    id("eu.tintera.tasks.kmp.library")
+    id("eu.tintera.background.kmp.library")
 }
 
 kotlin {

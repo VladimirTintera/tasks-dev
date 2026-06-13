@@ -6,7 +6,7 @@ plugins {
     alias(libs.plugins.serialization)
     alias(libs.plugins.androidx.room)
     alias(libs.plugins.ksp)
-    id("eu.tintera.tasks.android.library")
+    id("eu.tintera.background.android.library")
 }
 
 room3 {

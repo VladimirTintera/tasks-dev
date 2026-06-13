@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
     alias(libs.plugins.serialization)
-    id("eu.tintera.tasks.android.library")
+    id("eu.tintera.background.android.library")
 }
 kotlin {
 

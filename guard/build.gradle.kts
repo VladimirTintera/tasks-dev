@@ -3,17 +3,13 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
-    id("eu.tintera.tasks.android.library")
+    id("eu.tintera.background.android.library")
 }
 
 group = "eu.tintera"
 version = "1.0.0"
 
 kotlin {
-
-    androidLibrary {
-        withHostTest {}
-    }
 
     compilerOptions {
         optIn.addAll(
@@ -53,5 +49,5 @@ kotlin {
 }
 
 androidLibrary {
-    namespace("eu.tintera.guard")
+    namespace("eu.tintera.background.guard")
 }

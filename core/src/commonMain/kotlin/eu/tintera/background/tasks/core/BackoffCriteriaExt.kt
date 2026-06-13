@@ -1,0 +1,42 @@
+package eu.tintera.background.tasks.core
+
+import eu.tintera.background.tasks.BackoffCriteria
+import eu.tintera.background.tasks.BackoffPolicy
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
+
+fun BackoffCriteria.calculate(retryCount: Int): Duration {
+
+    val baseDelay = delay.coerceAtLeast(MIN_BACKOFF_DELAY)
+
+    return when (backoffPolicy) {
+        BackoffPolicy.Linear -> {
+            (baseDelay * (retryCount + 1)).coerceAtMost(MAX_BACKOFF_DELAY)
+        }
+
+        BackoffPolicy.Exponential -> {
+            var currentDelay = baseDelay
+            repeat(retryCount) {
+                currentDelay *= 2
+                if (currentDelay >= MAX_BACKOFF_DELAY) {
+                    return MAX_BACKOFF_DELAY
+                }
+            }
+            currentDelay
+        }
+    }
+}
+
+val defaultBackoffCriteria by lazy {
+    BackoffCriteria(
+        backoffPolicy = BackoffPolicy.Exponential,
+        delay = DEFAULT_BACKOFF_DELAY
+    )
+}
+
+val MINIMAL_REPEAT_INTERVAL: Duration get() = 15.minutes
+val DEFAULT_BACKOFF_DELAY: Duration get() = 30.seconds
+val MAX_BACKOFF_DELAY: Duration = 5.hours
+val MIN_BACKOFF_DELAY: Duration = 10.seconds

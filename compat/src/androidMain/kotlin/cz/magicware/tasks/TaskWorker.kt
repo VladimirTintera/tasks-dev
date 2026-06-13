@@ -2,7 +2,7 @@ package cz.magicware.tasks
 
 import android.content.Context
 import androidx.work.WorkerParameters
-import eu.tintera.tasks.android.TaskWorker
+import eu.tintera.background.tasks.android.TaskWorker
 
 internal class TaskWorker(
     context: Context,

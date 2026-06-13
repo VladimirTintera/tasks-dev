@@ -23,7 +23,7 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "eu.tintera.tasks"
+            packageName = "eu.tintera.background.tasks"
             packageVersion = "1.0.0"
         }
     }

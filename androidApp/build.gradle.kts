@@ -15,11 +15,11 @@ kotlin {
 }
 
 android {
-    namespace = "eu.tintera.tasks"
+    namespace = "eu.tintera.background.tasks"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "eu.tintera.tasks"
+        applicationId = "eu.tintera.background.tasks"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1

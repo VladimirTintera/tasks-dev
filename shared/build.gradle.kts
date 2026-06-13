@@ -6,7 +6,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.serialization)
-    id("eu.tintera.tasks.android.library")
+    id("eu.tintera.background.android.library")
 }
 
 kotlin {
