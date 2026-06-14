@@ -1,18 +1,17 @@
 package eu.tintera.background.tasks.ios
 
-import eu.tintera.background.guard.AbstractToken
 import eu.tintera.background.guard.ExecutionContextObserver
 import eu.tintera.background.guard.PendingTokenProducer
-import eu.tintera.background.guard.Token
 import eu.tintera.background.tasks.EventBus
 import eu.tintera.background.tasks.core.AppDispatchers
 import eu.tintera.background.tasks.core.ApplicationScope
 import eu.tintera.background.tasks.core.runningStates
 import kotlinx.cinterop.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.dropWhile
 import kotlinx.coroutines.launch
 import kotlinx.datetime.toNSDate
-import platform.BackgroundTasks.BGTask
 import platform.BackgroundTasks.BGTaskRequest
 import platform.BackgroundTasks.BGTaskScheduler
 import platform.Foundation.NSError
@@ -101,31 +100,5 @@ internal abstract class BgTaskManager(
 
     override fun onPreCancel() {
         if (appLifecycleObserver.isBackground.value) schedule(Clock.System.now() + 1.hours)
-    }
-}
-
-internal class BgTaskToken(
-    identifier: String,
-    private val task: BGTask
-) : AbstractToken() {
-
-    override val tag = "BgTask:$identifier"
-
-    init {
-        task.expirationHandler = {
-            finishWithCancel()
-        }
-    }
-
-    override suspend fun onRelease() {
-        task.setTaskCompletedWithSuccess(true)
-    }
-
-    override fun onCancel() {
-        task.setTaskCompletedWithSuccess(false)
-    }
-
-    fun cancel() {
-        finishWithCancel()
     }
 }

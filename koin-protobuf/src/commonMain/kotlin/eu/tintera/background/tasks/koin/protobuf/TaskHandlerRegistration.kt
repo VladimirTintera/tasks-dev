@@ -9,6 +9,22 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.factoryOf
 
 
+inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>> Module.taskHandler(
+    identifier: String,
+    currentVersion: Int = 1,
+    migrations: List<Migration> = emptyList(),
+    noinline definition: Module.() -> KoinDefinition<R>
+) = taskRegistration(
+    identifier = identifier,
+    currentVersion = currentVersion,
+    migrations = migrations,
+    inputSerializer = protobufSerializer(),
+    outputSerializer = protobufSerializer(),
+    progressSerializer = protobufSerializer(),
+    definition = definition
+)
+
+
 inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>> Module.taskHandlerOf(
     crossinline constructor: () -> R,
     identifier: String,

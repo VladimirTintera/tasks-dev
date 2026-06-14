@@ -23,7 +23,6 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.shared)
             implementation(libs.compose.ui)
-            implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
         }
     }

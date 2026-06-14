@@ -1,17 +1,12 @@
 package eu.tintera.background.tasks
 
 import co.touchlab.kermit.Logger
-import eu.tintera.background.guard.ExecutionContextObserverRegistry
-import eu.tintera.background.guard.ExecutionEnvironment
-import eu.tintera.background.guard.ExhaustibleObservable
-import eu.tintera.background.guard.MultiplexerObservable
-import eu.tintera.background.guard.PendingTokenObservable
-import eu.tintera.background.guard.TokenObservable
+import eu.tintera.background.guard.*
 import eu.tintera.background.tasks.handlers.TestHandler
 import eu.tintera.background.tasks.handlers.TestHandlerData
 import eu.tintera.background.tasks.handlers.TestHandlerProgress
 import eu.tintera.background.tasks.handlers.TestTypedTag
-import eu.tintera.background.tasks.koin.json.taskHandlerOf
+import eu.tintera.background.tasks.koin.json.taskHandler
 import eu.tintera.background.tasks.koin.taskTag
 import eu.tintera.background.tasks.migrations.migration
 import eu.tintera.background.tasks.migrations.migrations
@@ -20,14 +15,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.koin.core.context.startKoin
-import org.koin.core.module.dsl.createdAtStart
 import org.koin.core.module.dsl.factoryOf
-import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.KoinAppDeclaration
 import org.koin.dsl.bind
 import org.koin.dsl.binds
 import org.koin.dsl.module
+import org.koin.plugin.module.dsl.factory
+import org.koin.plugin.module.dsl.viewModel
 
 fun koinApp(
     appDeclaration: KoinAppDeclaration = {}
@@ -61,8 +56,8 @@ fun koinApp(
                 identifier = "eu.tintera.tasks.handlers.TestTypedTag",
                 serializer = TestTypedTag.serializer
             )
-            taskHandlerOf(
-                ::TestHandler,
+
+            taskHandler(
                 identifier = "eu.tintera.tasks.handlers.TestHandler",
                 currentVersion = 2,
                 migrations = migrations {
@@ -85,7 +80,10 @@ fun koinApp(
                         }
                     }
                 }
-            )
+            ) {
+                factoryOf(::TestHandler)
+            }
+
             viewModelOf(::MainViewModel)
 
             single(createdAtStart = true) {

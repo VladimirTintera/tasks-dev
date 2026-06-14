@@ -34,7 +34,6 @@ kotlin {
             api(projects.api)
             api(projects.core)
             implementation(projects.coreDb)
-            implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
             api(projects.guard)
         }

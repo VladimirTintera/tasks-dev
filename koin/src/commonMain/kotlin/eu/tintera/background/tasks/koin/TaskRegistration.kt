@@ -7,6 +7,7 @@ import eu.tintera.background.tasks.serialization.Serializer
 import org.koin.core.definition.KoinDefinition
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
+import org.koin.core.scope.Scope
 
 inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>> Module.taskRegistration(
     currentVersion: Int,

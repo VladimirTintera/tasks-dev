@@ -23,7 +23,6 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(project.dependencies.platform(libs.koin.bom))
             api(libs.koin.core)
             implementation(projects.runtime)
             api(projects.api)

@@ -4,9 +4,28 @@ import eu.tintera.background.tasks.TaskHandler
 import eu.tintera.background.tasks.migrations.Migration
 import eu.tintera.background.tasks.serialization.Serializer
 import org.koin.core.definition.Definition
+import org.koin.core.definition.KoinDefinition
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.qualifier.Qualifier
+
+inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>> Module.taskHandler(
+    currentVersion: Int,
+    identifier: String,
+    migrations: List<Migration>,
+    inputSerializer: Serializer<Input>,
+    outputSerializer: Serializer<Output>,
+    progressSerializer: Serializer<Progress>,
+    noinline definition: Module.() -> KoinDefinition<R>
+) = taskRegistration(
+    identifier = identifier,
+    currentVersion = currentVersion,
+    inputSerializer = inputSerializer,
+    outputSerializer = outputSerializer,
+    progressSerializer = progressSerializer,
+    migrations = migrations,
+    definition = definition
+)
 
 inline fun <reified Input : Any, reified Output : Any, reified Progress : Any, reified R : TaskHandler<Input, Output, Progress>> Module.taskHandlerOf(
     crossinline constructor: () -> R,
