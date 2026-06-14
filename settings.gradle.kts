@@ -40,31 +40,29 @@ include(":webApp")
 
 include(":guard")
 
-include(":runtime")
-include(":core")
-include(":core-db")
-include(":engine")
-include(":engine-db")
-include(":db")
-include(":api")
-include(":android")
-include(":android-db")
-include(":di")
-include(":ios")
-include(":ios-db")
-
-include(":web")
-
-include(":compat")
-
-include(":koin")
-include(":koin-json")
-include(":koin-protobuf")
-include(":koin-compat")
-
-include(":serialization-json")
-include(":serialization-protobuf")
-include(":serialization-compat")
+include(
+    ":tasks:runtime",
+    ":tasks:core:core",
+    ":tasks:core:db",
+    ":tasks:engine:engine",
+    ":tasks:engine:db",
+    ":tasks:db",
+    ":tasks:api",
+    ":tasks:android:android",
+    ":tasks:android:db",
+    ":tasks:di",
+    ":tasks:ios:ios",
+    ":tasks:ios:db",
+    ":tasks:web",
+    ":tasks:compat",
+    ":tasks:koin:koin",
+    ":tasks:koin:json",
+    ":tasks:koin:protobuf",
+    ":tasks:koin:compat",
+    ":tasks:serialization:json",
+    ":tasks:serialization:protobuf",
+    ":tasks:serialization:compat"
+)
 
 //includeBuild("external/guard") {
 //    dependencySubstitution {

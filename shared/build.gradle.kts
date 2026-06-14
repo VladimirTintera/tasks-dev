@@ -63,10 +63,10 @@ kotlin {
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
 
-            implementation(projects.runtime)
-            implementation(projects.koinJson)
-            implementation(projects.serializationCompat)
-            implementation(projects.serializationJson)
+            implementation(projects.tasks.runtime)
+            implementation(projects.tasks.koin.json)
+            implementation(projects.tasks.serialization.compat)
+            implementation(projects.tasks.serialization.json)
 
             implementation(libs.time.format)
             implementation(libs.time.format.context)

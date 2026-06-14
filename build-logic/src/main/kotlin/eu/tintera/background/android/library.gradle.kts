@@ -14,8 +14,12 @@ kotlin {
 
     androidLibrary {
 
-        val formattedProjectName = project.name.replace("-", ".")
-        namespace = "eu.tintera.background.tasks.$formattedProjectName"
+        val pathSegments = project.path
+            .split(":")
+            .filter { it.isNotEmpty() }
+            .toSet()
+
+        namespace = "eu.tintera.background." + pathSegments.joinToString(".")
 
         compileSdk = libs.findVersion("android.compileSdk").get().requiredVersion.toInt()
         minSdk = libs.findVersion("android.minSdk").get().requiredVersion.toInt()
