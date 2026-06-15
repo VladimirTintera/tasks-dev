@@ -1,6 +1,5 @@
 package eu.tintera.background.tasks.core
 
-import eu.tintera.background.tasks.EventBus
 import eu.tintera.background.tasks.ForegroundInfo
 import eu.tintera.background.tasks.ParentData
 import eu.tintera.background.tasks.TaskResult
@@ -121,7 +120,6 @@ class TaskEvaluatorImpl(
                 throw e
             } catch (e: Exception) {
                 e.printStackTrace()
-                EventBus.send(TAG, "Task execution failed with error '${e.message}'")
                 TaskResult.Failure
             }
         }
@@ -154,9 +152,7 @@ class TaskEvaluatorImpl(
     ): TaskEvaluatorResult {
 
         withContext(NonCancellable) {
-            taskResultHandler.handleResult(
-                result
-            )
+            taskResultHandler.handleResult(result)
         }
 
         return when (result) {

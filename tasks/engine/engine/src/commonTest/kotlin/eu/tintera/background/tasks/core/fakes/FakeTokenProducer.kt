@@ -8,10 +8,8 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 // Falešný producent, u kterého můžeme "na povel" emitovat tokeny nebo je expirovat
 class FakeTokenProducer : TokenProducer {
     private val tokenFlow = MutableSharedFlow<Token>()
-    private var expireCallback: (() -> Unit)? = null
 
-    override fun token(onExpire: () -> Unit): Flow<Token> {
-        this.expireCallback = onExpire
+    override fun token(): Flow<Token> {
         return tokenFlow
     }
 
@@ -24,10 +22,5 @@ class FakeTokenProducer : TokenProducer {
         val token = FakeToken()
         tokenFlow.emit(token)
         return token
-    }
-
-    // Pomocná metoda pro testy: Simuluje, že iOS odpálil Watchdoga
-    fun simulateExpiration() {
-        expireCallback?.invoke()
     }
 }

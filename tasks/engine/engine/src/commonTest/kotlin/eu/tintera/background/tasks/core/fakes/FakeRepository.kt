@@ -1,61 +1,116 @@
 package eu.tintera.background.tasks.core.fakes
 
-import eu.tintera.background.tasks.Data
 import eu.tintera.background.tasks.State
-import eu.tintera.background.tasks.core.data.FullTask
-import eu.tintera.background.tasks.core.data.Repository
-import eu.tintera.background.tasks.core.data.Task
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.update
+import eu.tintera.background.tasks.core.OrphanTaskSweeperRepository
+import eu.tintera.background.tasks.core.ProcessableTask
+import eu.tintera.background.tasks.core.TaskDispatcherRepository
+import eu.tintera.background.tasks.core.TaskProcessorRepository
+import eu.tintera.background.tasks.core.TaskResultProcessorRepository
+import eu.tintera.background.tasks.core.data.*
+import kotlinx.coroutines.flow.*
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
-class FakeRepository : Repository {
+class FakeRepository : Repository, TaskDispatcherRepository, TaskProcessorRepository, TaskEvaluatorRepository, OrphanTaskSweeperRepository, TaskScopeRepository, TaskResultProcessorRepository {
 
     private val tasks = MutableStateFlow<List<Task>>(emptyList())
-    private val parentMap = mutableMapOf<Uuid, Set<Uuid>>() // childId -> parentIds
 
-    override fun parentsDataFor(id: Uuid): Flow<List<Task>> {
-        val parentIds = parentMap[id] ?: emptySet()
-        return tasks.map { allTasks ->
-            allTasks.filter { it.id in parentIds }
+    fun taskState(id: Uuid): State? = tasks.value.firstOrNull { it.id == id }?.state
+    private val parentMap = mutableMapOf<Uuid, Set<Uuid>>() // childId -> parentIds
+    private val tagMap = mutableMapOf<Uuid, Set<String>>() // taskId -> tags
+
+    override fun dispatchableTasks(states: Set<State>): Flow<List<DispatchableTask>> {
+        return tasks.map { list ->
+            list.filter { it.state in states }.map { DispatchableTask(it.id, it.state) }
         }
     }
 
-    override suspend fun updateRunAttemptCount(
-        id: Uuid,
-        runAttemptsCount: Int
-    ) {
-        tasks.update { currentTasks ->
-            currentTasks.map {
-                if (it.id == id) {
-                    it.copy(
-                        runAttemptCount = runAttemptsCount
-                    )
-                } else {
-                    it
-                }
+    override fun processableTask(id: Uuid): Flow<ProcessableTask?> {
+        return tasks.map { list ->
+            list.firstOrNull { it.id == id }?.let {
+                ProcessableTask(
+                    id = it.id,
+                    state = it.state,
+                    initialDelay = it.initialDelay,
+                    runAttemptCount = it.runAttemptCount,
+                    networkRequired = it.networkRequired,
+                    requiresDeviceIdle = it.requiresDeviceIdle,
+                    repeatInterval = it.repeatInterval,
+                    backoffCriteria = it.backoffCriteria,
+                    processTime = it.processTime
+                )
             }
         }
     }
 
-    override suspend fun updateNextRun(
+    override suspend fun executableTask(id: Uuid): ExecutableTask? {
+        return tasks.value.firstOrNull { it.id == id }?.let {
+            ExecutableTask(
+                identifier = it.identifier,
+                runAttemptCount = it.runAttemptCount,
+                backoffCriteria = it.backoffCriteria,
+                repeatInterval = it.repeatInterval,
+                version = it.version,
+                inputData = it.inputData,
+                outputData = it.outputData,
+                progressData = it.progressData,
+                tags = getTags(it.id)
+            )
+        }
+    }
+
+    override suspend fun parentsDataFor(id: Uuid): List<eu.tintera.background.tasks.core.data.ParentData> {
+        val parentIds = parentMap[id] ?: emptySet()
+        return tasks.value.filter { it.id in parentIds }.map {
+            eu.tintera.background.tasks.core.data.ParentData(
+                id = it.id,
+                identifier = it.identifier,
+                outputData = it.outputData,
+                finishedAt = it.finishedAt ?: Instant.DISTANT_PAST,
+                version = it.version
+            )
+        }
+    }
+
+
+    override suspend fun run(id: Uuid, allowedSourceStates: Set<State>) {
+        val currentTask = tasks.value.firstOrNull { it.id == id }
+        val nextRunAttemptCount = currentTask?.let { it.runAttemptCount + 1 }
+        updateState(id, State.Running, allowedSourceStates, resetProcessTime = true, runAttemptCount = nextRunAttemptCount)
+    }
+
+    override suspend fun updateEnqueuedState(id: Uuid, allowedSourceStates: Set<State>) {
+        updateState(id, State.Enqueued, allowedSourceStates, resetProcessTime = false, runAttemptCount = null)
+    }
+
+    override suspend fun enqueue(id: Uuid, allowedSourceStates: Set<State>, processTime: Instant) {
+        updateState(id, State.Enqueued, allowedSourceStates, resetProcessTime = false, runAttemptCount = null)
+        tasks.update { list ->
+            list.map {
+                if (it.id == id) it.copy(processTime = processTime) else it
+            }
+        }
+    }
+
+    override suspend fun fail(id: Uuid) {
+        updateState(id, State.Failed, emptySet(), resetProcessTime = false, runAttemptCount = null)
+    }
+
+    override suspend fun upgradeData(
         id: Uuid,
-        processTime: Instant,
-        state: State,
-        progressData: Data,
-        runAttemptCount: Int?
+        input: ByteArray?,
+        output: ByteArray?,
+        progress: ByteArray?,
+        version: Int
     ) {
-        tasks.update { currentTasks ->
-            currentTasks.map {
+        tasks.update { list ->
+            list.map {
                 if (it.id == id) {
                     it.copy(
-                        state = state,
-                        processTime = processTime,
-                        progressData = progressData,
-                        runAttemptCount = runAttemptCount ?: it.runAttemptCount
+                        inputData = input,
+                        outputData = output,
+                        progressData = progress,
+                        version = version
                     )
                 } else {
                     it
@@ -68,7 +123,7 @@ class FakeRepository : Repository {
         id: Uuid,
         state: State,
         finishedAt: Instant,
-        outputData: Data
+        outputData: ByteArray?
     ) {
         tasks.update { currentTasks ->
             currentTasks.map {
@@ -85,22 +140,18 @@ class FakeRepository : Repository {
         }
     }
 
-    override suspend fun taskState(id: Uuid): State? {
-        return tasks.value.firstOrNull {
-            it.id == id
-        }?.state
+    override suspend fun task(id: Uuid): Task? {
+        return tasks.value.firstOrNull { it.id == id }
     }
 
-    override fun task(id: Uuid): Flow<Task?> {
-        return tasks.map { it.firstOrNull { it.id == id } }
-    }
-
-    override suspend fun allByUniqueName(uniqueName: String): List<Task> {
-        TODO("Not yet implemented")
+    override suspend fun allByUniqueName(uniqueName: String, states: Set<State>): List<Uuid> {
+        return tasks.value.filter { it.uniqueName == uniqueName && it.state in states }.map { it.id }
     }
 
     override suspend fun delete(id: Uuid) {
-        TODO("Not yet implemented")
+        tasks.update { it.filterNot { task -> task.id == id } }
+        parentMap.remove(id)
+        tagMap.remove(id)
     }
 
     override suspend fun insert(
@@ -108,69 +159,95 @@ class FakeRepository : Repository {
         tags: Set<String>,
         parentIds: Set<Uuid>
     ) {
-        tasks.update { currentTasks ->
-            currentTasks + task
-        }
+        tasks.update { it + task }
         if (parentIds.isNotEmpty()) {
             parentMap[task.id] = parentIds
         }
+        if (tags.isNotEmpty()) {
+            tagMap[task.id] = tags
+        }
     }
 
-    override suspend fun cleanOld(
-        terminalStates: Set<State>,
-    ) {
-        TODO("Not yet implemented")
+    override suspend fun cleanOld(terminalStates: Set<State>) {
+        tasks.update { it.filterNot { task -> task.state in terminalStates } }
     }
 
-    override fun taskInfosByTag(name: String): Flow<List<FullTask>> {
-        TODO("Not yet implemented")
+    private fun getTags(id: Uuid): Set<String> = tagMap[id] ?: emptySet()
+
+    private fun toInfo(task: Task) = Info(
+        id = task.id,
+        identifier = task.identifier,
+        runAttemptCount = task.runAttemptCount,
+        state = task.state,
+        tags = getTags(task.id),
+        outputData = task.outputData,
+        processTime = task.processTime,
+        progressData = task.progressData,
+        finishedAt = task.finishedAt,
+        createdAt = task.createdAt,
+        version = task.version
+    )
+
+    override fun taskInfosByTag(name: String): Flow<List<Info>> {
+        return tasks.map { list ->
+            list.filter { name in getTags(it.id) }.map { toInfo(it) }
+        }
     }
 
-    override fun taskInfoById(id: Uuid): Flow<FullTask?> {
-        TODO("Not yet implemented")
+    override fun taskInfos(
+        ids: Set<Uuid>,
+        tags: Set<String>,
+        states: Set<State>,
+        uniqueNames: Set<String>
+    ): Flow<List<Info>> {
+        return tasks.map { list ->
+            list.filter { task ->
+                (ids.isEmpty() || task.id in ids) &&
+                (tags.isEmpty() || getTags(task.id).any { it in tags }) &&
+                (states.isEmpty() || task.state in states) &&
+                (uniqueNames.isEmpty() || task.uniqueName in uniqueNames)
+            }.map { toInfo(it) }
+        }
     }
 
-    override fun schedulableTasks(states: List<State>): Flow<List<Task>> {
-        return tasks.map {
-            it.filter { it.state in states }
+    override fun taskInfoById(id: Uuid): Flow<Info?> {
+        return tasks.map { list ->
+            list.firstOrNull { it.id == id }?.let { toInfo(it) }
+        }
+    }
+
+    override fun taskInfoByIds(ids: Set<Uuid>): Flow<List<Info>> {
+        return tasks.map { list ->
+            list.filter { it.id in ids }.map { toInfo(it) }
         }
     }
 
     override suspend fun childrenForTask(id: Uuid): List<Uuid> {
-        TODO("Not yet implemented")
+        return parentMap.filterValues { id in it }.keys.toList()
     }
 
     override suspend fun taskIdsByTagAndState(
         states: List<State>,
         tag: String
-    ): List<Task> {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun resetState(
-        from: State,
-        to: State,
-        excludedIds: Set<Uuid>
-    ) {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun updateProgressData(
-        id: Uuid,
-        progressData: Data
-    ) {
-        TODO("Not yet implemented")
+    ): List<Uuid> {
+        return tasks.value.filter { it.state in states && tag in getTags(it.id) }.map { it.id }
     }
 
     override suspend fun updateState(
         id: Uuid,
         state: State,
-        allowedSourceStates: Set<State>
+        allowedSourceStates: Set<State>,
+        resetProcessTime: Boolean,
+        runAttemptCount: Int?
     ) {
-        tasks.update {
-            it.map {
-                if (it.id == id && it.state in allowedSourceStates) {
-                    it.copy(state = state)
+        tasks.update { list ->
+            list.map {
+                if (it.id == id && (allowedSourceStates.isEmpty() || it.state in allowedSourceStates)) {
+                    it.copy(
+                        state = state,
+                        processTime = if (resetProcessTime) null else it.processTime,
+                        runAttemptCount = runAttemptCount ?: it.runAttemptCount
+                    )
                 } else {
                     it
                 }
@@ -178,15 +255,75 @@ class FakeRepository : Repository {
         }
     }
 
-    override suspend fun terminateWithDescendants(
+    override suspend fun finishTaskWithUnsuccess(
         id: Uuid,
         state: State,
-        allowedSourceStates: Set<State>
+        finishedAt: Instant
     ) {
-        TODO("Not yet implemented")
+        tasks.update { list ->
+            list.map {
+                if (it.id == id) {
+                    it.copy(state = state, finishedAt = finishedAt)
+                } else {
+                    it
+                }
+            }
+        }
     }
 
-    override suspend fun <T> withTransaction(action: suspend Repository.() -> T): T {
-        TODO("Not yet implemented")
+    override suspend fun resetState(from: State, to: State, excludedIds: Set<Uuid>) {
+        tasks.update { list ->
+            list.map {
+                if (it.state == from && it.id !in excludedIds) {
+                    it.copy(state = to)
+                } else {
+                    it
+                }
+            }
+        }
+    }
+
+    override suspend fun updateProgressData(id: Uuid, progressData: ByteArray?) {
+        tasks.update { list ->
+            list.map {
+                if (it.id == id) it.copy(progressData = progressData) else it
+            }
+        }
+    }
+
+    override suspend fun scheduleNextFromBeginning(id: Uuid, state: State, allowedSourceStates: Set<State>, processTime: Instant) {
+        updateState(id, state, allowedSourceStates, resetProcessTime = false, runAttemptCount = 0)
+        tasks.update { list ->
+            list.map {
+                if (it.id == id) it.copy(processTime = processTime) else it
+            }
+        }
+    }
+
+    override suspend fun scheduleNext(id: Uuid, state: State, allowedSourceStates: Set<State>, processTime: Instant) {
+        updateState(id, state, allowedSourceStates, resetProcessTime = false, runAttemptCount = null)
+        tasks.update { list ->
+            list.map {
+                if (it.id == id) it.copy(processTime = processTime) else it
+            }
+        }
+    }
+
+    override suspend fun failTask(id: Uuid, state: State, allowedSourceStates: Set<State>, finishedAt: Instant) {
+        updateState(id, state, allowedSourceStates, resetProcessTime = false, runAttemptCount = 0)
+        tasks.update { list ->
+            list.map {
+                if (it.id == id) it.copy(finishedAt = finishedAt) else it
+            }
+        }
+    }
+
+    override suspend fun successTask(id: Uuid, state: State, allowedSourceStates: Set<State>, finishedAt: Instant, outputData: ByteArray) {
+        updateState(id, state, allowedSourceStates, resetProcessTime = false, runAttemptCount = 0)
+        tasks.update { list ->
+            list.map {
+                if (it.id == id) it.copy(finishedAt = finishedAt, outputData = outputData) else it
+            }
+        }
     }
 }

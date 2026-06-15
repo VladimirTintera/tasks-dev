@@ -1,20 +1,24 @@
 package eu.tintera.background.tasks.core.fakes
 
-import eu.tintera.background.guard.Token
+import eu.tintera.background.guard.AbstractToken
 
-// Falešný token, který si jen pamatuje, co se s ním stalo
-class FakeToken(val name: String = "Fake") : Token {
+class FakeToken(val name: String = "Fake") : AbstractToken() {
+    override val tag = name
+
     var isReleased = false
         private set
     var isCanceled = false
         private set
 
-    override suspend fun release() {
+    override suspend fun onRelease() {
         isReleased = true
     }
 
-    override fun cancel() {
+    override fun onCancel() {
         isCanceled = true
     }
-}
 
+    fun cancel() {
+        finishWithCancel()
+    }
+}

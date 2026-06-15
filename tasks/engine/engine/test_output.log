@@ -1,0 +1,651 @@
+Initialized native services in: /Users/vladimirtintera/.gradle/native
+Initialized jansi services in: /Users/vladimirtintera/.gradle/native
+The client will now receive all logging from the daemon (pid: 70739). The daemon log file: /Users/vladimirtintera/.gradle/daemon/9.5.0/daemon-70739.out.log
+Starting 77th build in daemon [uptime: 2 hrs 38 mins 23.232 secs, performance: 99%, GC rate: 0.00/s, heap usage: 0% of 4 GiB]
+Using 10 worker leases.
+Operational build model parameters: {cachingModelBuilding=false, configurationCache=true, configurationCacheDisabledReason=null, configurationCacheParallelLoad=true, configurationCacheParallelStore=false, configureOnDemand=false, invalidateCoupledProjects=false, isolatedProjects=false, modelAsProjectDependency=false, modelBuilding=false, parallelModelBuilding=false, parallelProjectConfiguration=false, parallelProjectExecution=false, resilientModelBuilding=false}
+Encryption key source: default Gradle keystore (pkcs12)
+Now considering [/Users/vladimirtintera/Develop/tasks-dev, /Users/vladimirtintera/Develop/tasks-dev/build-logic] as hierarchies to watch
+Now considering [/Users/vladimirtintera/Develop/tasks-dev/build-logic, /Users/vladimirtintera/Develop/tasks-dev] as hierarchies to watch
+Reusing configuration cache.
+Now considering [/Users/vladimirtintera/Develop/tasks-dev, /Users/vladimirtintera/Develop/tasks-dev/build-logic] as hierarchies to watch
+Watching the file system is configured to be enabled if available
+File system watching is active
+Using local directory build cache for the root build (location = /Users/vladimirtintera/.gradle/caches/build-cache-1, remove unused entries = after 7 days).
+Tasks to be executed: [task ':guard:kmpPartiallyResolvedDependenciesChecker', task ':guard:checkKotlinGradlePluginConfigurationErrors', task ':guard:compileKotlinJvm', task ':guard:compileJvmMainJava', task ':guard:jvmProcessResources', task ':guard:processJvmMainResources', task ':guard:jvmMainClasses', task ':guard:jvmJar', task ':tasks:api:kmpPartiallyResolvedDependenciesChecker', task ':tasks:api:checkKotlinGradlePluginConfigurationErrors', task ':tasks:api:compileKotlinJvm', task ':tasks:api:compileJvmMainJava', task ':tasks:api:jvmProcessResources', task ':tasks:api:processJvmMainResources', task ':tasks:api:jvmMainClasses', task ':tasks:api:jvmJar', task ':tasks:db:kmpPartiallyResolvedDependenciesChecker', task ':tasks:db:checkKotlinGradlePluginConfigurationErrors', task ':tasks:core:core:kmpPartiallyResolvedDependenciesChecker', task ':tasks:core:core:checkKotlinGradlePluginConfigurationErrors', task ':tasks:core:core:compileKotlinJvm', task ':tasks:core:core:compileJvmMainJava', task ':tasks:core:core:jvmProcessResources', task ':tasks:core:core:processJvmMainResources', task ':tasks:core:core:jvmMainClasses', task ':tasks:core:core:jvmJar', task ':tasks:db:kspKotlinJvm', task ':tasks:db:compileKotlinJvm', task ':tasks:db:copyRoomSchemas', task ':tasks:db:compileJvmMainJava', task ':tasks:db:jvmProcessResources', task ':tasks:db:processJvmMainResources', task ':tasks:db:jvmMainClasses', task ':tasks:db:jvmJar', task ':tasks:core:db:kmpPartiallyResolvedDependenciesChecker', task ':tasks:core:db:checkKotlinGradlePluginConfigurationErrors', task ':tasks:core:db:compileKotlinJvm', task ':tasks:core:db:compileJvmMainJava', task ':tasks:core:db:jvmProcessResources', task ':tasks:core:db:processJvmMainResources', task ':tasks:core:db:jvmMainClasses', task ':tasks:core:db:jvmJar', task ':tasks:engine:engine:kmpPartiallyResolvedDependenciesChecker', task ':tasks:engine:engine:checkKotlinGradlePluginConfigurationErrors', task ':tasks:engine:engine:compileKotlinJvm', task ':tasks:engine:engine:compileJvmMainJava', task ':tasks:engine:engine:jvmProcessResources', task ':tasks:engine:engine:processJvmMainResources', task ':tasks:engine:engine:jvmMainClasses', task ':tasks:engine:engine:jvmJar', task ':tasks:engine:engine:compileTestKotlinJvm', task ':tasks:engine:engine:compileJvmTestJava', task ':tasks:engine:engine:jvmTestProcessResources', task ':tasks:engine:engine:processJvmTestResources', task ':tasks:engine:engine:jvmTestClasses', task ':tasks:engine:engine:jvmTest']
+Tasks that were excluded: []
+Resolve mutations for :guard:kmpPartiallyResolvedDependenciesChecker (Thread[#4234,Execution worker,5,main]) started.
+Resolve mutations for :tasks:api:jvmProcessResources (Thread[#4237,Execution worker Thread 4,5,main]) started.
+Resolve mutations for :tasks:core:core:kmpPartiallyResolvedDependenciesChecker (Thread[#4239,Execution worker Thread 6,5,main]) started.
+Resolve mutations for :tasks:core:db:kmpPartiallyResolvedDependenciesChecker (Thread[#4233,included builds,5,main]) started.
+Resolve mutations for :tasks:db:kmpPartiallyResolvedDependenciesChecker (Thread[#4238,Execution worker Thread 5,5,main]) started.
+:tasks:core:db:kmpPartiallyResolvedDependenciesChecker (Thread[#4233,included builds,5,main]) started.
+Resolve mutations for :tasks:api:kmpPartiallyResolvedDependenciesChecker (Thread[#4236,Execution worker Thread 3,5,main]) started.
+Resolve mutations for :guard:jvmProcessResources (Thread[#4235,Execution worker Thread 2,5,main]) started.
+:tasks:api:kmpPartiallyResolvedDependenciesChecker (Thread[#4236,Execution worker Thread 3,5,main]) started.
+:tasks:db:kmpPartiallyResolvedDependenciesChecker (Thread[#4238,Execution worker Thread 5,5,main]) started.
+:tasks:core:core:kmpPartiallyResolvedDependenciesChecker (Thread[#4239,Execution worker Thread 6,5,main]) started.
+:tasks:api:jvmProcessResources (Thread[#4237,Execution worker Thread 4,5,main]) started.
+:guard:kmpPartiallyResolvedDependenciesChecker (Thread[#4234,Execution worker,5,main]) started.
+Resolve mutations for :tasks:engine:engine:kmpPartiallyResolvedDependenciesChecker (Thread[#4241,Execution worker Thread 8,5,main]) started.
+Resolve mutations for :tasks:core:db:jvmProcessResources (Thread[#4242,Execution worker Thread 9,5,main]) started.
+Resolve mutations for :tasks:core:core:jvmProcessResources (Thread[#4240,Execution worker Thread 7,5,main]) started.
+:tasks:core:db:jvmProcessResources (Thread[#4242,Execution worker Thread 9,5,main]) started.
+:tasks:engine:engine:kmpPartiallyResolvedDependenciesChecker (Thread[#4241,Execution worker Thread 8,5,main]) started.
+:guard:jvmProcessResources (Thread[#4235,Execution worker Thread 2,5,main]) started.
+:tasks:core:core:jvmProcessResources (Thread[#4240,Execution worker Thread 7,5,main]) started.
+
+> Task :tasks:core:db:jvmProcessResources NO-SOURCE
+Skipping task ':tasks:core:db:jvmProcessResources' as it has no source files and no previous output files.
+
+> Task :tasks:api:jvmProcessResources NO-SOURCE
+Skipping task ':tasks:api:jvmProcessResources' as it has no source files and no previous output files.
+Build 13a1dd93-d937-407b-80c3-c56dbbe64f86 is started
+Resolve mutations for :tasks:api:processJvmMainResources (Thread[#4237,Execution worker Thread 4,5,main]) started.
+
+> Task :tasks:core:core:jvmProcessResources NO-SOURCE
+Skipping task ':tasks:core:core:jvmProcessResources' as it has no source files and no previous output files.
+Resolve mutations for :tasks:core:db:processJvmMainResources (Thread[#4242,Execution worker Thread 9,5,main]) started.
+Resolve mutations for :tasks:core:core:processJvmMainResources (Thread[#4240,Execution worker Thread 7,5,main]) started.
+:tasks:core:db:processJvmMainResources (Thread[#4242,Execution worker Thread 9,5,main]) started.
+:tasks:api:processJvmMainResources (Thread[#4237,Execution worker Thread 4,5,main]) started.
+
+> Task :guard:jvmProcessResources NO-SOURCE
+Skipping task ':guard:jvmProcessResources' as it has no source files and no previous output files.
+
+> Task :tasks:api:processJvmMainResources SKIPPED
+Skipping task ':tasks:api:processJvmMainResources' as task onlyIf 'Task is enabled' is false.
+Resolve mutations for :guard:processJvmMainResources (Thread[#4235,Execution worker Thread 2,5,main]) started.
+:guard:processJvmMainResources (Thread[#4235,Execution worker Thread 2,5,main]) started.
+
+> Task :tasks:core:db:processJvmMainResources SKIPPED
+Skipping task ':tasks:core:db:processJvmMainResources' as task onlyIf 'Task is enabled' is false.
+:tasks:core:core:processJvmMainResources (Thread[#4240,Execution worker Thread 7,5,main]) started.
+
+> Task :tasks:core:core:processJvmMainResources SKIPPED
+Skipping task ':tasks:core:core:processJvmMainResources' as task onlyIf 'Task is enabled' is false.
+Resolve mutations for :tasks:engine:engine:jvmTestProcessResources (Thread[#4242,Execution worker Thread 9,5,main]) started.
+
+> Task :tasks:db:kmpPartiallyResolvedDependenciesChecker
+Caching disabled for task ':tasks:db:kmpPartiallyResolvedDependenciesChecker' because:
+  This task is not intended for execution
+Task ':tasks:db:kmpPartiallyResolvedDependenciesChecker' is not up-to-date because:
+  Task has not declared any outputs despite executing actions.
+Execution stopped by some action with message: null
+:tasks:engine:engine:jvmTestProcessResources (Thread[#4242,Execution worker Thread 9,5,main]) started.
+
+> Task :tasks:core:db:kmpPartiallyResolvedDependenciesChecker
+Caching disabled for task ':tasks:core:db:kmpPartiallyResolvedDependenciesChecker' because:
+  This task is not intended for execution
+Task ':tasks:core:db:kmpPartiallyResolvedDependenciesChecker' is not up-to-date because:
+  Task has not declared any outputs despite executing actions.
+Execution stopped by some action with message: null
+Resolve mutations for :tasks:db:checkKotlinGradlePluginConfigurationErrors (Thread[#4238,Execution worker Thread 5,5,main]) started.
+
+> Task :guard:processJvmMainResources SKIPPED
+Skipping task ':guard:processJvmMainResources' as task onlyIf 'Task is enabled' is false.
+Resolve mutations for :tasks:engine:engine:jvmProcessResources (Thread[#4237,Execution worker Thread 4,5,main]) started.
+
+> Task :tasks:engine:engine:jvmTestProcessResources NO-SOURCE
+Skipping task ':tasks:engine:engine:jvmTestProcessResources' as it has no source files and no previous output files.
+
+> Task :tasks:core:core:kmpPartiallyResolvedDependenciesChecker
+Caching disabled for task ':tasks:core:core:kmpPartiallyResolvedDependenciesChecker' because:
+  This task is not intended for execution
+Task ':tasks:core:core:kmpPartiallyResolvedDependenciesChecker' is not up-to-date because:
+  Task has not declared any outputs despite executing actions.
+Execution stopped by some action with message: null
+
+> Task :guard:kmpPartiallyResolvedDependenciesChecker
+Caching disabled for task ':guard:kmpPartiallyResolvedDependenciesChecker' because:
+  This task is not intended for execution
+Task ':guard:kmpPartiallyResolvedDependenciesChecker' is not up-to-date because:
+  Task has not declared any outputs despite executing actions.
+Execution stopped by some action with message: null
+Resolve mutations for :tasks:core:core:checkKotlinGradlePluginConfigurationErrors (Thread[#4239,Execution worker Thread 6,5,main]) started.
+Resolve mutations for :tasks:engine:engine:processJvmTestResources (Thread[#4234,Execution worker,5,main]) started.
+:tasks:db:checkKotlinGradlePluginConfigurationErrors (Thread[#4238,Execution worker Thread 5,5,main]) started.
+:tasks:engine:engine:processJvmTestResources (Thread[#4234,Execution worker,5,main]) started.
+Resolve mutations for :tasks:core:db:checkKotlinGradlePluginConfigurationErrors (Thread[#4233,included builds,5,main]) started.
+
+> Task :tasks:engine:engine:kmpPartiallyResolvedDependenciesChecker
+Caching disabled for task ':tasks:engine:engine:kmpPartiallyResolvedDependenciesChecker' because:
+  This task is not intended for execution
+Task ':tasks:engine:engine:kmpPartiallyResolvedDependenciesChecker' is not up-to-date because:
+  Task has not declared any outputs despite executing actions.
+Execution stopped by some action with message: null
+:tasks:core:db:checkKotlinGradlePluginConfigurationErrors (Thread[#4233,included builds,5,main]) started.
+
+> Task :tasks:api:kmpPartiallyResolvedDependenciesChecker
+Caching disabled for task ':tasks:api:kmpPartiallyResolvedDependenciesChecker' because:
+  This task is not intended for execution
+Task ':tasks:api:kmpPartiallyResolvedDependenciesChecker' is not up-to-date because:
+  Task has not declared any outputs despite executing actions.
+Execution stopped by some action with message: null
+Resolve mutations for :tasks:engine:engine:checkKotlinGradlePluginConfigurationErrors (Thread[#4241,Execution worker Thread 8,5,main]) started.
+
+> Task :tasks:db:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':tasks:db:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+:tasks:engine:engine:checkKotlinGradlePluginConfigurationErrors (Thread[#4241,Execution worker Thread 8,5,main]) started.
+:tasks:core:core:checkKotlinGradlePluginConfigurationErrors (Thread[#4239,Execution worker Thread 6,5,main]) started.
+Resolve mutations for :guard:checkKotlinGradlePluginConfigurationErrors (Thread[#4242,Execution worker Thread 9,5,main]) started.
+:tasks:engine:engine:jvmProcessResources (Thread[#4237,Execution worker Thread 4,5,main]) started.
+:guard:checkKotlinGradlePluginConfigurationErrors (Thread[#4242,Execution worker Thread 9,5,main]) started.
+
+> Task :guard:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':guard:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :guard:compileKotlinJvm (Thread[#4242,Execution worker Thread 9,5,main]) started.
+
+> Task :tasks:engine:engine:processJvmTestResources SKIPPED
+Skipping task ':tasks:engine:engine:processJvmTestResources' as task onlyIf 'Task is enabled' is false.
+Resolve mutations for :tasks:api:checkKotlinGradlePluginConfigurationErrors (Thread[#4236,Execution worker Thread 3,5,main]) started.
+
+> Task :tasks:core:db:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':tasks:core:db:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+:guard:compileKotlinJvm (Thread[#4242,Execution worker Thread 9,5,main]) started.
+:tasks:api:checkKotlinGradlePluginConfigurationErrors (Thread[#4236,Execution worker Thread 3,5,main]) started.
+
+> Task :tasks:engine:engine:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':tasks:engine:engine:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+
+> Task :tasks:core:core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':tasks:core:core:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+
+> Task :tasks:api:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':tasks:api:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :tasks:api:compileKotlinJvm (Thread[#4236,Execution worker Thread 3,5,main]) started.
+
+> Task :tasks:engine:engine:jvmProcessResources NO-SOURCE
+Skipping task ':tasks:engine:engine:jvmProcessResources' as it has no source files and no previous output files.
+:tasks:api:compileKotlinJvm (Thread[#4236,Execution worker Thread 3,5,main]) started.
+Resolve mutations for :tasks:engine:engine:processJvmMainResources (Thread[#4237,Execution worker Thread 4,5,main]) started.
+:tasks:engine:engine:processJvmMainResources (Thread[#4237,Execution worker Thread 4,5,main]) started.
+
+> Task :tasks:engine:engine:processJvmMainResources SKIPPED
+Skipping task ':tasks:engine:engine:processJvmMainResources' as task onlyIf 'Task is enabled' is false.
+
+> Task :tasks:api:compileKotlinJvm UP-TO-DATE
+Build cache key for task ':tasks:api:compileKotlinJvm' is 36e10438d3b6f4d700fa7bf0c2029fcb
+Skipping task ':tasks:api:compileKotlinJvm' as it is up-to-date.
+
+> Task :guard:compileKotlinJvm UP-TO-DATE
+Build cache key for task ':guard:compileKotlinJvm' is e17f78ff0a19b4951b29361ed4d855b8
+Skipping task ':guard:compileKotlinJvm' as it is up-to-date.
+Resolve mutations for :tasks:api:compileJvmMainJava (Thread[#4236,Execution worker Thread 3,5,main]) started.
+Resolve mutations for :guard:compileJvmMainJava (Thread[#4242,Execution worker Thread 9,5,main]) started.
+:tasks:api:compileJvmMainJava (Thread[#4236,Execution worker Thread 3,5,main]) started.
+:guard:compileJvmMainJava (Thread[#4242,Execution worker Thread 9,5,main]) started.
+
+> Task :tasks:api:compileJvmMainJava NO-SOURCE
+Skipping task ':tasks:api:compileJvmMainJava' as it has no source files and no previous output files.
+Resolve mutations for :tasks:api:jvmMainClasses (Thread[#4236,Execution worker Thread 3,5,main]) started.
+:tasks:api:jvmMainClasses (Thread[#4236,Execution worker Thread 3,5,main]) started.
+
+> Task :tasks:api:jvmMainClasses UP-TO-DATE
+Skipping task ':tasks:api:jvmMainClasses' as it has no actions.
+
+> Task :guard:compileJvmMainJava NO-SOURCE
+Skipping task ':guard:compileJvmMainJava' as it has no source files and no previous output files.
+Resolve mutations for :guard:jvmMainClasses (Thread[#4236,Execution worker Thread 3,5,main]) started.
+Resolve mutations for :tasks:api:jvmJar (Thread[#4235,Execution worker Thread 2,5,main]) started.
+:guard:jvmMainClasses (Thread[#4242,Execution worker Thread 9,5,main]) started.
+
+> Task :guard:jvmMainClasses UP-TO-DATE
+Skipping task ':guard:jvmMainClasses' as it has no actions.
+Resolve mutations for :guard:jvmJar (Thread[#4242,Execution worker Thread 9,5,main]) started.
+:tasks:api:jvmJar (Thread[#4235,Execution worker Thread 2,5,main]) started.
+:guard:jvmJar (Thread[#4242,Execution worker Thread 9,5,main]) started.
+
+> Task :guard:jvmJar UP-TO-DATE
+Caching disabled for task ':guard:jvmJar' because:
+  Not worth caching
+Skipping task ':guard:jvmJar' as it is up-to-date.
+
+> Task :tasks:api:jvmJar UP-TO-DATE
+Caching disabled for task ':tasks:api:jvmJar' because:
+  Not worth caching
+Skipping task ':tasks:api:jvmJar' as it is up-to-date.
+work action resolve api-jvm.jar (project :tasks:api) (Thread[#4235,Execution worker Thread 2,5,main]) started.
+work action resolve guard-jvm-1.0.0.jar (project :guard) (Thread[#4242,Execution worker Thread 9,5,main]) started.
+Resolve mutations for :tasks:core:core:compileKotlinJvm (Thread[#4242,Execution worker Thread 9,5,main]) started.
+:tasks:core:core:compileKotlinJvm (Thread[#4242,Execution worker Thread 9,5,main]) started.
+
+> Task :tasks:core:core:compileKotlinJvm UP-TO-DATE
+Build cache key for task ':tasks:core:core:compileKotlinJvm' is 2052c8bb551a0c39a5d8eb9dfecceb14
+Skipping task ':tasks:core:core:compileKotlinJvm' as it is up-to-date.
+Resolve mutations for :tasks:core:core:compileJvmMainJava (Thread[#4242,Execution worker Thread 9,5,main]) started.
+:tasks:core:core:compileJvmMainJava (Thread[#4242,Execution worker Thread 9,5,main]) started.
+
+> Task :tasks:core:core:compileJvmMainJava NO-SOURCE
+Skipping task ':tasks:core:core:compileJvmMainJava' as it has no source files and no previous output files.
+Resolve mutations for :tasks:core:core:jvmMainClasses (Thread[#4242,Execution worker Thread 9,5,main]) started.
+:tasks:core:core:jvmMainClasses (Thread[#4242,Execution worker Thread 9,5,main]) started.
+
+> Task :tasks:core:core:jvmMainClasses UP-TO-DATE
+Skipping task ':tasks:core:core:jvmMainClasses' as it has no actions.
+Resolve mutations for :tasks:core:core:jvmJar (Thread[#4235,Execution worker Thread 2,5,main]) started.
+:tasks:core:core:jvmJar (Thread[#4235,Execution worker Thread 2,5,main]) started.
+
+> Task :tasks:core:core:jvmJar UP-TO-DATE
+Caching disabled for task ':tasks:core:core:jvmJar' because:
+  Not worth caching
+Skipping task ':tasks:core:core:jvmJar' as it is up-to-date.
+work action resolve core-jvm.jar (project :tasks:core:core) (Thread[#4235,Execution worker Thread 2,5,main]) started.
+Resolve mutations for :tasks:db:kspKotlinJvm (Thread[#4235,Execution worker Thread 2,5,main]) started.
+:tasks:db:kspKotlinJvm (Thread[#4235,Execution worker Thread 2,5,main]) started.
+
+> Task :tasks:db:kspKotlinJvm FROM-CACHE
+Build cache key for task ':tasks:db:kspKotlinJvm' is c0c5b4da7c357d2beb327708ea0b645d
+Task ':tasks:db:kspKotlinJvm' is not up-to-date because:
+  Value of input property 'kspConfig.logLevel' has changed for task ':tasks:db:kspKotlinJvm'
+Loaded cache entry for task ':tasks:db:kspKotlinJvm' with cache key c0c5b4da7c357d2beb327708ea0b645d
+Resolve mutations for :tasks:db:compileKotlinJvm (Thread[#4235,Execution worker Thread 2,5,main]) started.
+Resolve mutations for :tasks:db:copyRoomSchemas (Thread[#4242,Execution worker Thread 9,5,main]) started.
+Resolve mutations for :tasks:db:jvmProcessResources (Thread[#4238,Execution worker Thread 5,5,main]) started.
+:tasks:db:copyRoomSchemas (Thread[#4242,Execution worker Thread 9,5,main]) started.
+:tasks:db:compileKotlinJvm (Thread[#4235,Execution worker Thread 2,5,main]) started.
+:tasks:db:jvmProcessResources (Thread[#4237,Execution worker Thread 4,5,main]) started.
+
+> Task :tasks:db:copyRoomSchemas NO-SOURCE
+Skipping task ':tasks:db:copyRoomSchemas' as it has no source files and no previous output files.
+
+> Task :tasks:db:jvmProcessResources NO-SOURCE
+Skipping task ':tasks:db:jvmProcessResources' as it has no source files and no previous output files.
+Resolve mutations for :tasks:db:processJvmMainResources (Thread[#4237,Execution worker Thread 4,5,main]) started.
+:tasks:db:processJvmMainResources (Thread[#4237,Execution worker Thread 4,5,main]) started.
+
+> Task :tasks:db:processJvmMainResources SKIPPED
+Skipping task ':tasks:db:processJvmMainResources' as task onlyIf 'Task is enabled' is false.
+
+> Task :tasks:db:compileKotlinJvm UP-TO-DATE
+Build cache key for task ':tasks:db:compileKotlinJvm' is 3b604cae063406efa1925ee3bf7a5247
+Skipping task ':tasks:db:compileKotlinJvm' as it is up-to-date.
+Resolve mutations for :tasks:db:compileJvmMainJava (Thread[#4235,Execution worker Thread 2,5,main]) started.
+:tasks:db:compileJvmMainJava (Thread[#4235,Execution worker Thread 2,5,main]) started.
+
+> Task :tasks:db:compileJvmMainJava NO-SOURCE
+Skipping task ':tasks:db:compileJvmMainJava' as it has no source files and no previous output files.
+Resolve mutations for :tasks:db:jvmMainClasses (Thread[#4235,Execution worker Thread 2,5,main]) started.
+:tasks:db:jvmMainClasses (Thread[#4235,Execution worker Thread 2,5,main]) started.
+
+> Task :tasks:db:jvmMainClasses UP-TO-DATE
+Skipping task ':tasks:db:jvmMainClasses' as it has no actions.
+Resolve mutations for :tasks:db:jvmJar (Thread[#4235,Execution worker Thread 2,5,main]) started.
+:tasks:db:jvmJar (Thread[#4235,Execution worker Thread 2,5,main]) started.
+
+> Task :tasks:db:jvmJar UP-TO-DATE
+Caching disabled for task ':tasks:db:jvmJar' because:
+  Not worth caching
+Skipping task ':tasks:db:jvmJar' as it is up-to-date.
+work action resolve db-jvm.jar (project :tasks:db) (Thread[#4235,Execution worker Thread 2,5,main]) started.
+Resolve mutations for :tasks:core:db:compileKotlinJvm (Thread[#4235,Execution worker Thread 2,5,main]) started.
+:tasks:core:db:compileKotlinJvm (Thread[#4235,Execution worker Thread 2,5,main]) started.
+
+> Task :tasks:core:db:compileKotlinJvm UP-TO-DATE
+Build cache key for task ':tasks:core:db:compileKotlinJvm' is 8740d7abff6dc6a627aba1a1bb23ceb1
+Skipping task ':tasks:core:db:compileKotlinJvm' as it is up-to-date.
+Resolve mutations for :tasks:core:db:compileJvmMainJava (Thread[#4235,Execution worker Thread 2,5,main]) started.
+:tasks:core:db:compileJvmMainJava (Thread[#4235,Execution worker Thread 2,5,main]) started.
+
+> Task :tasks:core:db:compileJvmMainJava NO-SOURCE
+Skipping task ':tasks:core:db:compileJvmMainJava' as it has no source files and no previous output files.
+Resolve mutations for :tasks:core:db:jvmMainClasses (Thread[#4235,Execution worker Thread 2,5,main]) started.
+:tasks:core:db:jvmMainClasses (Thread[#4235,Execution worker Thread 2,5,main]) started.
+
+> Task :tasks:core:db:jvmMainClasses UP-TO-DATE
+Skipping task ':tasks:core:db:jvmMainClasses' as it has no actions.
+Resolve mutations for :tasks:core:db:jvmJar (Thread[#4235,Execution worker Thread 2,5,main]) started.
+:tasks:core:db:jvmJar (Thread[#4235,Execution worker Thread 2,5,main]) started.
+
+> Task :tasks:core:db:jvmJar UP-TO-DATE
+Caching disabled for task ':tasks:core:db:jvmJar' because:
+  Not worth caching
+Skipping task ':tasks:core:db:jvmJar' as it is up-to-date.
+work action resolve db-jvm.jar (project :tasks:core:db) (Thread[#4235,Execution worker Thread 2,5,main]) started.
+Resolve mutations for :tasks:engine:engine:compileKotlinJvm (Thread[#4235,Execution worker Thread 2,5,main]) started.
+:tasks:engine:engine:compileKotlinJvm (Thread[#4235,Execution worker Thread 2,5,main]) started.
+
+> Task :tasks:engine:engine:compileKotlinJvm UP-TO-DATE
+Build cache key for task ':tasks:engine:engine:compileKotlinJvm' is 633f5ae8f27e403974d14127e935f67a
+Skipping task ':tasks:engine:engine:compileKotlinJvm' as it is up-to-date.
+Resolve mutations for :tasks:engine:engine:compileJvmMainJava (Thread[#4235,Execution worker Thread 2,5,main]) started.
+:tasks:engine:engine:compileJvmMainJava (Thread[#4235,Execution worker Thread 2,5,main]) started.
+
+> Task :tasks:engine:engine:compileJvmMainJava NO-SOURCE
+Skipping task ':tasks:engine:engine:compileJvmMainJava' as it has no source files and no previous output files.
+Resolve mutations for :tasks:engine:engine:jvmMainClasses (Thread[#4235,Execution worker Thread 2,5,main]) started.
+:tasks:engine:engine:jvmMainClasses (Thread[#4235,Execution worker Thread 2,5,main]) started.
+
+> Task :tasks:engine:engine:jvmMainClasses UP-TO-DATE
+Skipping task ':tasks:engine:engine:jvmMainClasses' as it has no actions.
+Resolve mutations for :tasks:engine:engine:jvmJar (Thread[#4235,Execution worker Thread 2,5,main]) started.
+:tasks:engine:engine:jvmJar (Thread[#4235,Execution worker Thread 2,5,main]) started.
+
+> Task :tasks:engine:engine:jvmJar UP-TO-DATE
+Caching disabled for task ':tasks:engine:engine:jvmJar' because:
+  Not worth caching
+Skipping task ':tasks:engine:engine:jvmJar' as it is up-to-date.
+Resolve mutations for :tasks:engine:engine:compileTestKotlinJvm (Thread[#4235,Execution worker Thread 2,5,main]) started.
+:tasks:engine:engine:compileTestKotlinJvm (Thread[#4235,Execution worker Thread 2,5,main]) started.
+
+> Task :tasks:engine:engine:compileTestKotlinJvm UP-TO-DATE
+Build cache key for task ':tasks:engine:engine:compileTestKotlinJvm' is ddfd2208a991608df7c882f2b62b457b
+Skipping task ':tasks:engine:engine:compileTestKotlinJvm' as it is up-to-date.
+Resolve mutations for :tasks:engine:engine:compileJvmTestJava (Thread[#4235,Execution worker Thread 2,5,main]) started.
+:tasks:engine:engine:compileJvmTestJava (Thread[#4235,Execution worker Thread 2,5,main]) started.
+
+> Task :tasks:engine:engine:compileJvmTestJava NO-SOURCE
+Skipping task ':tasks:engine:engine:compileJvmTestJava' as it has no source files and no previous output files.
+Resolve mutations for :tasks:engine:engine:jvmTestClasses (Thread[#4235,Execution worker Thread 2,5,main]) started.
+:tasks:engine:engine:jvmTestClasses (Thread[#4235,Execution worker Thread 2,5,main]) started.
+
+> Task :tasks:engine:engine:jvmTestClasses UP-TO-DATE
+Skipping task ':tasks:engine:engine:jvmTestClasses' as it has no actions.
+Resolve mutations for :tasks:engine:engine:jvmTest (Thread[#4235,Execution worker Thread 2,5,main]) started.
+:tasks:engine:engine:jvmTest (Thread[#4235,Execution worker Thread 2,5,main]) started.
+Gradle Test Executor 28 started executing tests.
+Gradle Test Executor 28 finished executing tests.
+
+> Task :tasks:engine:engine:jvmTest FAILED
+Build cache key for task ':tasks:engine:engine:jvmTest' is 16562c0aab3a5b6554fb25da5cb6dc03
+Task ':tasks:engine:engine:jvmTest' is not up-to-date because:
+  Task has failed previously.
+file or directory '/Users/vladimirtintera/Develop/tasks-dev/tasks/engine/engine/build/classes/java/jvmTest', not found
+Starting process 'Gradle Test Executor 28'. Working directory: /Users/vladimirtintera/Develop/tasks-dev/tasks/engine/engine Command: /Users/vladimirtintera/.gradle/jdks/eclipse_adoptium-11-aarch64-os_x.2/jdk-11.0.30+7/Contents/Home/bin/java -Dorg.gradle.internal.worker.tmpdir=/Users/vladimirtintera/Develop/tasks-dev/tasks/engine/engine/build/tmp/jvmTest/work @/Users/vladimirtintera/.gradle/.tmp/gradle-worker-classpath16488963388750721299txt -Xmx512m -Dfile.encoding=UTF-8 -Duser.country=CZ -Duser.language=cs -Duser.variant -ea worker.org.gradle.process.internal.worker.GradleWorkerMain 'Gradle Test Executor 28'
+Successfully started process 'Gradle Test Executor 28'
+
+TaskProcessorTest[jvm] > when parent task failed, child task fails too[jvm] STANDARD_OUT
+    No registration found for ask with id ffcd5d62-7b4e-4855-aefb-224bb199b6c0, identifier child
+
+TaskProcessorTest[jvm] > when task throws exception, it is marked as failed[jvm] STANDARD_ERROR
+    java.lang.RuntimeException: Crash!
+    	at eu.tintera.background.tasks.core.TaskProcessorTest$when task throws exception, it is marked as failed$1$registry$1$1.invokeSuspend(TaskProcessorTest.kt:376)
+    	at eu.tintera.background.tasks.core.TaskProcessorTest$when task throws exception, it is marked as failed$1$registry$1$1.invoke(TaskProcessorTest.kt)
+    	at eu.tintera.background.tasks.core.TaskProcessorTest$when task throws exception, it is marked as failed$1$registry$1$1.invoke(TaskProcessorTest.kt)
+    	at eu.tintera.background.tasks.core.fakes.FakeRegistryResolver$register$1$1.run(FakeTaskRegistry.kt:22)
+    	at eu.tintera.background.tasks.core.TaskEvaluatorImpl.handle(TaskEvaluator.kt:116)
+    	at eu.tintera.background.tasks.core.TaskProcessorImpl$executeTask$2$1.invokeSuspend(TaskProcessor.kt:115)
+    	at eu.tintera.background.tasks.core.TaskProcessorImpl$executeTask$2$1.invoke(TaskProcessor.kt)
+    	at eu.tintera.background.tasks.core.TaskProcessorImpl$executeTask$2$1.invoke(TaskProcessor.kt)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatched(Undispatched.kt:66)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:43)
+    	at kotlinx.coroutines.CoroutineScopeKt.coroutineScope(CoroutineScope.kt:848)
+    	at eu.tintera.background.tasks.core.TaskProcessorImpl$executeTask$$inlined$invoke$1.invokeSuspend(ExecutionContext.kt:62)
+    	at eu.tintera.background.tasks.core.TaskProcessorImpl$executeTask$$inlined$invoke$1.invoke(ExecutionContext.kt)
+    	at eu.tintera.background.tasks.core.TaskProcessorImpl$executeTask$$inlined$invoke$1.invoke(ExecutionContext.kt)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatched(Undispatched.kt:66)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:43)
+    	at kotlinx.coroutines.CoroutineScopeKt.coroutineScope(CoroutineScope.kt:848)
+    	at eu.tintera.background.tasks.core.TaskProcessorImpl.executeTask(TaskProcessor.kt:148)
+    	at eu.tintera.background.tasks.core.TaskProcessorImpl.access$executeTask(TaskProcessor.kt:23)
+    	at eu.tintera.background.tasks.core.TaskProcessorImpl$run$2$workflowJob$1.invokeSuspend(TaskProcessor.kt:59)
+    	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+    	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+    	at kotlinx.coroutines.test.TestDispatcher.processEvent$kotlinx_coroutines_test(TestDispatcher.kt:24)
+    	at kotlinx.coroutines.test.TestCoroutineScheduler.tryRunNextTaskUnless$kotlinx_coroutines_test(TestCoroutineScheduler.kt:98)
+    	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$workRunner$1.invokeSuspend(TestBuilders.kt:326)
+    	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+    	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+    	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:256)
+    	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:54)
+    	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlockingImpl(Builders.kt:30)
+    	at kotlinx.coroutines.BuildersKt.runBlockingImpl(Unknown Source)
+    	at kotlinx.coroutines.BuildersKt__Builders_concurrentKt.runBlockingK(Builders.concurrent.kt:172)
+    	at kotlinx.coroutines.BuildersKt.runBlockingK(Unknown Source)
+    	at kotlinx.coroutines.BuildersKt__Builders_concurrentKt.runBlockingK$default(Builders.concurrent.kt:157)
+    	at kotlinx.coroutines.BuildersKt.runBlockingK$default(Unknown Source)
+    	at kotlinx.coroutines.test.TestBuildersJvmKt.createTestResult(TestBuildersJvm.kt:10)
+    	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:309)
+    	at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:1)
+    	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:167)
+    	at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:1)
+    	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0$default(TestBuilders.kt:159)
+    	at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0$default(TestBuilders.kt:1)
+    	at eu.tintera.background.tasks.core.TaskProcessorTest.when task throws exception, it is marked as failed(TaskProcessorTest.kt:373)
+    	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+    	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+    	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+    	at java.base/java.lang.reflect.Method.invoke(Method.java:566)
+    	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+    	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+    	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+    	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+    	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+    	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+    	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+    	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+    	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+    	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+    	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+    	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+    	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+    	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+    	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+    	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+    	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+    	at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+    	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.runRequest(JUnitTestExecutor.java:175)
+    	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.accept(JUnitTestExecutor.java:84)
+    	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.accept(JUnitTestExecutor.java:47)
+    	at org.gradle.api.internal.tasks.testing.junit.AbstractJUnitTestDefinitionProcessor.processTestDefinition(AbstractJUnitTestDefinitionProcessor.java:65)
+    	at org.gradle.api.internal.tasks.testing.SuiteTestDefinitionProcessor.processTestDefinition(SuiteTestDefinitionProcessor.java:53)
+    	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+    	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+    	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+    	at java.base/java.lang.reflect.Method.invoke(Method.java:566)
+    	at org.gradle.internal.dispatch.MethodInvocation.invokeOn(MethodInvocation.java:77)
+    	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:28)
+    	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:19)
+    	at org.gradle.internal.dispatch.ContextClassLoaderDispatch.dispatch(ContextClassLoaderDispatch.java:33)
+    	at org.gradle.internal.dispatch.ProxyDispatchAdapter$DispatchingInvocationHandler.invoke(ProxyDispatchAdapter.java:88)
+    	at com.sun.proxy.$Proxy4.processTestDefinition(Unknown Source)
+    	at org.gradle.api.internal.tasks.testing.worker.TestWorker$2.run(TestWorker.java:178)
+    	at org.gradle.api.internal.tasks.testing.worker.TestWorker.executeAndMaintainThreadName(TestWorker.java:126)
+    	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:103)
+    	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:63)
+    	at org.gradle.process.internal.worker.child.ActionExecutionWorker.execute(ActionExecutionWorker.java:56)
+    	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:122)
+    	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:72)
+    	at worker.org.gradle.process.internal.worker.GradleWorkerMain.run(GradleWorkerMain.java:69)
+    	at worker.org.gradle.process.internal.worker.GradleWorkerMain.main(GradleWorkerMain.java:74)
+
+TaskProcessorTest[jvm] > task waiting for processTime does not hold system wake lock[jvm] FAILED
+    java.lang.AssertionError: expected:<Running> but was:<Enqueued>
+        at org.junit.Assert.fail(Assert.java:89)
+        at org.junit.Assert.failNotEquals(Assert.java:835)
+        at org.junit.Assert.assertEquals(Assert.java:120)
+        at kotlin.test.junit.JUnitAsserter.assertEquals(JUnitSupport.kt:32)
+        at kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)
+        at kotlin.test.AssertionsKt.assertEquals(Unknown Source)
+        at kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)
+        at kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)
+        at eu.tintera.background.tasks.core.TaskProcessorTest$task waiting for processTime does not hold system wake lock$1.invokeSuspend(TaskProcessorTest.kt:432)
+        at eu.tintera.background.tasks.core.TaskProcessorTest$task waiting for processTime does not hold system wake lock$1.invoke(TaskProcessorTest.kt)
+        at eu.tintera.background.tasks.core.TaskProcessorTest$task waiting for processTime does not hold system wake lock$1.invoke(TaskProcessorTest.kt)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$1.invokeSuspend(TestBuilders.kt:317)
+        at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+        at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+        at kotlinx.coroutines.test.TestDispatcher.processEvent$kotlinx_coroutines_test(TestDispatcher.kt:24)
+        at kotlinx.coroutines.test.TestCoroutineScheduler.tryRunNextTaskUnless$kotlinx_coroutines_test(TestCoroutineScheduler.kt:98)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$workRunner$1.invokeSuspend(TestBuilders.kt:326)
+        at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+        at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+        at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:256)
+        at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:54)
+        at kotlinx.coroutines.BuildersKt__BuildersKt.runBlockingImpl(Builders.kt:30)
+        at kotlinx.coroutines.BuildersKt.runBlockingImpl(Unknown Source)
+        at kotlinx.coroutines.BuildersKt__Builders_concurrentKt.runBlockingK(Builders.concurrent.kt:172)
+        at kotlinx.coroutines.BuildersKt.runBlockingK(Unknown Source)
+        at kotlinx.coroutines.BuildersKt__Builders_concurrentKt.runBlockingK$default(Builders.concurrent.kt:157)
+        at kotlinx.coroutines.BuildersKt.runBlockingK$default(Unknown Source)
+        at kotlinx.coroutines.test.TestBuildersJvmKt.createTestResult(TestBuildersJvm.kt:10)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:309)
+        at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:1)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:167)
+        at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:1)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0$default(TestBuilders.kt:159)
+        at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0$default(TestBuilders.kt:1)
+        at eu.tintera.background.tasks.core.TaskProcessorTest.task waiting for processTime does not hold system wake lock(TaskProcessorTest.kt:391)
+
+TaskProcessorTest[jvm] > when task has initial delay, it waits before execution[jvm] FAILED
+    java.lang.AssertionError: expected:<Enqueued> but was:<Succeeded>
+        at org.junit.Assert.fail(Assert.java:89)
+        at org.junit.Assert.failNotEquals(Assert.java:835)
+        at org.junit.Assert.assertEquals(Assert.java:120)
+        at kotlin.test.junit.JUnitAsserter.assertEquals(JUnitSupport.kt:32)
+        at kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)
+        at kotlin.test.AssertionsKt.assertEquals(Unknown Source)
+        at kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)
+        at kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)
+        at eu.tintera.background.tasks.core.TaskProcessorTest$when task has initial delay, it waits before execution$1.invokeSuspend(TaskProcessorTest.kt:361)
+        at eu.tintera.background.tasks.core.TaskProcessorTest$when task has initial delay, it waits before execution$1.invoke(TaskProcessorTest.kt)
+        at eu.tintera.background.tasks.core.TaskProcessorTest$when task has initial delay, it waits before execution$1.invoke(TaskProcessorTest.kt)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$1.invokeSuspend(TestBuilders.kt:317)
+        at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+        at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+        at kotlinx.coroutines.test.TestDispatcher.processEvent$kotlinx_coroutines_test(TestDispatcher.kt:24)
+        at kotlinx.coroutines.test.TestCoroutineScheduler.tryRunNextTaskUnless$kotlinx_coroutines_test(TestCoroutineScheduler.kt:98)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$workRunner$1.invokeSuspend(TestBuilders.kt:326)
+        at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+        at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+        at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:256)
+        at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:54)
+        at kotlinx.coroutines.BuildersKt__BuildersKt.runBlockingImpl(Builders.kt:30)
+        at kotlinx.coroutines.BuildersKt.runBlockingImpl(Unknown Source)
+        at kotlinx.coroutines.BuildersKt__Builders_concurrentKt.runBlockingK(Builders.concurrent.kt:172)
+        at kotlinx.coroutines.BuildersKt.runBlockingK(Unknown Source)
+        at kotlinx.coroutines.BuildersKt__Builders_concurrentKt.runBlockingK$default(Builders.concurrent.kt:157)
+        at kotlinx.coroutines.BuildersKt.runBlockingK$default(Unknown Source)
+        at kotlinx.coroutines.test.TestBuildersJvmKt.createTestResult(TestBuildersJvm.kt:10)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:309)
+        at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:1)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:167)
+        at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:1)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0$default(TestBuilders.kt:159)
+        at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0$default(TestBuilders.kt:1)
+        at eu.tintera.background.tasks.core.TaskProcessorTest.when task has initial delay, it waits before execution(TaskProcessorTest.kt:342)
+
+TaskProcessorTest[jvm] > when task requests retry, it is rescheduled with backoff[jvm] FAILED
+    java.lang.AssertionError: Task should have 1 retry expected:<1> but was:<0>
+        at org.junit.Assert.fail(Assert.java:89)
+        at org.junit.Assert.failNotEquals(Assert.java:835)
+        at org.junit.Assert.assertEquals(Assert.java:120)
+        at kotlin.test.junit.JUnitAsserter.assertEquals(JUnitSupport.kt:32)
+        at kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)
+        at kotlin.test.AssertionsKt.assertEquals(Unknown Source)
+        at eu.tintera.background.tasks.core.TaskProcessorTest$when task requests retry, it is rescheduled with backoff$1.invokeSuspend(TaskProcessorTest.kt:222)
+        at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+        at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+        at kotlinx.coroutines.test.TestDispatcher.processEvent$kotlinx_coroutines_test(TestDispatcher.kt:24)
+        at kotlinx.coroutines.test.TestCoroutineScheduler.tryRunNextTaskUnless$kotlinx_coroutines_test(TestCoroutineScheduler.kt:98)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$workRunner$1.invokeSuspend(TestBuilders.kt:326)
+        at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+        at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+        at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:256)
+        at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:54)
+        at kotlinx.coroutines.BuildersKt__BuildersKt.runBlockingImpl(Builders.kt:30)
+        at kotlinx.coroutines.BuildersKt.runBlockingImpl(Unknown Source)
+        at kotlinx.coroutines.BuildersKt__Builders_concurrentKt.runBlockingK(Builders.concurrent.kt:172)
+        at kotlinx.coroutines.BuildersKt.runBlockingK(Unknown Source)
+        at kotlinx.coroutines.BuildersKt__Builders_concurrentKt.runBlockingK$default(Builders.concurrent.kt:157)
+        at kotlinx.coroutines.BuildersKt.runBlockingK$default(Unknown Source)
+        at kotlinx.coroutines.test.TestBuildersJvmKt.createTestResult(TestBuildersJvm.kt:10)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:309)
+        at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:1)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:167)
+        at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:1)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0$default(TestBuilders.kt:159)
+        at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0$default(TestBuilders.kt:1)
+        at eu.tintera.background.tasks.core.TaskProcessorTest.when task requests retry, it is rescheduled with backoff(TaskProcessorTest.kt:207)
+
+TaskProcessorTest[jvm] > when iOS wake lock expires, task is cancelled and token released but state remains running[jvm] FAILED
+    java.lang.AssertionError: task must be running expected:<Failed> but was:<Running>
+        at org.junit.Assert.fail(Assert.java:89)
+        at org.junit.Assert.failNotEquals(Assert.java:835)
+        at org.junit.Assert.assertEquals(Assert.java:120)
+        at kotlin.test.junit.JUnitAsserter.assertEquals(JUnitSupport.kt:32)
+        at kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)
+        at kotlin.test.AssertionsKt.assertEquals(Unknown Source)
+        at eu.tintera.background.tasks.core.TaskProcessorTest$when iOS wake lock expires, task is cancelled and token released but state remains running$1.invokeSuspend(TaskProcessorTest.kt:166)
+        at eu.tintera.background.tasks.core.TaskProcessorTest$when iOS wake lock expires, task is cancelled and token released but state remains running$1.invoke(TaskProcessorTest.kt)
+        at eu.tintera.background.tasks.core.TaskProcessorTest$when iOS wake lock expires, task is cancelled and token released but state remains running$1.invoke(TaskProcessorTest.kt)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$1.invokeSuspend(TestBuilders.kt:317)
+        at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+        at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+        at kotlinx.coroutines.test.TestDispatcher.processEvent$kotlinx_coroutines_test(TestDispatcher.kt:24)
+        at kotlinx.coroutines.test.TestCoroutineScheduler.tryRunNextTaskUnless$kotlinx_coroutines_test(TestCoroutineScheduler.kt:98)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$workRunner$1.invokeSuspend(TestBuilders.kt:326)
+        at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+        at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+        at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:256)
+        at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:54)
+        at kotlinx.coroutines.BuildersKt__BuildersKt.runBlockingImpl(Builders.kt:30)
+        at kotlinx.coroutines.BuildersKt.runBlockingImpl(Unknown Source)
+        at kotlinx.coroutines.BuildersKt__Builders_concurrentKt.runBlockingK(Builders.concurrent.kt:172)
+        at kotlinx.coroutines.BuildersKt.runBlockingK(Unknown Source)
+        at kotlinx.coroutines.BuildersKt__Builders_concurrentKt.runBlockingK$default(Builders.concurrent.kt:157)
+        at kotlinx.coroutines.BuildersKt.runBlockingK$default(Unknown Source)
+        at kotlinx.coroutines.test.TestBuildersJvmKt.createTestResult(TestBuildersJvm.kt:10)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:309)
+        at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:1)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:167)
+        at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:1)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0$default(TestBuilders.kt:159)
+        at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0$default(TestBuilders.kt:1)
+        at eu.tintera.background.tasks.core.TaskProcessorTest.when iOS wake lock expires, task is cancelled and token released but state remains running(TaskProcessorTest.kt:119)
+
+TaskProcessorTest[jvm] > when task is cancelled in DB during execution, processor stops it[jvm] FAILED
+    java.lang.AssertionError: Task is running expected:<Running> but was:<Enqueued>
+        at org.junit.Assert.fail(Assert.java:89)
+        at org.junit.Assert.failNotEquals(Assert.java:835)
+        at org.junit.Assert.assertEquals(Assert.java:120)
+        at kotlin.test.junit.JUnitAsserter.assertEquals(JUnitSupport.kt:32)
+        at kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)
+        at kotlin.test.AssertionsKt.assertEquals(Unknown Source)
+        at eu.tintera.background.tasks.core.TaskProcessorTest$when task is cancelled in DB during execution, processor stops it$1.invokeSuspend(TaskProcessorTest.kt:477)
+        at eu.tintera.background.tasks.core.TaskProcessorTest$when task is cancelled in DB during execution, processor stops it$1.invoke(TaskProcessorTest.kt)
+        at eu.tintera.background.tasks.core.TaskProcessorTest$when task is cancelled in DB during execution, processor stops it$1.invoke(TaskProcessorTest.kt)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$1.invokeSuspend(TestBuilders.kt:317)
+        at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+        at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+        at kotlinx.coroutines.test.TestDispatcher.processEvent$kotlinx_coroutines_test(TestDispatcher.kt:24)
+        at kotlinx.coroutines.test.TestCoroutineScheduler.tryRunNextTaskUnless$kotlinx_coroutines_test(TestCoroutineScheduler.kt:98)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$workRunner$1.invokeSuspend(TestBuilders.kt:326)
+        at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+        at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+        at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:256)
+        at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:54)
+        at kotlinx.coroutines.BuildersKt__BuildersKt.runBlockingImpl(Builders.kt:30)
+        at kotlinx.coroutines.BuildersKt.runBlockingImpl(Unknown Source)
+        at kotlinx.coroutines.BuildersKt__Builders_concurrentKt.runBlockingK(Builders.concurrent.kt:172)
+        at kotlinx.coroutines.BuildersKt.runBlockingK(Unknown Source)
+        at kotlinx.coroutines.BuildersKt__Builders_concurrentKt.runBlockingK$default(Builders.concurrent.kt:157)
+        at kotlinx.coroutines.BuildersKt.runBlockingK$default(Unknown Source)
+        at kotlinx.coroutines.test.TestBuildersJvmKt.createTestResult(TestBuildersJvm.kt:10)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:309)
+        at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:1)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:167)
+        at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:1)
+        at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0$default(TestBuilders.kt:159)
+        at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0$default(TestBuilders.kt:1)
+        at eu.tintera.background.tasks.core.TaskProcessorTest.when task is cancelled in DB during execution, processor stops it(TaskProcessorTest.kt:443)
+
+10 tests completed, 5 failed
+Generating HTML test report...
+Finished generating test html results (0.002 secs) into: /Users/vladimirtintera/Develop/tasks-dev/tasks/engine/engine/build/reports/tests/jvmTest
+Finished generating test XML results (0.0 secs) into: /Users/vladimirtintera/Develop/tasks-dev/tasks/engine/engine/build/test-results/jvmTest
+Build 13a1dd93-d937-407b-80c3-c56dbbe64f86 is closed
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':tasks:engine:engine:jvmTest'.
+> There were failing tests. See the report at: file:///Users/vladimirtintera/Develop/tasks-dev/tasks/engine/engine/build/reports/tests/jvmTest/index.html
+
+* Try:
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 586ms
+21 actionable tasks: 7 executed, 1 from cache, 13 up-to-date
+Watched directory hierarchies: [/Users/vladimirtintera/Develop/tasks-dev]
+Configuration cache entry reused.

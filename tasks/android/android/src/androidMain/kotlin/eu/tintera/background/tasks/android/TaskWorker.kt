@@ -48,7 +48,6 @@ open class TaskWorker(
             it.isNotBlank()
         } ?: return Result.failure()
 
-        EventBus.send("TaskWorker", "Task started '$taskIdentifier'")
 
         val taskId = id.toKotlinUuid()
 

@@ -47,24 +47,4 @@ internal fun iosModule(
             override val databaseName: String = config.databaseName
         }
     }
-
-    singleOf(::DebugObserver) bind ExecutionContextObserver::class
-}
-
-class DebugObserver : ExecutionContextObserver {
-    override fun onPreCancel() {
-        EventBus.send(TAG, "onPreCancel")
-    }
-
-    override suspend fun onPreRelease() {
-        EventBus.send(TAG, "onPreRelease")
-    }
-
-    override fun onStarted() {
-        EventBus.send(TAG, "onStarted")
-    }
-
-    companion object {
-        private const val TAG = "DebugObserver"
-    }
 }

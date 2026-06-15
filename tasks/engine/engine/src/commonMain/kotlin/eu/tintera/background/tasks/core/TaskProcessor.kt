@@ -2,7 +2,8 @@ package eu.tintera.background.tasks.core
 
 import eu.tintera.background.guard.ExecutionContextProvider
 import eu.tintera.background.guard.invoke
-import eu.tintera.background.tasks.EventBus
+import eu.tintera.background.tasks.State
+import eu.tintera.background.tasks.TaskResult
 import eu.tintera.background.tasks.core.constraints.ConstraintController
 import eu.tintera.background.tasks.core.constraints.ConstraintLostException
 import kotlinx.coroutines.*
@@ -35,8 +36,6 @@ internal class TaskProcessorImpl(
 
     override suspend fun run(id: Uuid) = coroutineScope {
 
-        EventBus.send(TAG, "running task $id")
-
         val taskFlowScope = CoroutineScope(coroutineContext + Job(coroutineContext.job))
 
         try {
@@ -60,12 +59,10 @@ internal class TaskProcessorImpl(
                         task = task
                     )
                 }
-
-                EventBus.send(TAG, "Task finished '$id'")
             }
 
             val observeJob = launch {
-                task.first { it.isDisrupted() }
+                task.first { it == null || it.state == State.Cancelled }
                 workflowJob.cancelAndJoin()
             }
 
@@ -133,8 +130,8 @@ internal class TaskProcessorImpl(
             taskLifecycleObserver.onCanceled(id, "Context cancelled")
             throw e
         } catch (_: Throwable) {
-            EventBus.send(TAG, "Task failed '${id}'")
             repository.fail(id = id)
+            taskLifecycleObserver.onCompleted(id, TaskResult.Failure)
         }
     }
 

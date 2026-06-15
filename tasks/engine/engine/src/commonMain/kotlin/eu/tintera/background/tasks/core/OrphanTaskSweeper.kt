@@ -1,7 +1,6 @@
 package eu.tintera.background.tasks.core
 
 import eu.tintera.background.guard.ExecutionContextObserver
-import eu.tintera.background.tasks.EventBus
 import eu.tintera.background.tasks.State
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
@@ -34,10 +33,7 @@ internal class OrphanTaskSweeper(
     }
 
     private suspend fun runSmartSweep(trigger: String) {
-        // Přečteme si aktuální stav z trackeru
         val activelyRunningIds = activeTaskTracker.getActiveIds()
-
-        EventBus.send("OrphanTaskSweeper", "Trigger: $trigger. Excluding ${activelyRunningIds.size} active tasks.")
 
         repository.resetState(
             from = State.Running,

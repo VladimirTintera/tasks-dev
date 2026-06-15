@@ -1,5 +1,6 @@
 package eu.tintera.background.tasks.core.fakes
 
+import eu.tintera.background.tasks.core.NetworkState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 

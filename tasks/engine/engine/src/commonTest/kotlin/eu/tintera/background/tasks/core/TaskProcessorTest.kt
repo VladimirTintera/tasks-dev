@@ -1,19 +1,20 @@
 package eu.tintera.background.tasks.core
 
+import eu.tintera.background.guard.ExecutionContextProvider
 import eu.tintera.background.tasks.BackoffCriteria
 import eu.tintera.background.tasks.State
 import eu.tintera.background.tasks.TaskResult
 import eu.tintera.background.tasks.core.data.Task
 import eu.tintera.background.tasks.core.fakes.*
 import eu.tintera.background.tasks.core.migrations.TaskMigrator
-import eu.tintera.background.tasks.core.constraints.NetworkStateConstraint
-import eu.tintera.background.tasks.core.constraints.ConstraintController
+import eu.tintera.background.tasks.core.constraints.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.TestScope
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -26,7 +27,91 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
 
+class FakeTaskResultHandler(
+    private val repository: FakeRepository
+) : TaskResultHandler {
+    override suspend fun handleResult(result: TaskEvaluationResult) {
+        val now = Clock.System.now()
+        val runningStates = setOf(State.Running)
+        when (result) {
+            is TaskEvaluationResult.Failed -> {
+                val duration = result.repeatInterval
+                if (duration != null) repository.scheduleNextFromBeginning(
+                    id = result.id,
+                    state = State.Enqueued,
+                    processTime = now + duration,
+                    allowedSourceStates = runningStates
+                )
+                else repository.failTask(
+                    id = result.id,
+                    state = State.Failed,
+                    finishedAt = now,
+                    allowedSourceStates = runningStates
+                )
+            }
+            is TaskEvaluationResult.Success -> {
+                val duration = result.repeatInterval
+                if (duration != null) repository.scheduleNextFromBeginning(
+                    id = result.id,
+                    state = State.Enqueued,
+                    processTime = now + duration,
+                    allowedSourceStates = runningStates
+                )
+                else repository.successTask(
+                    id = result.id,
+                    state = State.Succeeded,
+                    finishedAt = now,
+                    outputData = ByteArray(0),
+                    allowedSourceStates = runningStates
+                )
+            }
+            is TaskEvaluationResult.Retry -> {
+                val backoff = (result.backoffCriteria ?: defaultBackoffCriteria).calculate(result.retryCount)
+                repository.scheduleNext(
+                    id = result.id,
+                    state = State.Enqueued,
+                    processTime = now + backoff,
+                    allowedSourceStates = runningStates
+                )
+            }
+        }
+    }
+}
+
 class TaskProcessorTest {
+
+    private fun TestScope.createTaskEvaluator(
+        fakeRepository: FakeRepository,
+        registryResolver: RegistryResolver = FakeRegistryResolver()
+    ): TaskEvaluator {
+        return TaskEvaluatorImpl(
+            registryResolver = registryResolver,
+            taskMigrator = TaskMigrator(),
+            taskScopeFactory = TaskScopeFactory(fakeRepository),
+            applicationScope = ApplicationScope(SupervisorJob()),
+            dispatchers = dispatchers(),
+            tagMapper = TagMapper(registryResolver),
+            repository = fakeRepository,
+            taskResultHandler = FakeTaskResultHandler(fakeRepository)
+        )
+    }
+
+    private fun createTaskProcessor(
+        repository: FakeRepository,
+        taskEvaluator: TaskEvaluator,
+        executionContextProvider: ExecutionContextProvider = FakeExecutionContextProvider(),
+        taskLifecycleObserver: CompositeTaskLifecycleObserver = CompositeTaskLifecycleObserver(emptyList()),
+        preconditionController: ConstraintController = ConstraintController(emptyList())
+    ): TaskProcessorImpl {
+        return TaskProcessorImpl(
+            taskEvaluator = taskEvaluator,
+            executionContextProvider = executionContextProvider,
+            preconditionController = preconditionController,
+            taskLifecycleObserver = taskLifecycleObserver,
+            repository = repository,
+            clock = Clock.System
+        )
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
@@ -38,24 +123,9 @@ class TaskProcessorTest {
         val fakeRepository = FakeRepository() // Musí vracet flow stavů a rodičů
         val fakeNetworkState = FakeNetworkState()
 
-        // Evaluator, který trvá nesmyslně dlouho (např. 10 minut),
-        // takže ho expiration handler určitě přeruší
-        val fakeEvaluator = TaskEvaluatorImpl(
-            registryResolver = fakeTaskRegistry(),
-            repository = fakeRepository,
-            taskMigrator = TaskMigrator(fakeRepository),
-            taskScopeFactory = TaskScopeFactory(fakeRepository),
-            applicationScope = ApplicationScope(SupervisorJob()),
-            dispatchers = dispatchers()
-        )
+        val fakeEvaluator = createTaskEvaluator(fakeRepository, fakeTaskRegistry())
 
-        val processor = TaskProcessorImpl(
-            repository = fakeRepository,
-            taskEvaluator = fakeEvaluator,
-            executionContextProvider = fakeWakeLock,
-            preconditionController = ConstraintController(emptyList()),
-            taskResultHandler = TaskResultHandlerImpl(fakeRepository)
-        )
+        val processor = createTaskProcessor(fakeRepository, fakeEvaluator, fakeWakeLock)
 
         // Vytvoříme testovací task, který vyžaduje iOS KeepAlive
         val task = Task(
@@ -66,7 +136,7 @@ class TaskProcessorTest {
             runAttemptCount = 0,
             initialDelay = Duration.ZERO,
             processTime = Clock.System.now(),
-            inputData = null,
+            inputData = ByteArray(0),
             outputData = null,
             networkRequired = false,
             createdAt = Clock.System.now(),
@@ -81,7 +151,7 @@ class TaskProcessorTest {
 
         fakeRepository.insert(task, emptySet(), emptySet())
 
-        assertEquals(fakeRepository.taskState(task.id), State.Enqueued)
+        assertEquals(State.Enqueued, fakeRepository.taskState(task.id))
 
         // 2. Spuštění processoru v samostatné coroutině (aby nám neblokoval test)
         val processorJob = launch {
@@ -92,7 +162,7 @@ class TaskProcessorTest {
         advanceTimeBy(1000.milliseconds)
 
         // Ověříme, že Task začal běžet a token se ještě neuvolnil
-        assertEquals(fakeRepository.taskState(task.id), State.Running, "task must be running")
+        assertEquals(State.Running, fakeRepository.taskState(task.id), "task must be running")
         assertFalse(fakeWakeLock.token.isExpired.value, "token is not expired")
 
         // 3. AKCE: Nasimulujeme, že iOS volá expiration handler!
@@ -112,29 +182,22 @@ class TaskProcessorTest {
 
         // C) Task nesmí být označen jako Failed nebo Success, musí zůstat viset
         // (protože mainJob byl zrušen a přeskočil se zápis do DB).
-        assertEquals(fakeRepository.taskState(task.id), State.Running)
+        assertEquals(State.Running, fakeRepository.taskState(task.id))
     }
 
     @Test
     fun `when task finishes successfully, state is updated to Succeeded`() = runTest {
         val fakeRepository = FakeRepository()
-        val fakeEvaluator = TaskEvaluator(
-            taskRegistry = TaskRegistry().apply {
-                register("successTask") { { TaskResult.success() } }
-            }
-        )
-        val processor = TaskProcessorImpl(
-            repository = fakeRepository,
-            taskEvaluator = fakeEvaluator,
-            executionContextProvider = FakeExecutionContextProvider(),
-            taskScopeFactory = FakeTaskScopeFactory(),
-            preconditionController = ConstraintController(emptyList())
-        )
+        val registry = FakeRegistryResolver().apply {
+            register("successTask") { TaskResult.success(Unit) }
+        }
+        val fakeEvaluator = createTaskEvaluator(fakeRepository, registry)
+        val processor = createTaskProcessor(fakeRepository, fakeEvaluator)
 
         val task = createTask(identifier = "successTask")
         fakeRepository.insert(task, emptySet(), emptySet())
 
-        processor.run(task)
+        processor.run(task.id)
 
         assertEquals(State.Succeeded, fakeRepository.taskState(task.id), "Task should be succeeded")
     }
@@ -142,40 +205,30 @@ class TaskProcessorTest {
     @Test
     fun `when task requests retry, it is rescheduled with backoff`() = runTest {
         val fakeRepository = FakeRepository()
-        val fakeEvaluator = TaskEvaluatorImpl(
-            taskRegistry = TaskRegistry().apply {
-                register("retryTask") { { TaskResult.Retry } }
-            }
-        )
-        val processor = TaskProcessorImpl(
-            repository = fakeRepository,
-            taskEvaluator = fakeEvaluator,
-            executionContextProvider = FakeExecutionContextProvider(),
-            taskScopeFactory = FakeTaskScopeFactory(),
-            preconditionController = ConstraintController(emptyList())
-        )
+        val registry = FakeRegistryResolver().apply {
+            register("retryTask") { TaskResult.Retry }
+        }
+        val fakeEvaluator = createTaskEvaluator(fakeRepository, registry)
+        val processor = createTaskProcessor(fakeRepository, fakeEvaluator)
 
         val task = createTask(identifier = "retryTask")
         fakeRepository.insert(task, emptySet(), emptySet())
 
-        processor.run(task)
+        processor.run(task.id)
 
-        val updatedTask = fakeRepository.task(task.id).first()!!
+        val updatedTask = fakeRepository.task(task.id)!!
         assertEquals(State.Enqueued, updatedTask.state, "Task should be enqueued")
         assertEquals(1, updatedTask.runAttemptCount, "Task should have 1 retry")
-        assertTrue(updatedTask.processTime > task.processTime, "Task should have been rescheduled")
+        val updatedProcessTime = updatedTask.processTime ?: error("processTime should not be null")
+        val taskProcessTime = task.processTime ?: error("task.processTime should not be null")
+        assertTrue(updatedProcessTime > taskProcessTime, "Task should have been rescheduled")
     }
 
     @Test
     fun `when parent task failed, child task fails too`() = runTest {
         val fakeRepository = FakeRepository()
-        val processor = TaskProcessorImpl(
-            repository = fakeRepository,
-            taskEvaluator = TaskEvaluator(TaskRegistry()),
-            executionContextProvider = FakeExecutionContextProvider(),
-            taskScopeFactory = FakeTaskScopeFactory(),
-            preconditionController = ConstraintController(emptyList())
-        )
+        val fakeEvaluator = createTaskEvaluator(fakeRepository, FakeRegistryResolver())
+        val processor = createTaskProcessor(fakeRepository, fakeEvaluator)
 
         val parentTask = createTask(identifier = "parent", state = State.Failed)
         val childTask = createTask(identifier = "child")
@@ -183,7 +236,7 @@ class TaskProcessorTest {
         fakeRepository.insert(parentTask, emptySet(), emptySet())
         fakeRepository.insert(childTask, emptySet(), setOf(parentTask.id))
 
-        processor.run(childTask)
+        processor.run(childTask.id)
 
         assertEquals(State.Failed, fakeRepository.taskState(childTask.id))
     }
@@ -194,21 +247,13 @@ class TaskProcessorTest {
         val fakeRepository = FakeRepository()
         val fakeNetworkState = FakeNetworkState(NetworkState.State.Disconnected)
 
-        val fakeEvaluator = TaskEvaluator(
-            taskRegistry = TaskRegistry().apply {
-                register("networkTask") {
-                    {
-                        TaskResult.success()
-                    }
-                }
-            }
-        )
-
-        val processor = TaskProcessorImpl(
+        val registry = FakeRegistryResolver().apply {
+            register("networkTask") { TaskResult.success(Unit) }
+        }
+        val fakeEvaluator = createTaskEvaluator(fakeRepository, registry)
+        val processor = createTaskProcessor(
             repository = fakeRepository,
             taskEvaluator = fakeEvaluator,
-            executionContextProvider = FakeExecutionContextProvider(),
-            taskScopeFactory = FakeTaskScopeFactory(),
             preconditionController = ConstraintController(
                 listOf(
                     NetworkStateConstraint(fakeNetworkState)
@@ -220,12 +265,11 @@ class TaskProcessorTest {
         fakeRepository.insert(task, emptySet(), emptySet())
 
         val job = launch {
-            processor.run(task)
+            processor.run(task.id)
         }
 
         advanceUntilIdle()
 
-        //advanceUntilIdle()
         // Task should be waiting for network, so it's not finished yet
         // Note: In the current implementation, it might be Enqueued or Running depending on where it pauses.
         // Based on TaskProcessor code:
@@ -249,22 +293,16 @@ class TaskProcessorTest {
         val fakeRepository = FakeRepository()
         val fakeNetworkState = FakeNetworkState(NetworkState.State.Disconnected)
 
-        val fakeEvaluator = TaskEvaluator(
-            taskRegistry = TaskRegistry().apply {
-                register("networkTask") {
-                    {
-                        delay(10.seconds)
-                        TaskResult.success()
-                    }
-                }
+        val registry = FakeRegistryResolver().apply {
+            register("networkTask") {
+                delay(10.seconds)
+                TaskResult.success(Unit)
             }
-        )
-
-        val processor = TaskProcessorImpl(
+        }
+        val fakeEvaluator = createTaskEvaluator(fakeRepository, registry)
+        val processor = createTaskProcessor(
             repository = fakeRepository,
             taskEvaluator = fakeEvaluator,
-            executionContextProvider = FakeExecutionContextProvider(),
-            taskScopeFactory = FakeTaskScopeFactory(),
             preconditionController = ConstraintController(
                 listOf(
                     NetworkStateConstraint(fakeNetworkState)
@@ -276,7 +314,7 @@ class TaskProcessorTest {
         fakeRepository.insert(task, emptySet(), emptySet())
 
         val job = launch {
-            processor.run(task)
+            processor.run(task.id)
         }
 
         advanceUntilIdle()
@@ -302,17 +340,18 @@ class TaskProcessorTest {
     @Test
     fun `when task has initial delay, it waits before execution`() = runTest {
         val fakeRepository = FakeRepository()
-        val fakeEvaluator = TaskEvaluator(
-            taskRegistry = TaskRegistry().apply {
-                register("delayedTask") { { TaskResult.success() } }
-            }
-        )
-        val processor = TaskProcessorImpl(
+        val registry = FakeRegistryResolver().apply {
+            register("delayedTask") { TaskResult.success(Unit) }
+        }
+        val fakeEvaluator = createTaskEvaluator(fakeRepository, registry)
+        val processor = createTaskProcessor(
             repository = fakeRepository,
             taskEvaluator = fakeEvaluator,
-            executionContextProvider = FakeExecutionContextProvider(),
-            taskScopeFactory = FakeTaskScopeFactory(),
-            preconditionController = ConstraintController(emptyList())
+            preconditionController = ConstraintController(
+                listOf(
+                    InitialDelayConstraint()
+                )
+            )
         )
 
         val delayDuration = 10.seconds
@@ -320,7 +359,7 @@ class TaskProcessorTest {
         fakeRepository.insert(task, emptySet(), emptySet())
 
         val job = launch {
-            processor.run(task)
+            processor.run(task.id)
         }
 
         // Advance time less than delay
@@ -340,23 +379,16 @@ class TaskProcessorTest {
     @Test
     fun `when task throws exception, it is marked as failed`() = runTest {
         val fakeRepository = FakeRepository()
-        val fakeEvaluator = TaskEvaluator(
-            taskRegistry = TaskRegistry().apply {
-                register("exceptionTask") { { throw RuntimeException("Crash!") } }
-            }
-        )
-        val processor = TaskProcessorImpl(
-            repository = fakeRepository,
-            taskEvaluator = fakeEvaluator,
-            executionContextProvider = FakeExecutionContextProvider(),
-            taskScopeFactory = FakeTaskScopeFactory(),
-            preconditionController = ConstraintController(emptyList())
-        )
+        val registry = FakeRegistryResolver().apply {
+            register("exceptionTask") { throw RuntimeException("Crash!") }
+        }
+        val fakeEvaluator = createTaskEvaluator(fakeRepository, registry)
+        val processor = createTaskProcessor(fakeRepository, fakeEvaluator)
 
         val task = createTask(identifier = "exceptionTask")
         fakeRepository.insert(task, emptySet(), emptySet())
 
-        processor.run(task)
+        processor.run(task.id)
 
         assertEquals(State.Failed, fakeRepository.taskState(task.id))
     }
@@ -366,27 +398,25 @@ class TaskProcessorTest {
     fun `task waiting for processTime does not hold system wake lock`() = runTest {
         val fakeRepository = FakeRepository()
 
-        val fakeEvaluator = TaskEvaluator(
-            taskRegistry = TaskRegistry().apply {
-                register("delayedTask") {
-                    {
-                        delay(1.hours)
-                        TaskResult.success()
-                    }
-                }
+        val registry = FakeRegistryResolver().apply {
+            register("delayedTask") {
+                delay(1.hours)
+                TaskResult.success(Unit)
             }
-        )
+        }
+        val fakeEvaluator = createTaskEvaluator(fakeRepository, registry)
 
         val fakeProvider = FakeTokenProvider()
-
-        val processor = TaskProcessorImpl(
+        val processor = createTaskProcessor(
             repository = fakeRepository,
             taskEvaluator = fakeEvaluator,
             executionContextProvider = executionContextProvider(fakeProvider),
-            taskScopeFactory = FakeTaskScopeFactory(),
-            preconditionController = ConstraintController(emptyList())
+            preconditionController = ConstraintController(
+                listOf(
+                    ProcessTimePrecondition()
+                )
+            )
         )
-
 
         // Vytvoříme task, který má běžet až za 1 hodinu
         val task = createTask(
@@ -398,7 +428,7 @@ class TaskProcessorTest {
 
         // Spustíme procesor (coroutina se uspí)
         val job = launch {
-            processor.run(task)
+            processor.run(task.id)
         }
 
         // Posuneme čas jen o 30 minut
@@ -410,9 +440,9 @@ class TaskProcessorTest {
 
         // Posuneme čas za hranici (task by měl začít běžet)
         advanceTimeBy(31.minutes)
+        runCurrent()
 
         assertEquals(State.Running, fakeRepository.taskState(task.id))
-        runCurrent()
 
         // ASSERT: Až teď se musel zámek vyžádat
         assertEquals(1, fakeProvider.acquireCount, "Před samotnou exekucí se musí OS zamknout")
@@ -423,30 +453,22 @@ class TaskProcessorTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `when task is cancelled in DB during execution, processor stops it`() = runTest {
-
         val fakeRepository = FakeRepository()
 
-        val fakeEvaluator = TaskEvaluator(
-            taskRegistry = TaskRegistry().apply {
-                register("cancelledOutside") {
-                    {
-                        delay(1.hours)
-                        TaskResult.success()
-                    }
-                }
+        val registry = FakeRegistryResolver().apply {
+            register("cancelledOutside") {
+                delay(1.hours)
+                TaskResult.success(Unit)
             }
-        )
+        }
+        val fakeEvaluator = createTaskEvaluator(fakeRepository, registry)
 
         val fakeProvider = FakeTokenProvider()
-
-        val processor = TaskProcessorImpl(
+        val processor = createTaskProcessor(
             repository = fakeRepository,
             taskEvaluator = fakeEvaluator,
-            executionContextProvider = executionContextProvider(fakeProvider),
-            taskScopeFactory = FakeTaskScopeFactory(),
-            preconditionController = ConstraintController(emptyList())
+            executionContextProvider = executionContextProvider(fakeProvider)
         )
-
 
         // Vytvoříme task, který má běžet až za 1 hodinu
         val task = createTask(
@@ -457,7 +479,7 @@ class TaskProcessorTest {
 
         // Spustíme procesor (coroutina se uspí)
         val job = launch {
-            processor.run(task)
+            processor.run(task.id)
         }
 
         // Posuneme čas o 1 vteřinu (Task přejde do stavu Running)
@@ -466,14 +488,20 @@ class TaskProcessorTest {
 
         assertEquals(State.Running, fakeRepository.taskState(task.id), "Task is running")
         // AKCE (Sabotáž zvenčí): UI vlákno změní stav tasku v DB!
-        fakeRepository.updateState(task.id, State.Cancelled, State.entries.toSet())
+        fakeRepository.updateState(
+            id = task.id,
+            state = State.Cancelled,
+            allowedSourceStates = State.entries.toSet(),
+            resetProcessTime = false,
+            runAttemptCount = null
+        )
 
         assertEquals(State.Cancelled, fakeRepository.taskState(task.id), "Task is cancelled")
 
         // Necháme Coroutine Dispatcher zpracovat tu změnu ve Flow
         runCurrent()
 
-        // ASSERT: job.isCancelled musí být true!
+        // ASSERT: job.isCancelled must be true!
         // Náš DB Watcher zjistil, že state.terminal() je true, a zavolal mainJob.cancelAndJoin()
         assertTrue(job.isCompleted, "Processor musí zrušit běh, pokud je task zrušen v DB")
     }

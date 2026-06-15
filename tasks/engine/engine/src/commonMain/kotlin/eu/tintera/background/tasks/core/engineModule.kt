@@ -1,6 +1,7 @@
 package eu.tintera.background.tasks.core
 
 import eu.tintera.background.guard.ExecutionContextObserver
+import eu.tintera.background.tasks.TaskLifecycleObserver
 import eu.tintera.background.tasks.TaskManager
 import eu.tintera.background.tasks.core.db.coreDbModule
 import eu.tintera.background.tasks.core.constraints.*
@@ -8,6 +9,7 @@ import org.koin.core.module.dsl.createdAtStart
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.bind
+import org.koin.dsl.binds
 import org.koin.dsl.module
 
 val engineModule = module {
@@ -31,7 +33,7 @@ val engineModule = module {
         ConstraintController(constraints = getAll())
     }
 
-    singleOf(::ActiveTaskTrackerImpl) bind ActiveTaskTracker::class
+    singleOf(::ActiveTaskTrackerImpl) binds arrayOf(ActiveTaskTracker::class, TaskLifecycleObserver::class)
 
     singleOf(::OrphanTaskSweeper) {
         createdAtStart()

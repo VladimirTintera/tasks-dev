@@ -1,24 +1,18 @@
 package eu.tintera.background.tasks.core.fakes
 
-import eu.tintera.background.tasks.core.ExecutionKey
 import eu.tintera.background.tasks.core.TaskProcessor
-import eu.tintera.background.tasks.core.data.Task
 import kotlinx.coroutines.awaitCancellation
+import kotlin.uuid.Uuid
 
-internal class FakeTaskProcessor : TaskProcessor{
-    // Ukládáme si klíče právě běžících tasků
-    val currentlyRunningKeys = mutableSetOf<ExecutionKey>()
+internal class FakeTaskProcessor : TaskProcessor {
+    val currentlyRunningIds = mutableSetOf<Uuid>()
 
-    override suspend fun run(task: Task) {
-        val key = ExecutionKey(task.id, task.processTime)
-        currentlyRunningKeys.add(key)
+    override suspend fun run(id: Uuid) {
+        currentlyRunningIds.add(id)
         try {
-            // awaitCancellation() simuluje task, který běží "donekonečna",
-            // dokud ho někdo zvenku nezruší (což je přesně to, co chceme testovat)
             awaitCancellation()
         } finally {
-            // Až Dispatcher zavolá job.cancel(), blok finally se vykoná
-            currentlyRunningKeys.remove(key)
+            currentlyRunningIds.remove(id)
         }
     }
 }

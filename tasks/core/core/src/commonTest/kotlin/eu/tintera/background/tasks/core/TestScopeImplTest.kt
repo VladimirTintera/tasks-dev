@@ -4,6 +4,7 @@ import eu.tintera.background.tasks.core.data.TaskScopeRepository
 import eu.tintera.background.tasks.serialization.Serializer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.*
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -36,7 +37,6 @@ class TaskScopeImplTest {
             repository = fakeRepository,
             progressSerializer = FakeIntSerializer(), // Vlastní mock
             tags = emptySet(),
-            typedTags = emptySet(),
             saveDispatcher = testDispatcher // Ovládáme časování IO!
         )
     }
@@ -100,9 +100,15 @@ class TaskScopeImplTest {
         // Assert: Před flushem je uloženo 0 krát
         assertEquals(0, fakeRepository.saveCount)
 
+        // Cancel the background collector job so it does not save concurrently
+        scope.close()
+
         // Act: Voláme manuální flush
-        scope.flushProgress()
+        val job = launch {
+            scope.flushProgress()
+        }
         runCurrent()
+        job.join()
 
         // Assert: Bylo zapsáno okamžitě (čas se neposouval!)
         assertEquals(1, fakeRepository.saveCount)

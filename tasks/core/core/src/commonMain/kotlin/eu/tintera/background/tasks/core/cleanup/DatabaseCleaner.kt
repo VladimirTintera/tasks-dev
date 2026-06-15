@@ -3,7 +3,6 @@ package eu.tintera.background.tasks.core.cleanup
 import eu.tintera.background.tasks.*
 import eu.tintera.background.tasks.core.AppDispatchers
 import eu.tintera.background.tasks.core.ApplicationScope
-import eu.tintera.background.tasks.core.io
 import eu.tintera.background.tasks.core.serialization.UnitSerializer
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.hours

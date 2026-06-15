@@ -1,26 +1,38 @@
 package eu.tintera.background.tasks.core
 
+import eu.tintera.background.tasks.TaskLifecycleObserver
+import eu.tintera.background.tasks.TaskResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlin.uuid.Uuid
 
 internal interface ActiveTaskTracker {
-    fun track(id: Uuid)
-    fun untrack(id: Uuid)
     fun getActiveIds(): Set<Uuid>
 }
 
-internal class ActiveTaskTrackerImpl : ActiveTaskTracker {
+internal class ActiveTaskTrackerImpl : ActiveTaskTracker, TaskLifecycleObserver {
     // Použijeme StateFlow jako elegantní thread-safe Set
     private val activeIds = MutableStateFlow<Set<Uuid>>(emptySet())
 
-    override fun track(id: Uuid) {
+    private fun track(id: Uuid) {
         activeIds.update { it + id }
     }
 
-    override fun untrack(id: Uuid) {
+    private fun untrack(id: Uuid) {
         activeIds.update { it - id }
     }
 
     override fun getActiveIds(): Set<Uuid> = activeIds.value
+
+    override fun onStarted(id: Uuid) {
+        track(id)
+    }
+
+    override fun onCompleted(id: Uuid, result: TaskResult<Any>) {
+        untrack(id)
+    }
+
+    override fun onCanceled(id: Uuid, reason: String?) {
+        untrack(id)
+    }
 }

@@ -13,6 +13,7 @@ import kotlin.time.Duration.Companion.seconds
 fun TestScope.dispatchers() = object : AppDispatchers {
     override val default = StandardTestDispatcher(testScheduler)
     override val main = StandardTestDispatcher(testScheduler)
+    override val io = StandardTestDispatcher(testScheduler)
 }
 
 val defaultReleaseDebounce = 1.5.seconds
@@ -23,5 +24,6 @@ fun TestScope.executionContextProvider(
 ): ExecutionContextProvider = ExecutionEnvironmentFactory.create(
     scope = this,
     tokenProducers = listOf(tokenProducer),
-    config = ExecutionEnvironmentConfig(releaseDebounce)
+    config = ExecutionEnvironmentConfig(releaseDebounce),
+    dispatcher = dispatchers().default
 )

@@ -2,6 +2,7 @@ package eu.tintera.background.tasks.ios
 
 import eu.tintera.background.guard.ExecutionContextObserver
 import eu.tintera.background.guard.TokenProducer
+import eu.tintera.background.tasks.TaskLifecycleObserver
 import eu.tintera.background.tasks.core.AppStateObserver
 import eu.tintera.background.tasks.core.NetworkState
 import eu.tintera.background.tasks.core.engineModule
@@ -35,7 +36,7 @@ fun iosModule(
                 isAppRefreshTaskAllowed = appRefreshTaskIdentifier != null,
                 clock = get(),
             )
-        } binds arrayOf(TokenProducer::class, ExecutionContextObserver::class, Constraint::class)
+        } binds arrayOf(TokenProducer::class, ExecutionContextObserver::class, Constraint::class, TaskLifecycleObserver::class)
     }
 
     appRefreshTaskIdentifier?.also { identifier ->
@@ -48,7 +49,7 @@ fun iosModule(
                 appLifecycleObserver = get(),
                 clock = get(),
             )
-        } binds arrayOf(TokenProducer::class, ExecutionContextObserver::class)
+        } binds arrayOf(TokenProducer::class, ExecutionContextObserver::class, TaskLifecycleObserver::class)
     }
 
     singleOf(::AppLifecycleObserver) {

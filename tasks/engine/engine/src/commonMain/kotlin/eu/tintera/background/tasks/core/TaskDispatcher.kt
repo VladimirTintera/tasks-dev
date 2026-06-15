@@ -1,6 +1,5 @@
 package eu.tintera.background.tasks.core
 
-import eu.tintera.background.tasks.EventBus
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
@@ -13,7 +12,6 @@ internal class TaskDispatcher(
     private val repository: TaskDispatcherRepository,
     private val scope: ApplicationScope,
     private val dispatchers: AppDispatchers,
-    private val activeTaskTracker: ActiveTaskTracker,
 ) {
     private val runningJobs = MutableStateFlow<Map<Uuid, Job>>(emptyMap())
     private val jobFinishedEvent = MutableSharedFlow<Unit>(
@@ -35,15 +33,7 @@ internal class TaskDispatcher(
     private suspend fun collectAndDispatchTasks() {
         tasks().collect { tasks ->
 
-            val currentExecutionKeys = tasks.map { it.id }.toSet()
-
             val currentJobsMap = runningJobs.value
-
-            currentJobsMap.forEach { (key, job) ->
-                if (key !in currentExecutionKeys) {
-                    job.cancel()
-                }
-            }
 
             val newTasks = tasks.filter { !currentJobsMap.containsKey(it.id) }
 
@@ -51,18 +41,14 @@ internal class TaskDispatcher(
                 newTasks.forEach { task ->
 
                     val job = scope.launch(context = dispatchers.io, start = CoroutineStart.LAZY) {
-                        EventBus.send(TAG, "Task started '${task.id}'")
                         taskProcessor.run(task.id)
                     }
 
                     runningJobs.update { it + (task.id to job) }
-                    activeTaskTracker.track(task.id)
 
                     job.invokeOnCompletion {
                         runningJobs.update { it - task.id }
-                        activeTaskTracker.untrack(task.id)
                         jobFinishedEvent.tryEmit(Unit)
-                        EventBus.send(TAG, "Task invokeOnCompletion '${task.id}'")
                     }
 
                     job.start()

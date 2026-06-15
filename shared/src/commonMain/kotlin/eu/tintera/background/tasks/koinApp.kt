@@ -85,23 +85,6 @@ fun koinApp(
             }
 
             viewModelOf(::MainViewModel)
-
-            single(createdAtStart = true) {
-                object {
-                    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-
-                    init {
-                        scope.launch {
-                            EventBus.events.collect {
-                                when (it) {
-                                    is TaskEvent.Custom -> Logger.i(tag = it.tag) { it.message }
-                                }
-
-                            }
-                        }
-                    }
-                }
-            }
         }
     )
 }

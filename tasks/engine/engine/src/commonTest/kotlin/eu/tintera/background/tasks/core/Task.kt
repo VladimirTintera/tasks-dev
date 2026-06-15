@@ -15,7 +15,7 @@ fun createTask(
     id: Uuid = Uuid.random(),
     networkRequired: Boolean = false,
     initialDelay: Duration = Duration.ZERO,
-    processTime: Instant = Clock.System.now(),
+    processTime: Instant = Clock.System.now() + initialDelay,
     runAttemptCount: Int = 0,
     requiresDeviceIdle: Boolean = false
 ): Task = Task(
@@ -26,7 +26,7 @@ fun createTask(
     runAttemptCount = runAttemptCount,
     initialDelay = initialDelay,
     processTime = processTime,
-    inputData = null,
+    inputData = ByteArray(0),
     outputData = null,
     networkRequired = networkRequired,
     createdAt = Clock.System.now(),
