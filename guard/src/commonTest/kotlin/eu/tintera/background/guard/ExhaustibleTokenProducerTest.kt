@@ -2,15 +2,21 @@ package eu.tintera.background.guard
 
 import app.cash.turbine.test
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration.Companion.seconds
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotSame
 import kotlin.test.assertTrue
+import kotlin.test.assertNotNull
+
 
 class ExhaustibleTokenProducerTest {
 
     @Test
-    fun `emits token initially, exhausts on expire and produces new token when onStarted is called`() = runTest {
+    fun `emits token initially exhausts on expire and produces new token when onStarted is called`() = runTest {
         val producer = TestExhaustibleTokenProducer()
         var parentExpireCallCount = 0
 

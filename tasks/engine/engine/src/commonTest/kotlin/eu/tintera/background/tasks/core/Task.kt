@@ -32,7 +32,7 @@ fun createTask(
     createdAt = Clock.System.now(),
     finishedAt = if (state.terminal()) Clock.System.now() else null,
     repeatInterval = null,
-    backoffCriteria = BackoffCriteria.DEFAULT,
+    backoffCriteria = defaultBackoffCriteria,
     progressData = null,
     retentionDelay = 24.hours,
     requiresDeviceIdle = requiresDeviceIdle,

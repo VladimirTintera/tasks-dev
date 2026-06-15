@@ -23,52 +23,103 @@ internal class SharedExecutionContextProvider(
 ) : ExecutionContextProvider, MultiplexerObservable {
     private val mutex = Mutex()
     private val currentSession = AtomicReference<Session?>(null)
+    private var activeSessionDeferred: Deferred<Session>? = null
     private var debounceJob: Job? = null
 
     private val _multiplexerState = MutableStateFlow(MultiplexerState())
     override val state: StateFlow<MultiplexerState> = _multiplexerState.asStateFlow()
 
-    override suspend fun acquire(): ExecutionContext = mutex.withLock {
-        cancelDebounce()
-
-        var session = currentSession.load()
-
-        if (session == null || session.isExpired.value) {
-            val expirationFlow = MutableStateFlow(false)
-            val newSession = Session(expirationFlow)
-
-            // Získáme systémový zámek ze sjednoceného TokenProducer
-            val sysToken = tokenProducer.token().first()
-
-            sysToken.invokeOnPreCancel {
-                lifecycleObserver.onPreCancel()
-                cancelDebounce()
-                newSession.isExpired.value = true
-                currentSession.compareAndSet(newSession, null)
-                newSession.systemToken.exchange(null)
-            }
-
-            newSession.systemToken.store(sysToken)
-
-            // Defenzivní check. Co když callback běžel přesně mezi acquire() a store()?
-            // Pokud ano, ukradneme token my a zrušíme ho, aby nezůstal viset v paměti systému.
-
-            if (newSession.isExpired.value) {
-                newSession.systemToken.exchange(null)?.release()
-            } else {
-                _multiplexerState.update { it.copy(isSystemTokenHeld = true) }
-                lifecycleObserver.onStarted()
-            }
-
-            session = newSession
-            currentSession.store(newSession)
-        }
-
-        val activeCount = session.activeCount.incrementAndFetch()
-        _multiplexerState.update { it.copy(activeTasksCount = activeCount) }
-
+    override suspend fun acquire(): ExecutionContext {
+        val session = getOrCreateSession()
         return ExecutionContextImpl(session, ::releaseSessionToken)
     }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private suspend fun getOrCreateSession(): Session {
+        var joined = false
+        val deferred = mutex.withLock {
+            cancelDebounce()
+            val current = currentSession.load()
+            if (current != null && !current.isExpired.value) {
+                val activeCount = current.activeCount.incrementAndFetch()
+                _multiplexerState.update { it.copy(activeTasksCount = activeCount) }
+                return@withLock CompletableDeferred(current)
+            }
+
+            val existingDeferred = activeSessionDeferred
+            if (existingDeferred != null && !existingDeferred.isCompleted) {
+                joined = true
+                existingDeferred
+            } else {
+                val newDeferred = scope.async(dispatcher) {
+                    try {
+                        val expirationFlow = MutableStateFlow(false)
+                        val session = Session(expirationFlow, activeCount = AtomicInt(1))
+
+                        val sysToken = tokenProducer.token().first()
+
+                        sysToken.invokeOnPreCancel {
+                            lifecycleObserver.onPreCancel()
+                            cancelDebounce()
+                            session.isExpired.value = true
+                            currentSession.compareAndSet(session, null)
+                            session.systemToken.exchange(null)
+                        }
+
+                        session.systemToken.store(sysToken)
+
+                        if (session.isExpired.value) {
+                            session.systemToken.exchange(null)?.release()
+                        } else {
+                            _multiplexerState.update {
+                                it.copy(
+                                    isSystemTokenHeld = true,
+                                    activeTasksCount = it.activeTasksCount + 1
+                                )
+                            }
+                            currentSession.store(session)
+                            lifecycleObserver.onStarted()
+                        }
+
+                        session
+                    } catch (e: Throwable) {
+                        mutex.withLock {
+                            if (activeSessionDeferred === this@async) {
+                                activeSessionDeferred = null
+                            }
+                        }
+                        throw e
+                    }
+                }
+                activeSessionDeferred = newDeferred
+                newDeferred
+            }
+        }
+
+        try {
+            if (joined) {
+                val session = deferred.await()
+                val activeCount = session.activeCount.incrementAndFetch()
+                _multiplexerState.update { it.copy(activeTasksCount = activeCount) }
+                return session
+            } else {
+                return deferred.await()
+            }
+        } catch (e: Throwable) {
+            mutex.withLock {
+                if (activeSessionDeferred === deferred) {
+                    activeSessionDeferred = null
+                }
+            }
+            try {
+                val session = deferred.getCompleted()
+                releaseSessionToken(session)
+            } catch (_: Throwable) {
+            }
+            throw e
+        }
+    }
+
 
     private fun cancelDebounce() {
         debounceJob?.also {

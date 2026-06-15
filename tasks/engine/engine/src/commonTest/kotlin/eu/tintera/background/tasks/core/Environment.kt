@@ -12,7 +12,6 @@ import kotlin.time.Duration.Companion.seconds
 
 fun TestScope.dispatchers() = object : AppDispatchers {
     override val default = StandardTestDispatcher(testScheduler)
-    override val io = StandardTestDispatcher(testScheduler)
     override val main = StandardTestDispatcher(testScheduler)
 }
 

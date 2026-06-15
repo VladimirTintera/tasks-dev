@@ -8,7 +8,7 @@ import kotlin.test.assertEquals
 
 class TaskDataTest {
     @Test
-    fun `Data merging prioritizes task input over new parents, and new parents over old parents`() {
+    fun `Data merging prioritizes task input over new parents and new parents over old parents`() {
         // Arrange
         val originalInput = taskDataOf("path" to "original", "retries" to 0)
 

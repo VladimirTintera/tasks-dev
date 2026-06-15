@@ -72,7 +72,7 @@ class TaskProcessorTest {
             createdAt = Clock.System.now(),
             finishedAt = null,
             repeatInterval = null,
-            backoffCriteria = BackoffCriteria.DEFAULT,
+            backoffCriteria = defaultBackoffCriteria,
             progressData = null,
             retentionDelay = 24.hours,
             requiresDeviceIdle = false,
@@ -85,7 +85,7 @@ class TaskProcessorTest {
 
         // 2. Spuštění processoru v samostatné coroutině (aby nám neblokoval test)
         val processorJob = launch {
-            processor.run(task)
+            processor.run(task.id)
         }
 
         // Posuneme virtuální čas o kousek, aby task stihl začít pracovat (např. 1 vteřinu)
@@ -142,7 +142,7 @@ class TaskProcessorTest {
     @Test
     fun `when task requests retry, it is rescheduled with backoff`() = runTest {
         val fakeRepository = FakeRepository()
-        val fakeEvaluator = TaskEvaluator(
+        val fakeEvaluator = TaskEvaluatorImpl(
             taskRegistry = TaskRegistry().apply {
                 register("retryTask") { { TaskResult.Retry } }
             }

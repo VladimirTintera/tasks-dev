@@ -2,7 +2,9 @@ package eu.tintera.background.guard
 
 import eu.tintera.background.guard.fakes.SpyExecutionContextObserver
 import eu.tintera.background.guard.fakes.FakeTokenProvider
+import eu.tintera.background.guard.fakes.FakeToken
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -135,7 +137,7 @@ class SharedExecutionContextProviderTest {
     }
 
     @Test
-    fun `after expiration, new acquire starts fresh`() = runTest {
+    fun `after expiration new acquire starts fresh`() = runTest {
         val fakeSystemLock = FakeTokenProvider()
         val wakeLock = executionContextProvider(fakeSystemLock)
 
@@ -192,7 +194,7 @@ class SharedExecutionContextProviderTest {
     }
 
     @Test
-    fun `when system expires lock instantly during acquire, token is cancelled immediately`() = runTest {
+    fun `when system expires lock instantly during acquire token is cancelled immediately`() = runTest {
         // Arrange
         val fakeSystemLock = FakeTokenProvider().apply {
             simulateInstantExpiration = true // Zapínáme zákeřný scénář
@@ -227,7 +229,7 @@ class SharedExecutionContextProviderTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `when coroutine is cancelled, system wake lock is still released`() = runTest {
+    fun `when coroutine is cancelled system wake lock is still released`() = runTest {
         // 1. Příprava
         val fakePlatformProvider = FakeTokenProvider()
         val countingProvider = executionContextProvider(
@@ -261,7 +263,7 @@ class SharedExecutionContextProviderTest {
     }
 
     @Test
-    fun `when system expires task immediately during acquire, token is cancelled`() = runTest {
+    fun `when system expires task immediately during acquire token is cancelled`() = runTest {
         val fakeProvider = FakeTokenProvider().apply {
             simulateInstantExpiration = true
         }
@@ -374,5 +376,56 @@ class SharedExecutionContextProviderTest {
             "Systemovy token MUSI byt uvolnen bez ohledu na to, ze se observer zasekl"
         )
     }
+
+    @Test
+    fun `when acquire is suspended waiting for token release of old token is not blocked`() = runTest {
+        var shouldSuspend = false
+        val fakeToken = FakeToken()
+        val customProducer = TokenProducer {
+
+            flow {
+                if (shouldSuspend) {
+                    awaitCancellation()
+                } else {
+                    emit(fakeToken)
+                }
+            }
+        }
+
+        val wakeLock = executionContextProvider(
+            tokenProducer = customProducer,
+            releaseDebounce = Duration.ZERO
+        )
+
+        // 1. Acquire first token
+        val token1 = wakeLock.acquire()
+
+        // 2. Expire the first session
+        fakeToken.cancel()
+        assertTrue(token1.isExpired.value)
+
+        // 3. Set producer to suspend and start a second acquire in background, which will try to start a new session and suspend
+        shouldSuspend = true
+        val secondAcquireJob = launch {
+            wakeLock.acquire()
+        }
+        runCurrent()
+
+        try {
+            // 4. Try to release the old token1. It should succeed immediately (without waiting for the second acquire to finish)
+            val releaseCompleted = withTimeoutOrNull(2.seconds) {
+                token1.release()
+                true
+            }
+
+            // In the buggy implementation, releaseCompleted will be null because the mutex is locked by secondAcquireJob
+            assertTrue(releaseCompleted ?: false, "Release of old token should not be blocked by pending acquire")
+        } finally {
+            secondAcquireJob.cancelAndJoin()
+        }
+    }
 }
+
+
+
 

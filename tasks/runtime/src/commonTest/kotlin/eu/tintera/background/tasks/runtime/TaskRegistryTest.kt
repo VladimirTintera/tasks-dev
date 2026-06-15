@@ -89,7 +89,7 @@ class TaskRegistryTest {
     }
 
     @Test
-    fun `after warmup is consumed, resolving missing tags is instant`() = runTest {
+    fun `after warmup is consumed resolving missing tags is instant`() = runTest {
         // Arrange: Úmyslně vyčerpáme warmup
         val job = launch { registry.resolveTag<MyDummyTag>("trigger_warmup") }
         advanceTimeBy(5.seconds)

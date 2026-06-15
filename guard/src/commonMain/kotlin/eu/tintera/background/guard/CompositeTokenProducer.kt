@@ -47,8 +47,8 @@ internal class CompositeTokenProducer(
                 token.markAsActive()
 
                 token.invokeOnPreCancel {
-                    val current = activeTokens.value
-                    if (current.size == 1 && current.contains(token)) {
+                    val allCancelled = activeTokens.value.all { it.state.value == TokenState.CANCELLED }
+                    if (allCancelled) {
                         combinedTokenRef?.triggerCancel()
                     }
                 }
@@ -64,31 +64,40 @@ internal class CompositeTokenProducer(
             }
         }
 
-        activeTokens.first { it.isNotEmpty() }
+        var emitted = false
+        try {
+            activeTokens.first { it.isNotEmpty() }
 
-        val combinedToken = CompositeToken(
-            releaseAction = {
-                collectionJob.cancel()
-                coroutineScope {
-                    activeTokens.getAndUpdate { emptySet() }.forEach {
-                        launch { it.release() }
+            val combinedToken = CompositeToken(
+                releaseAction = {
+                    collectionJob.cancel()
+                    coroutineScope {
+                        activeTokens.getAndUpdate { emptySet() }.forEach {
+                            launch { it.release() }
+                        }
+                    }
+                },
+                cancelAction = {
+                    collectionJob.cancel()
+                    scope.launch {
+                        activeTokens.getAndUpdate { emptySet() }.forEach {
+                            launch { it.release() }
+                        }
                     }
                 }
-            },
-            cancelAction = {
+            )
+
+            combinedTokenRef = combinedToken
+            emitted = true
+            emit(combinedToken)
+        } finally {
+            if (!emitted) {
                 collectionJob.cancel()
-                scope.launch {
-                    activeTokens.getAndUpdate { emptySet() }.forEach {
-                        launch { it.release() }
-                    }
-                }
             }
-        )
-
-        combinedTokenRef = combinedToken
-        emit(combinedToken)
+        }
     }
 }
+
 
 private class CompositeToken(
     private val releaseAction: suspend () -> Unit,

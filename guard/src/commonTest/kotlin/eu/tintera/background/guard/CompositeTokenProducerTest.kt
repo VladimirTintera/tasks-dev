@@ -287,4 +287,47 @@ class CompositeTokenProducerTest {
         assertEquals(1, preCancelOrder, "preCancel hook of combined token should execute first")
         assertEquals(2, cancelOrder, "onCancel of the platform token should execute after preCancel hooks")
     }
+
+    @Test
+    fun `when multiple tokens are cancelled concurrently global expiration is still triggered`() = runTest {
+        val producerA = FakeTokenProducer()
+        val producerB = FakeTokenProducer()
+        val compositeProducer = CompositeTokenProducer(
+            scope = backgroundScope,
+            dispatcher = StandardTestDispatcher(testScheduler),
+            producers = listOf(producerA, producerB),
+            onTokenProducerRegistered = {}
+        )
+
+        var globalExpired = false
+        val compositeTokenAsync = async {
+            val token = compositeProducer.token().first()
+            token.invokeOnPreCancel { globalExpired = true }
+            token
+        }
+        runCurrent()
+
+        val tokenA = producerA.emitNewToken()
+        runCurrent()
+
+        val tokenB = producerB.emitNewToken()
+        runCurrent()
+
+        println("Before cancel - activeTokens: ${tokenA.state.value}, ${tokenB.state.value}")
+
+        // Act: cancel both tokens concurrently (before any coroutines run to remove them from activeTokens)
+        tokenA.cancel()
+        println("After tokenA cancel - globalExpired: $globalExpired")
+        tokenB.cancel()
+        println("After tokenB cancel - globalExpired: $globalExpired")
+
+        runCurrent()
+
+        println("After runCurrent - globalExpired: $globalExpired")
+
+        // Assert: global expiration must be triggered because all tokens are cancelled
+        assertTrue(globalExpired, "Global expiration MUST trigger when all tokens are cancelled, even concurrently")
+    }
 }
+
+
