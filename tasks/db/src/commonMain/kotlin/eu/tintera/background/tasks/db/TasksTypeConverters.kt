@@ -1,6 +1,6 @@
 package eu.tintera.background.tasks.db
 
-import androidx.room3.TypeConverter
+import androidx.room3.ColumnTypeConverter
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
@@ -14,64 +14,64 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalSerializationApi::class)
 internal object TasksTypeConverters {
 
-    @TypeConverter
+    @ColumnTypeConverter
     @JvmStatic
     fun toUuid(value: String?): Uuid? {
         return value?.let { Uuid.parse(it) }
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     @JvmStatic
     fun fromUuid(value: Uuid?): String? {
         return value?.toString()
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     @JvmStatic
     fun toInstant(value: Long?): Instant? {
         return value?.let { Instant.fromEpochMilliseconds(it) }
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     @JvmStatic
     fun fromInstant(value: Instant?): Long? {
         return value?.toEpochMilliseconds()
     }
 
 
-    @TypeConverter
+    @ColumnTypeConverter
     @JvmStatic
     fun toDuration(value: Long?): Duration? {
         return value?.milliseconds
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     @JvmStatic
     fun fromDuration(value: Duration?): Long? {
         return value?.inWholeMilliseconds
     }
 
 
-    @TypeConverter
+    @ColumnTypeConverter
     @JvmStatic
     fun toState(value: String?): StateDb? {
         return StateDb.entries.firstOrNull { it.name == value }
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     @JvmStatic
     fun fromState(value: StateDb?): String? {
         return value?.name
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     @JvmStatic
     fun toBackoffCriteria(value: ByteArray?): BackoffCriteriaDb? {
         return value?.let { ProtoBuf.decodeFromByteArray<BackoffCriteriaDb>(it) }
     }
 
 
-    @TypeConverter
+    @ColumnTypeConverter
     @JvmStatic
     fun fromBackoffCriteria(value: BackoffCriteriaDb?): ByteArray? {
         return value?.let { ProtoBuf.encodeToByteArray<BackoffCriteriaDb>(it) }

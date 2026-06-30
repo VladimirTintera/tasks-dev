@@ -41,7 +41,7 @@ internal expect object TasksDatabaseConstructor : RoomDatabaseConstructor<TasksD
     ]
 )
 @ConstructedBy(TasksDatabaseConstructor::class)
-@TypeConverters(TasksTypeConverters::class)
+@ColumnTypeConverters(TasksTypeConverters::class)
 internal abstract class TasksDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao
     abstract fun taskTagDao(): TaskTagDao
