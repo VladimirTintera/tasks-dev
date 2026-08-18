@@ -15,6 +15,20 @@ room3 {
 
 kotlin {
 
+    // androidx.sqlite dělí API na nonWeb (synchronní) a web (suspend) — potřebujeme stejný šev,
+    // abychom ruční migrace psali jednou pro obě větve, ne pro každý target zvlášť.
+    applyDefaultHierarchyTemplate {
+        common {
+            group("nonWeb") {
+                // withAndroidTarget() cílí na KGP `androidTarget()`; tady je android z AGP
+                // pluginu com.android.kotlin.multiplatform.library, který se jmenuje "android".
+                withCompilations { it.target.name == "android" }
+                withIos()
+                withJvm()
+            }
+        }
+    }
+
     compilerOptions {
         optIn.addAll(
             "kotlinx.serialization.ExperimentalSerializationApi"
