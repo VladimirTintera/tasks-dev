@@ -33,7 +33,8 @@ class TaskEvaluatorImpl(
     private val dispatchers: AppDispatchers,
     private val tagMapper: TagMapper,
     private val repository: TaskEvaluatorRepository,
-    private val taskResultHandler: TaskResultHandler
+    private val taskResultHandler: TaskResultHandler,
+    private val log: CompositeTasksLogger
 ) : TaskEvaluator {
 
     override suspend fun handle(
@@ -42,7 +43,7 @@ class TaskEvaluatorImpl(
     ): TaskEvaluatorResult {
 
         val task = repository.executableTask(id) ?: return TaskEvaluatorResult.FAILURE.also {
-            println("Task $id not found")
+            log.warning(TAG) { "Task $id not found" }
         }
 
         val registration = registryResolver.resolve<Any, Any, Any>(
@@ -53,13 +54,24 @@ class TaskEvaluatorImpl(
                 repeatInterval = null
             )
         ).also {
-            println("No registration found for ask with id $id, identifier ${task.identifier}")
+            log.error(TAG) {
+                "No registration found for task $id (identifier '${task.identifier}'). " +
+                    "Registrace se musí jmenovat stejně jako identifier v TaskRequest."
+            }
         }
 
-        val migrationResult = taskMigrator.migrate(
-            data = task,
-            registration = registration
-        )?.also {
+        val migrationResult = runCatching {
+            taskMigrator.migrate(data = task, registration = registration)
+        }.getOrElse { e ->
+            // Chybějící migrační cesta nebo downgrade (task uložila novější verze aplikace, po
+            // rollbacku ho čte starší). Vyhodit to ven znamená shodit workera — task raději
+            // ukončíme jako Failed, ať se fronta nezasekne.
+            log.error(TAG, e) {
+                "Migration failed for task $id (identifier '${task.identifier}', version ${task.version} " +
+                    "→ ${registration.currentVersion})"
+            }
+            return handleResult(TaskEvaluationResult.Failed(id = id, repeatInterval = null))
+        }?.also {
             repository.upgradeData(
                 id = id,
                 input = it.input?.let { input ->
@@ -119,7 +131,7 @@ class TaskEvaluatorImpl(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                e.printStackTrace()
+                log.error(TAG, e) { "Task $id (identifier '${task.identifier}') threw" }
                 TaskResult.Failure
             }
         }

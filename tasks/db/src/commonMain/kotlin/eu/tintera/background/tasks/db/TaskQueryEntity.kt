@@ -54,7 +54,6 @@ internal class TaskQueryEntity(
             }
         }
 
-        println("Bindings: ${bindings.size}, ${bindings.first()}")
 
         return RoomRawQuery(
             sql = query.toString(),

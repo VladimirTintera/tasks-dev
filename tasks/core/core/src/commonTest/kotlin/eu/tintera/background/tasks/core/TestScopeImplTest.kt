@@ -37,7 +37,8 @@ class TaskScopeImplTest {
             repository = fakeRepository,
             progressSerializer = FakeIntSerializer(), // Vlastní mock
             tags = emptySet(),
-            saveDispatcher = testDispatcher // Ovládáme časování IO!
+            saveDispatcher = testDispatcher, // Ovládáme časování IO!
+            log = CompositeTasksLogger(emptyList())
         )
     }
 

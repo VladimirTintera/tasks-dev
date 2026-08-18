@@ -87,12 +87,13 @@ class TaskProcessorTest {
         return TaskEvaluatorImpl(
             registryResolver = registryResolver,
             taskMigrator = TaskMigrator(),
-            taskScopeFactory = TaskScopeFactory(fakeRepository),
+            taskScopeFactory = TaskScopeFactory(fakeRepository, CompositeTasksLogger(emptyList())),
             applicationScope = ApplicationScope(SupervisorJob()),
             dispatchers = dispatchers(),
             tagMapper = TagMapper(registryResolver),
             repository = fakeRepository,
-            taskResultHandler = FakeTaskResultHandler(fakeRepository)
+            taskResultHandler = FakeTaskResultHandler(fakeRepository),
+            log = CompositeTasksLogger(emptyList())
         )
     }
 

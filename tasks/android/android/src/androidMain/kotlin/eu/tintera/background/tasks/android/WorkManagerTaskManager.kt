@@ -29,7 +29,8 @@ internal class WorkManagerTaskManager(
     private val taskRegistry: RegistryResolver,
     private val taskMigrator: TaskMigrator,
     private val tagMapper: TagMapper,
-    private val transactionRunner: TransactionRunner
+    private val transactionRunner: TransactionRunner,
+    private val log: CompositeTasksLogger
 ) : TaskManager {
 
     private suspend fun TaskRequest<*>.serializeTags() = tagMapper.serialize(
@@ -351,10 +352,7 @@ internal class WorkManagerTaskManager(
                     .addIds(query.ids.map { it.toJavaUuid() })
                     .addStates(query.states.map { it.toWorkState() })
                     .addUniqueWorkNames(query.uniqueNames.toList()).build()
-            ).map {
-                println(it)
-                it
-            }.toTaskInfos().collect { emit(it) }
+            ).toTaskInfos().collect { emit(it) }
         }
     } ?: emptyFlow()
 
@@ -408,10 +406,15 @@ internal class WorkManagerTaskManager(
                     override val outputData = task.outputData
                     override val progressData = task.progressData
                 }
-                taskMigrator.migrate(
-                    data = migrationData,
-                    registration = registration
-                )
+                // Chybějící migrační cesta (nebo downgrade po rollbacku aplikace) tu nesmí
+                // vyletět — tenhle kód běží uvnitř Flow, který konzumuje UI. Bez dat se
+                // TaskInfo poskládá taky, jen bez output/progress.
+                runCatching {
+                    taskMigrator.migrate(data = migrationData, registration = registration)
+                }.getOrElse { e ->
+                    log.warning(TAG, e) { "Migration failed while reading TaskInfo ${'$'}{task.id}" }
+                    null
+                }
             }
         }
 
@@ -475,6 +478,8 @@ internal class WorkManagerTaskManager(
         repository.insert(task = t, tags = emptySet(), parentIds = parentIds)
     }
 }
+
+private const val TAG = "WorkManagerTaskManager"
 
 private fun <T> Serializer<T>.decodeFromBytesOrNull(data: ByteArray) = try {
     decodeFromBytes(data)

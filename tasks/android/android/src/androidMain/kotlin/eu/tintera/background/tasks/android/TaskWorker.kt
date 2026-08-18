@@ -11,6 +11,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import eu.tintera.background.tasks.*
 import eu.tintera.background.tasks.core.CompositeTaskLifecycleObserver
+import eu.tintera.background.tasks.core.CompositeTasksLogger
 import eu.tintera.background.tasks.core.TaskEvaluator
 import eu.tintera.background.tasks.core.TaskEvaluatorResult
 import eu.tintera.background.tasks.core.data.Repository
@@ -39,6 +40,7 @@ open class TaskWorker(
 
     private val workManagerConfiguration: WorkManagerConfiguration by inject()
     private val taskLifecycleObserver: CompositeTaskLifecycleObserver by inject()
+    private val log: CompositeTasksLogger by inject()
 
     override suspend fun doWork(): Result {
 
@@ -69,7 +71,15 @@ open class TaskWorker(
                 }
             }.toMap()
 
-            workManagerConfiguration.compatTransformation(sourceData)?.let { byteArray ->
+            val adopted = workManagerConfiguration.compatTransformation(sourceData)
+
+            if (adopted == null) log.error(TAG) {
+                "Task ${'$'}taskId ('${'$'}taskIdentifier') není v databázi a compatTransformation ho " +
+                    "neumí převzít, takže selže. Pokud jde o práci naplánovanou předchozí verzí " +
+                    "aplikace, předej TaskManagerConfiguration.compatTransformation."
+            }
+
+            adopted?.let { byteArray ->
                 Task(
                     id = taskId,
                     identifier = taskIdentifier,
@@ -163,6 +173,7 @@ open class TaskWorker(
 
     companion object {
         const val TASK_IDENTIFIER = "task_identifier"
+        private const val TAG = "TaskWorker"
     }
 
 }

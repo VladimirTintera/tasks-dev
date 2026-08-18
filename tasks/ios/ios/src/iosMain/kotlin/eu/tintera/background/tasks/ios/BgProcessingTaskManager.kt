@@ -2,6 +2,7 @@ package eu.tintera.background.tasks.ios
 
 import eu.tintera.background.tasks.core.AppDispatchers
 import eu.tintera.background.tasks.core.ApplicationScope
+import eu.tintera.background.tasks.core.CompositeTasksLogger
 import eu.tintera.background.tasks.core.ProcessableTask
 import eu.tintera.background.tasks.core.constraints.ConstraintResult
 import eu.tintera.background.tasks.core.constraints.Constraint
@@ -16,7 +17,8 @@ internal class BgProcessingTaskManager(
     repository: BgTaskManagerRepository,
     appLifecycleObserver: AppLifecycleObserver,
     private val isAppRefreshTaskAllowed: Boolean,
-    clock: Clock
+    clock: Clock,
+    log: CompositeTasksLogger
 ) : BgTaskManager(
     scope = scope,
     dispatchers = dispatchers,
@@ -25,6 +27,7 @@ internal class BgProcessingTaskManager(
     appLifecycleObserver = appLifecycleObserver,
     tag = "BgProcessingTaskManager",
     clock = clock,
+    log = log,
 ), Constraint {
 
     override fun List<BgTaskManagerTask>.filter() = if (!isAppRefreshTaskAllowed) this else filter {

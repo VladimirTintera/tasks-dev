@@ -24,5 +24,8 @@ val coreModule = module {
     factory {
         CompositeTaskLifecycleObserver(getAll())
     }
+    factory {
+        CompositeTasksLogger(getAll())
+    }
     factoryOf(::TagMapper)
 }

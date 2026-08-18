@@ -5,9 +5,10 @@ import eu.tintera.background.tasks.runtime.TasksInitializerBase
 actual object TasksInitializer : TasksInitializerBase() {
     actual fun initialize(
         configuration: TaskManagerConfiguration,
-        taskLifecycleObservers: List<TaskLifecycleObserver>
+        taskLifecycleObservers: List<TaskLifecycleObserver>,
+        loggers: List<TasksLogger>
     ) = create(
-        configuration, taskLifecycleObservers
+        configuration, taskLifecycleObservers, loggers
     )
 
     override fun module(config: TaskManagerConfiguration) = webModule(config)
