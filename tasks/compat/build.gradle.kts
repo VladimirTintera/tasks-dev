@@ -3,7 +3,6 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
-    alias(libs.plugins.serialization)
     id("eu.tintera.background.android.library")
 }
 kotlin {
@@ -24,7 +23,6 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(projects.tasks.api)
-            implementation(libs.kotlinx.serialization.protobuf)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

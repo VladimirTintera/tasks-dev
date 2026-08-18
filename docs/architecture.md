@@ -134,11 +134,11 @@ setup, not to the library.
 | **`engine-db`** | Bridge: Implements `engine` repositories using `db`. | `TaskDispatcherRepositoryImpl`, `TaskProcessorRepositoryImpl` |
 | **`runtime`** | Bootstrapper, platform-specific observers, library initialization. | `Tasks`, `TasksInitializer`, `JvmAppStateObserver`, `WebAppStateObserver` |
 | **`di`** | Internal dependency injection wrapper encapsulating Koin. | `TasksKoinContext`, `TasksKoinComponent` |
-| **`compat`** | Compatibility layer for migrating from an untyped, map-shaped payload. | `Data`, `LegacyTaskHandler`, `TaskRequest.LegacyExt` |
+| **`compat`** | Compatibility layer for migrating from an untyped, map-shaped payload. | `Data`, `DataTaskHandler`, `DataTaskScope` |
 | **`android` / `android-db`** | Android integration using system WorkManager. | `WorkManagerTaskManager`, `TaskWorker` |
 | **`ios` / `ios-db`** | iOS BGTask Scheduler and background processing integration. | `BgTaskManager`, `BgProcessingTaskManager`, `AppRefreshTaskManager` |
 | **`web`** | SQLite WASM worker driver integration for web browser DB support. | `SQLiteWasmWorker`, `SQLiteDriver` |
 | **`koin-*`** | Client-facing Koin integration utilities for registering tasks. | `TaskRegistration`, `taskHandlerOf` |
-| **`serialization-*`** | Serialization formats supported (JSON, Protobuf). | `JsonSerializer` |
+| **`serialization-*`** | Serialization formats supported (JSON, Protobuf, `compat` Data). | `jsonSerializer`, `protobufSerializer`, `dataSerializer` |
 | **`shared`** | Compose Multiplatform demo app UI and common demo handlers. | `App`, `MainViewModel`, `TestHandler` |
 | **`*App`** | Platform-specific entry point apps (`androidApp`, `iosApp`, etc.). | Platform-specific launcher files |
