@@ -51,6 +51,9 @@ kotlin {
 
         androidMain.dependencies {
             implementation(libs.androidx.work.runtime.ktx)
+            // TaskManagerStartupInitializer implementuje androidx.startup.Initializer a manifest
+            // registruje InitializationProvider — deklarujeme napřímo, ne přes tranzitivní WorkManager.
+            api(libs.androidx.startup.runtime)
             implementation(libs.androidx.core.ktx)
             implementation(libs.koin.android)
             implementation(projects.tasks.android.android)

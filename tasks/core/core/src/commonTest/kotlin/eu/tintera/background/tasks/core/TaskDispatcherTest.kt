@@ -20,7 +20,7 @@ import kotlin.uuid.Uuid
 class TaskDispatcherTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `when execution key changes, old job is cancelled and new job starts`() = runTest {
+    fun `when execution key changes - old job is cancelled and new job starts`() = runTest {
 
         // 1. Setup
         val fakeRepo = FakeRepository()

@@ -33,7 +33,7 @@ class OrphanTaskSweeperTest {
     }
 
     @Test
-    fun `when sweeper is initialized, a cold start sweep is performed excluding active tasks`() = runTest {
+    fun `when sweeper is initialized - a cold start sweep is performed excluding active tasks`() = runTest {
         val repository = FakeOrphanTaskSweeperRepository()
         val activeIds = setOf(Uuid.random(), Uuid.random())
         val activeTaskTracker = FakeActiveTaskTracker(activeIds)
@@ -62,7 +62,7 @@ class OrphanTaskSweeperTest {
     }
 
     @Test
-    fun `when app transitions to foreground, a sweep is triggered`() = runTest {
+    fun `when app transitions to foreground - a sweep is triggered`() = runTest {
         val repository = FakeOrphanTaskSweeperRepository()
         val activeIds = setOf(Uuid.random())
         val activeTaskTracker = FakeActiveTaskTracker(activeIds)
@@ -95,7 +95,7 @@ class OrphanTaskSweeperTest {
     }
 
     @Test
-    fun `when guard session starts, a background resurrection sweep is triggered`() = runTest {
+    fun `when guard session starts - a background resurrection sweep is triggered`() = runTest {
         val repository = FakeOrphanTaskSweeperRepository()
         val activeIds = setOf(Uuid.random())
         val activeTaskTracker = FakeActiveTaskTracker(activeIds)

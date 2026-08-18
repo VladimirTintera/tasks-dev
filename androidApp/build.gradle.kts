@@ -46,5 +46,8 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.koin.android)
     implementation(libs.koin.core)
+    // Manifest appky odkazuje na androidx.startup.InitializationProvider (odstraňuje meta-data
+    // TaskManagerStartupInitializeru), takže potřebuje třídu i na svém classpath — jinak lint MissingClass.
+    implementation(libs.androidx.startup.runtime)
     implementation(projects.shared)
 }

@@ -33,7 +33,7 @@ class TaskProcessorTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `when iOS wake lock expires, task is cancelled and token released but state remains running`() = runTest {
+    fun `when iOS wake lock expires - task is cancelled and token released but state remains running`() = runTest {
         // 1. Příprava závislostí
         val fakeWakeLock = FakeExecutionContextProvider()
 
@@ -120,7 +120,7 @@ class TaskProcessorTest {
     }
 
     @Test
-    fun `when task finishes successfully, state is updated to Succeeded`() = runTest {
+    fun `when task finishes successfully - state is updated to Succeeded`() = runTest {
         val fakeRepository = FakeRepository()
         val fakeEvaluator = TaskEvaluator(
             taskRegistry = TaskRegistry().apply {
@@ -144,7 +144,7 @@ class TaskProcessorTest {
     }
 
     @Test
-    fun `when task requests retry, it is rescheduled with backoff`() = runTest {
+    fun `when task requests retry - it is rescheduled with backoff`() = runTest {
         val fakeRepository = FakeRepository()
         val fakeEvaluator = TaskEvaluator(
             taskRegistry = TaskRegistry().apply {
@@ -171,7 +171,7 @@ class TaskProcessorTest {
     }
 
     @Test
-    fun `when parent task failed, child task fails too`() = runTest {
+    fun `when parent task failed - child task fails too`() = runTest {
         val fakeRepository = FakeRepository()
         val processor = TaskProcessorImpl(
             repository = fakeRepository,
@@ -194,7 +194,7 @@ class TaskProcessorTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `when network is required but not connected, task waits`() = runTest {
+    fun `when network is required but not connected - task waits`() = runTest {
         val fakeRepository = FakeRepository()
         val fakeNetworkState = FakeNetworkState(NetworkState.State.Disconnected)
 
@@ -249,7 +249,7 @@ class TaskProcessorTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `when network is required but not connected, task waits, when network disconnects, task cancels`() = runTest {
+    fun `when network is required but not connected - task waits - when network disconnects - task cancels`() = runTest {
         val fakeRepository = FakeRepository()
         val fakeNetworkState = FakeNetworkState(NetworkState.State.Disconnected)
 
@@ -304,7 +304,7 @@ class TaskProcessorTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `when task has initial delay, it waits before execution`() = runTest {
+    fun `when task has initial delay - it waits before execution`() = runTest {
         val fakeRepository = FakeRepository()
         val fakeEvaluator = TaskEvaluator(
             taskRegistry = TaskRegistry().apply {
@@ -342,7 +342,7 @@ class TaskProcessorTest {
     }
 
     @Test
-    fun `when task throws exception, it is marked as failed`() = runTest {
+    fun `when task throws exception - it is marked as failed`() = runTest {
         val fakeRepository = FakeRepository()
         val fakeEvaluator = TaskEvaluator(
             taskRegistry = TaskRegistry().apply {
@@ -426,7 +426,7 @@ class TaskProcessorTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `when task is cancelled in DB during execution, processor stops it`() = runTest {
+    fun `when task is cancelled in DB during execution - processor stops it`() = runTest {
 
         val fakeRepository = FakeRepository()
 

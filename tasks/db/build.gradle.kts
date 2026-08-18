@@ -40,6 +40,9 @@ kotlin {
             implementation(libs.kotlinx.serialization.protobuf)
 
             api(libs.androidx.room.runtime)
+            // Room protahuje jen typy ve svém API (SQLiteConnection v Migration). Top-level funkce
+            // jako androidx.sqlite.execSQL, které používá Migration9to10, potřebují artefakt přímo.
+            implementation(libs.androidx.sqlite)
             implementation(projects.tasks.core.core)
 
             implementation(libs.koin.core)
