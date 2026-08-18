@@ -4,6 +4,30 @@ This document outlines the architecture and modular structure of the **TaskManag
 
 ---
 
+## Conventions
+
+### Language
+
+**All code is written in English** — comments, KDoc, exception messages, log messages, test names,
+identifiers. This is an open-source library and everything in it has to be readable by people who
+do not speak Czech.
+
+Project documentation (this file, `README.md`, `development.md`) is English for the same reason.
+
+### Comments explain *why*
+
+The code says what happens; a comment is there for the reasoning that is not visible from it —
+a platform quirk, an ordering constraint, a deliberate trade-off. Comments that restate the next
+line are noise and get deleted.
+
+### Logging
+
+Never `println` or `printStackTrace`. Diagnostics go through `TasksLogger`, which the consuming
+application plugs in at initialization; with no logger registered the library stays silent.
+`TaskLifecycleObserver` is a separate seam and covers only the lifecycle of individual tasks.
+
+---
+
 ## Core Concepts
 
 The architecture follows a Clean Architecture design, dividing components into clear, decoupled layers of abstraction.
@@ -78,6 +102,25 @@ The database is structured to separate interfaces from database-specific entitie
 
 ---
 
+## Migrating from an existing WorkManager setup
+
+WorkManager stores the worker's class name in its own database, so work enqueued before the
+migration still asks for the old class by name. There are two ways to deal with it.
+
+**Let it fail (simplest).** WorkManager cannot instantiate the missing class, logs an error and
+marks that work failed — it does not crash. Pick this when the scheduled work can simply be
+recreated after the upgrade, which is usually the case for anything derived from local state.
+
+**Adopt it.** Depend on `tasks-android` and declare a subclass of
+`eu.tintera.background.tasks.android.TaskWorker` under the old worker's fully qualified name, then
+supply `TaskManagerConfiguration.compatTransformation` so the old input data can be read. See the
+KDoc on `TaskWorker` for the details.
+
+The library deliberately ships no such subclass itself: the class name belongs to *your* previous
+setup, not to the library.
+
+---
+
 ## Complete Module Guide
 
 | Module Name | Purpose & Responsibilities | Key Components |
@@ -91,11 +134,11 @@ The database is structured to separate interfaces from database-specific entitie
 | **`engine-db`** | Bridge: Implements `engine` repositories using `db`. | `TaskDispatcherRepositoryImpl`, `TaskProcessorRepositoryImpl` |
 | **`runtime`** | Bootstrapper, platform-specific observers, library initialization. | `Tasks`, `TasksInitializer`, `JvmAppStateObserver`, `WebAppStateObserver` |
 | **`di`** | Internal dependency injection wrapper encapsulating Koin. | `TasksKoinContext`, `TasksKoinComponent` |
-| **`compat`** | Compatibility layer for legacy components (e.g., `cz.magicware.tasks`). | `TaskRequest.LegacyExt`, `TaskWorker` |
+| **`compat`** | Compatibility layer for migrating from an untyped, map-shaped payload. | `Data`, `DataTaskHandler`, `DataTaskScope` |
 | **`android` / `android-db`** | Android integration using system WorkManager. | `WorkManagerTaskManager`, `TaskWorker` |
 | **`ios` / `ios-db`** | iOS BGTask Scheduler and background processing integration. | `BgTaskManager`, `BgProcessingTaskManager`, `AppRefreshTaskManager` |
 | **`web`** | SQLite WASM worker driver integration for web browser DB support. | `SQLiteWasmWorker`, `SQLiteDriver` |
 | **`koin-*`** | Client-facing Koin integration utilities for registering tasks. | `TaskRegistration`, `taskHandlerOf` |
-| **`serialization-*`** | Serialization formats supported (JSON, Protobuf). | `JsonSerializer` |
+| **`serialization-*`** | Serialization formats supported (JSON, Protobuf, `compat` Data). | `jsonSerializer`, `protobufSerializer`, `dataSerializer` |
 | **`shared`** | Compose Multiplatform demo app UI and common demo handlers. | `App`, `MainViewModel`, `TestHandler` |
 | **`*App`** | Platform-specific entry point apps (`androidApp`, `iosApp`, etc.). | Platform-specific launcher files |

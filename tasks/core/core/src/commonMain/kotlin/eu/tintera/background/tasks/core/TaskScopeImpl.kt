@@ -15,7 +15,8 @@ import kotlin.uuid.Uuid
 
 
 class TaskScopeFactory(
-    private val repository: TaskScopeRepository
+    private val repository: TaskScopeRepository,
+    private val log: CompositeTasksLogger
 ) {
     fun <Input : Any, Progress : Any> createForTask(
         taskId: Uuid,
@@ -37,7 +38,8 @@ class TaskScopeFactory(
         progressSerializer = progressSerializer,
         scope = scope,
         tags = tags,
-        saveDispatcher = saveDispatcher
+        saveDispatcher = saveDispatcher,
+        log = log
     )
 }
 
@@ -51,7 +53,8 @@ class TaskScopeImpl<Input : Any, Progress : Any>(
     private val repository: TaskScopeRepository,
     private val progressSerializer: Serializer<Progress>,
     override val tags: Set<Tag>,
-    private val saveDispatcher: CoroutineDispatcher
+    private val saveDispatcher: CoroutineDispatcher,
+    private val log: CompositeTasksLogger
 ) : TaskScope<Input, Progress>, AutoCloseable {
 
     private val progress = MutableStateFlow<Progress?>(null)
@@ -90,11 +93,16 @@ class TaskScopeImpl<Input : Any, Progress : Any>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            e.printStackTrace()
+            // Progress is informational only — failing to store it must not bring down a running task.
+            log.warning(TAG, e) { "Failed to persist progress for task $taskId" }
         }
     }
 
     override fun close() {
         job.cancel()
+    }
+
+    private companion object {
+        private const val TAG = "TaskScope"
     }
 }

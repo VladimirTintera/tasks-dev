@@ -3,7 +3,7 @@ package eu.tintera.background.tasks.koin.compat
 import eu.tintera.background.tasks.TaskHandler
 import eu.tintera.background.tasks.compat.Data
 import eu.tintera.background.tasks.koin.taskRegistration
-import eu.tintera.background.tasks.legacySerializer
+import eu.tintera.background.tasks.dataSerializer
 import eu.tintera.background.tasks.migrations.Migration
 import org.koin.core.definition.KoinDefinition
 import org.koin.core.module.Module
@@ -109,9 +109,9 @@ inline fun <reified R : TaskHandler<Data, Data, Data>> Module.taskRegistration(
 ) = taskRegistration(
     identifier = identifier,
     currentVersion = currentVersion,
-    inputSerializer = legacySerializer(),
-    outputSerializer = legacySerializer(),
-    progressSerializer = legacySerializer(),
+    inputSerializer = dataSerializer(),
+    outputSerializer = dataSerializer(),
+    progressSerializer = dataSerializer(),
     migrations = migrations,
     definition = definition
 )

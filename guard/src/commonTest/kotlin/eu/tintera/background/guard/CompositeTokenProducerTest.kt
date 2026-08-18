@@ -39,12 +39,12 @@ class CompositeTokenProducerTest {
         runCurrent()
         assertFalse(globalExpired, "Global expiration should not happen yet")
 
-        // Simulujeme, že token vypršel
+        // Simulate the token expiring.
         producer.simulateExpiration()
 
         runCurrent()
 
-        // Jelikož to byl jediný token, orchestrátor musí odpálit globální smrt
+        // It was the only token, so the orchestrator must trigger the global teardown.
         assertTrue(globalExpired, "Global expiration should be triggered when the last token dies")
     }
 
@@ -66,19 +66,19 @@ class CompositeTokenProducerTest {
             token
         }
 
-        // Oba producenti dodají své štíty (máme dvojitý štít)
+        // Both producers supply a token, so two are held.
         producerA.emitToken(FakeToken("A"))
         runCurrent()
         producerB.emitToken(FakeToken("B"))
         runCurrent()
 
-        // Umře štít A (např. 30s background task)
+        // Token A dies, e.g. a 30s background task.
         producerA.simulateExpiration()
         runCurrent()
 
         assertFalse(globalExpired, "Global expiration should NOT trigger, Token B is still active")
 
-        // Teprve když umře i štít B, orchestrátor to zabalí
+        // Only once token B dies too does the orchestrator give up.
         producerB.simulateExpiration()
         runCurrent()
         assertTrue(globalExpired, "Global expiration MUST trigger when the final token dies")
@@ -95,7 +95,7 @@ class CompositeTokenProducerTest {
             onTokenProducerRegistered = {}
         )
 
-        // Získáme ten náš orchestrální CompositeToken
+        // Take the orchestrating CompositeToken.
         val compositeTokenAsync = async { compositeProducer.token().first() }
         runCurrent()
 
@@ -106,13 +106,13 @@ class CompositeTokenProducerTest {
         producerB.emitToken(tokenB)
         runCurrent()
 
-        // Byznys logika skončila, voláme release()
+        // The work is done, so release().
         val compositeToken = compositeTokenAsync.await()
         runCurrent()
         compositeToken.release()
         runCurrent()
 
-        // Všechny držené tokeny musí dostat povel k release
+        // Every held token must be told to release.
         assertTrue(tokenA.isReleased, "Token A should be released")
         assertTrue(tokenB.isReleased, "Token B should be released")
         assertFalse(tokenA.isCanceled, "Token A should not be canceled")
@@ -120,7 +120,7 @@ class CompositeTokenProducerTest {
     }
 
     @Test
-    fun `acquire zachyti tokeny z initial produceru`() = runTest {
+    fun `acquire picks up tokens from the initial producer`() = runTest {
         // Arrange
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
         val producer1 = FakeTokenProducer()
@@ -137,27 +137,27 @@ class CompositeTokenProducerTest {
         launch {
             val fakeToken = producer1.emitNewToken()
 
-            // Prvotní stav - token žije
+            // Initial state: the token is alive.
             assertFalse(fakeToken.isReleased)
 
             val compositeToken = compositeTokenAsync.await()
 
-            // Zrušíme kompozitní token
+            // Cancel the composite token.
             compositeToken.release()
 
-            // Assert - uvolnění se musí propagovat do vnitřního tokenu
+            // Assert: the release propagates to the inner token.
             assertTrue(fakeToken.isReleased)
         }
     }
 
     @Test
-    fun `dynamicky pridany producer po acquire je korektne sledovan`() = runTest {
+    fun `a producer added after acquire is tracked correctly`() = runTest {
         // Arrange
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
         val compositeProducer = CompositeTokenProducer(
             scope = backgroundScope,
             dispatcher = dispatcher,
-            producers = emptyList(),// Startujeme prázdní!
+            producers = emptyList(),// start with nothing
             onTokenProducerRegistered = {}
         )
 
@@ -175,7 +175,7 @@ class CompositeTokenProducerTest {
     }
 
     @Test
-    fun `globalni cancel propaguje zruseni do vsech aktivnich tokenu`() = runTest {
+    fun `a global cancel propagates to every active token`() = runTest {
         // Arrange
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
         val producer1 = FakeTokenProducer()
@@ -194,7 +194,7 @@ class CompositeTokenProducerTest {
             val token1 = producer1.emitNewToken()
             val token2 = producer2.emitNewToken()
 
-            // Zavoláme natvrdo cancel na celém kompozitu
+            // Cancel the whole composite outright.
             compositeTokenAsync.await().release()
 
             assertTrue(token1.isReleased)
@@ -203,7 +203,7 @@ class CompositeTokenProducerTest {
     }
 
     @Test
-    fun `expirace vsech vnitrnich tokenu zavola globalni expiration handler`() = runTest {
+    fun `expiring every inner token invokes the global expiration handler`() = runTest {
         // Arrange
         val dispatcher = StandardTestDispatcher(testScheduler)
         val producer = FakeTokenProducer()
@@ -224,16 +224,16 @@ class CompositeTokenProducerTest {
 
         runCurrent()
 
-        // Získáme token, aby nebyla mapa prázdná
+        // Take a token so the map is not empty.
         producer.emitNewToken()
         runCurrent()
         assertFalse(globalExpirationCalled)
 
-        // Act - Simulujeme, že systém (iOS) ukončil tento úkol
+        // Act: simulate the system (iOS) ending this task.
         producer.simulateExpiration()
         runCurrent()
 
-        // Assert - globální handler se musel zavolat, protože to byl poslední (a jediný) token
+        // Assert: the global handler ran, because that was the last (and only) token.
         assertTrue(globalExpirationCalled, "Globalni expiration handler nebyl zavolan")
     }
 

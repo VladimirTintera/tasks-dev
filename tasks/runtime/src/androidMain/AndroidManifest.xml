@@ -9,8 +9,9 @@
             android:authorities="${applicationId}.androidx-startup"
             android:exported="false"
             tools:node="merge">
-            <!-- This entry makes ExampleLoggerInitializer discoverable. -->
-            <meta-data android:name="eu.tintera.tasks.TaskManagerStartupInitializer"
+            <!-- Must be the fully qualified name of TaskManagerStartupInitializer — androidx.startup
+                 loads it reflectively, so a typo crashes the application at process start. -->
+            <meta-data android:name="eu.tintera.background.tasks.TaskManagerStartupInitializer"
                 android:value="androidx.startup" />
         </provider>
 

@@ -8,9 +8,10 @@ import org.koin.core.KoinApplication
 actual object TasksInitializer  : TasksInitializerBase(){
     actual fun initialize(
         configuration: TaskManagerConfiguration,
-        taskLifecycleObservers: List<TaskLifecycleObserver>
+        taskLifecycleObservers: List<TaskLifecycleObserver>,
+        loggers: List<TasksLogger>
     ) = create(
-        configuration, taskLifecycleObservers
+        configuration, taskLifecycleObservers, loggers
     )
 
     override fun KoinApplication.customInitialization(config: TaskManagerConfiguration) {

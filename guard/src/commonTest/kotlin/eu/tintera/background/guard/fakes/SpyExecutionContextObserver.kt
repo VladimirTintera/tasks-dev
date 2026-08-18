@@ -9,7 +9,7 @@ class SpyExecutionContextObserver : ExecutionContextObserver {
     var preReleaseCount = 0
     var preCancelCount = 0
 
-    // Pro simulaci dlouhotrvající práce observeru (např. testování timeoutu)
+    // Simulates a slow observer, e.g. for timeout tests.
     var delayInPreRelease: Duration = Duration.ZERO
 
     override fun onStarted() {

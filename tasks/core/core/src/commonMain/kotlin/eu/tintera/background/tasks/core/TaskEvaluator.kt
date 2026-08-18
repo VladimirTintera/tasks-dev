@@ -33,7 +33,8 @@ class TaskEvaluatorImpl(
     private val dispatchers: AppDispatchers,
     private val tagMapper: TagMapper,
     private val repository: TaskEvaluatorRepository,
-    private val taskResultHandler: TaskResultHandler
+    private val taskResultHandler: TaskResultHandler,
+    private val log: CompositeTasksLogger
 ) : TaskEvaluator {
 
     override suspend fun handle(
@@ -42,9 +43,18 @@ class TaskEvaluatorImpl(
     ): TaskEvaluatorResult {
 
         val task = repository.executableTask(id) ?: return TaskEvaluatorResult.FAILURE.also {
-            println("Task $id not found")
+            log.warning(TAG) { "Task $id not found" }
         }
 
+        // Failed, not Retry — deliberately. A handler the application stopped using (replaced by
+        // another one, or dropped altogether) disappears from the registry, but tasks scheduled by
+        // it earlier are still sitting in the queue. Those have to fail for good, otherwise they
+        // would keep waking up forever.
+        //
+        // The race with application startup (the system runs a task before the consumer has built
+        // its Koin) is handled by the registry's warmup window, which makes resolve wait. When even
+        // that is not enough it is a matter of configuration:
+        // TaskManagerConfiguration.registryWarmupTimeout.
         val registration = registryResolver.resolve<Any, Any, Any>(
             identifier = task.identifier
         ) ?: return handleResult(
@@ -53,13 +63,28 @@ class TaskEvaluatorImpl(
                 repeatInterval = null
             )
         ).also {
-            println("No registration found for ask with id $id, identifier ${task.identifier}")
+            log.error(TAG) {
+                "No registration found for task $id (identifier '${task.identifier}') — failing it. " +
+                    "Either it was scheduled by a handler the application no longer registers, or the " +
+                    "identifier in the registration does not match the one in TaskRequest. If the " +
+                    "application starts slowly, consider raising " +
+                    "TaskManagerConfiguration.registryWarmupTimeout."
+            }
         }
 
-        val migrationResult = taskMigrator.migrate(
-            data = task,
-            registration = registration
-        )?.also {
+        val migrationResult = runCatching {
+            taskMigrator.migrate(data = task, registration = registration)
+        }.getOrElse { e ->
+            // Missing migration path, or a downgrade (the task was written by a newer version of
+            // the application and is being read by an older one after a rollback). Letting this
+            // escape would bring the worker down, so the task ends as Failed instead and the queue
+            // keeps moving.
+            log.error(TAG, e) {
+                "Migration failed for task $id (identifier '${task.identifier}', version ${task.version} " +
+                    "→ ${registration.currentVersion})"
+            }
+            return handleResult(TaskEvaluationResult.Failed(id = id, repeatInterval = null))
+        }?.also {
             repository.upgradeData(
                 id = id,
                 input = it.input?.let { input ->
@@ -119,7 +144,7 @@ class TaskEvaluatorImpl(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                e.printStackTrace()
+                log.error(TAG, e) { "Task $id (identifier '${task.identifier}') threw" }
                 TaskResult.Failure
             }
         }

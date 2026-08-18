@@ -4,7 +4,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 
 interface Exhaustible {
-    val name: String // Aby debug UI vědělo, kdo přesně je vyčerpán (např. "JVM Shutdown")
+    val name: String // so diagnostics can say which producer ran out (e.g. "JVM Shutdown")
     val isExhausted: StateFlow<Boolean>
 }
 

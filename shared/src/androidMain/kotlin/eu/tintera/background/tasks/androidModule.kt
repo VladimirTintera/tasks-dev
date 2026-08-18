@@ -9,7 +9,7 @@ val KoinApplication.androidModule get() = module {
         TaskManagerConfiguration(
             context = get(),
             compatTransformation = {
-                it.toByteArray()
+                it.toTaskDataBytes()
             }
         )
     }

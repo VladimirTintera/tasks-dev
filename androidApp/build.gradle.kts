@@ -46,5 +46,9 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.koin.android)
     implementation(libs.koin.core)
+    // The app manifest references androidx.startup.InitializationProvider (it removes the
+    // TaskManagerStartupInitializer meta-data), so it needs the class on its own classpath —
+    // otherwise lint reports MissingClass.
+    implementation(libs.androidx.startup.runtime)
     implementation(projects.shared)
 }

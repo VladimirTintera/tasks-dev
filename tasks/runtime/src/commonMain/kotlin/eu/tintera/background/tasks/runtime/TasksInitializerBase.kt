@@ -4,6 +4,7 @@ import eu.tintera.background.guard.ExecutionEnvironmentConfig
 import eu.tintera.background.tasks.TaskLifecycleObserver
 import eu.tintera.background.tasks.TaskManager
 import eu.tintera.background.tasks.TaskManagerConfiguration
+import eu.tintera.background.tasks.TasksLogger
 import eu.tintera.background.tasks.Tasks
 import eu.tintera.background.tasks.core.guard.guardInit
 import org.koin.core.KoinApplication
@@ -18,11 +19,15 @@ abstract class TasksInitializerBase {
 
     internal fun create(
         config: TaskManagerConfiguration,
-        taskLifecycleObservers: List<TaskLifecycleObserver> = emptyList()
+        taskLifecycleObservers: List<TaskLifecycleObserver> = emptyList(),
+        loggers: List<TasksLogger> = emptyList()
     ): TaskManager {
 
+        taskRegistry.warmupTimeout = config.registryWarmupTimeout
+
         TaskManagerBootstrapper.initialize(
-            taskLifecycleObservers = taskLifecycleObservers
+            taskLifecycleObservers = taskLifecycleObservers,
+            loggers = loggers
         ) {
             customInitialization(config)
             modules(

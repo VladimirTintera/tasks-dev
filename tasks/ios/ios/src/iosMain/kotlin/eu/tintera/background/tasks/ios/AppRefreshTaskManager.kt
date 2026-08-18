@@ -2,6 +2,7 @@ package eu.tintera.background.tasks.ios
 
 import eu.tintera.background.tasks.core.AppDispatchers
 import eu.tintera.background.tasks.core.ApplicationScope
+import eu.tintera.background.tasks.core.CompositeTasksLogger
 import platform.BackgroundTasks.BGAppRefreshTaskRequest
 import kotlin.time.Clock
 
@@ -11,7 +12,8 @@ internal class AppRefreshTaskManager(
     private val taskIdentifier: String,
     repository: BgTaskManagerRepository,
     appLifecycleObserver: AppLifecycleObserver,
-    clock: Clock
+    clock: Clock,
+    log: CompositeTasksLogger
 ) : BgTaskManager(
     scope = scope,
     dispatchers = dispatchers,
@@ -20,6 +22,7 @@ internal class AppRefreshTaskManager(
     appLifecycleObserver = appLifecycleObserver,
     tag = "AppRefreshTaskManager",
     clock = clock,
+    log = log,
 ) {
     override fun List<BgTaskManagerTask>.filter() = filterNot {
         it.requiresDeviceIdle

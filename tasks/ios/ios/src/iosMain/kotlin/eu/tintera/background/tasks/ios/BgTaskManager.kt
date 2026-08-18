@@ -6,6 +6,7 @@ import eu.tintera.background.tasks.TaskLifecycleObserver
 import eu.tintera.background.tasks.TaskResult
 import eu.tintera.background.tasks.core.AppDispatchers
 import eu.tintera.background.tasks.core.ApplicationScope
+import eu.tintera.background.tasks.core.CompositeTasksLogger
 import eu.tintera.background.tasks.core.runningStates
 import kotlinx.cinterop.*
 import kotlinx.coroutines.flow.*
@@ -27,7 +28,8 @@ internal abstract class BgTaskManager(
     private val repository: BgTaskManagerRepository,
     private val appLifecycleObserver: AppLifecycleObserver,
     private val tag: String,
-    private val clock: Clock
+    private val clock: Clock,
+    private val log: CompositeTasksLogger
 ) : PendingTokenProducer(scope), ExecutionContextObserver, TaskLifecycleObserver {
     private val _lastKnownTasks = MutableStateFlow<List<BgTaskManagerTask>>(emptyList())
     protected val lastKnownTasks: List<BgTaskManagerTask>
@@ -46,7 +48,7 @@ internal abstract class BgTaskManager(
 
         scope.launch(dispatchers.default) {
             appLifecycleObserver.isBackground
-                .dropWhile { it } // Ignoruj počáteční background
+                .dropWhile { it } // ignore the initial background state
                 .distinctUntilChanged()
                 .collectLatest { isBg ->
                     if (isBg) evaluateAndScheduleNext()
@@ -72,6 +74,7 @@ internal abstract class BgTaskManager(
             identifier = taskIdentifier,
             usingQueue = null
         ) {
+            log.info(tag) { "background window opened by the system at ${'$'}{clock.now()}" }
             it?.also { task ->
                 produce(BgTaskToken(taskIdentifier, task))
             }
@@ -90,11 +93,15 @@ internal abstract class BgTaskManager(
             val error = alloc<ObjCObjectVar<NSError?>>()
             BGTaskScheduler.sharedScheduler.submitTaskRequest(request, error.ptr)
 
-//            error.value?.also {
-//                EventBus.send(
-//                    tag, "BgTask schedule failed, code = ${it.code}, description = ${it.description}"
-//                )
-//            }
+            // Without this, scheduling background windows is completely opaque: iOS routinely
+            // refuses the request (identifier missing from Info.plist, too many pending requests,
+            // background refresh disabled) and the application simply never wakes up.
+            error.value?.also {
+                log.error(tag) {
+                    "BGTaskScheduler refused the request for ${'$'}{time}: " +
+                        "[${'$'}{it.code}] ${'$'}{it.localizedDescription}"
+                }
+            } ?: log.debug(tag) { "next background window requested for ${'$'}time" }
         }
     }
 

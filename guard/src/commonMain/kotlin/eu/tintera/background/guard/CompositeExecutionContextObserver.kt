@@ -25,7 +25,7 @@ internal class CompositeExecutionContextObserver(
     }
 
     override suspend fun onPreRelease() = coroutineScope {
-        // Všechny spustíme paralelně
+        // Run them all in parallel.
         _observers.value.forEach { observer ->
             launch {
                 try {
@@ -33,7 +33,7 @@ internal class CompositeExecutionContextObserver(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (_: Throwable) {
-                    // Ignorujeme chyby jednotlivých observerů
+                    // Individual observer failures are ignored.
                 }
             }
         }

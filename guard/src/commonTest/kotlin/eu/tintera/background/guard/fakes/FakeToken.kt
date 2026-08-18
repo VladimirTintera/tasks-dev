@@ -2,7 +2,7 @@ package eu.tintera.background.guard.fakes
 
 import eu.tintera.background.guard.AbstractToken
 
-// Falešný token, který si jen pamatuje, co se s ním stalo
+// Fake token that only records what happened to it.
 class FakeToken(override val tag: String = "Fake") : AbstractToken() {
     var isReleased = false
         private set

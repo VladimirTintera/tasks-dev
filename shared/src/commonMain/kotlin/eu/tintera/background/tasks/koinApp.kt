@@ -62,18 +62,18 @@ fun koinApp(
                 currentVersion = 2,
                 migrations = migrations {
                     migration(1, 2) {
-                        input(legacySerializer()) {
+                        input(dataSerializer()) {
                             TestHandlerData(
                                 count = it.getInt("count") ?: 20
                             )
                         }
-                        progress(legacySerializer()) {
+                        progress(dataSerializer()) {
                             TestHandlerProgress(
                                 totalCount = it.getInt("totalCount") ?: 20,
                                 progress = it.getInt("progress") ?: 0
                             )
                         }
-                        output(legacySerializer()) {
+                        output(dataSerializer()) {
                             TestHandlerData(
                                 count = it.getInt("count") ?: 20
                             )

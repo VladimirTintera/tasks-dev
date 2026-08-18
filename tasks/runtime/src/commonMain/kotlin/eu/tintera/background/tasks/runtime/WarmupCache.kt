@@ -14,8 +14,16 @@ import kotlin.time.Instant
 
 internal open class WarmupCache(
     private val clock: Clock,
-    private val warmupTimeout: Duration = 5.seconds
+    warmupTimeout: Duration = DEFAULT_WARMUP_TIMEOUT
 ) {
+    /**
+     * How long to wait after the first lookup for registrations to settle.
+     *
+     * A `var` because the registry is a process-wide singleton created before Koin exists, so the
+     * configured value cannot be passed through the constructor. [TasksInitializerBase] sets it
+     * once at startup.
+     */
+    internal var warmupTimeout: Duration = warmupTimeout
     private val mutex = Mutex()
 
     private data class Warmup(
@@ -58,3 +66,6 @@ internal open class WarmupCache(
         }
     }
 }
+
+/** Default window for registrations to settle after process start. */
+internal val DEFAULT_WARMUP_TIMEOUT: Duration = 5.seconds

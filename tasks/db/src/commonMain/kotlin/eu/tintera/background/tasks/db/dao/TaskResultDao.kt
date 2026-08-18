@@ -11,15 +11,15 @@ interface TaskResultDao {
     @Query(
         """
     WITH RECURSIVE Descendants(id) AS (
-        -- 1. Základní případ: Začínáme od kořene (task, který rušíme)
+        -- 1. Base case: start from the root (the task being cancelled)
         SELECT :taskId
         UNION ALL
-        -- 2. Rekurzivní krok: Najdi všechny děti úkolů, které už máme v Descendants
+        -- 2. Recursive step: find the children of everything already in Descendants
         SELECT tpt.taskId 
         FROM TaskParentTask tpt
         INNER JOIN Descendants d ON tpt.parentTaskId = d.id
     )
-    -- 3. Hromadný Update: Zruš všechny tasky, jejichž ID jsme našli v rekurzi
+    -- 3. Bulk update: cancel every task the recursion found
     UPDATE Task 
     SET state = :state, finishedAt = :finishedAt, processTime = NULL, progressData = NULL
     WHERE id IN Descendants AND state IN (:allowedSourceStates)

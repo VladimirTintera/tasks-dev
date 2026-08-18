@@ -29,7 +29,8 @@ internal class WorkManagerTaskManager(
     private val taskRegistry: RegistryResolver,
     private val taskMigrator: TaskMigrator,
     private val tagMapper: TagMapper,
-    private val transactionRunner: TransactionRunner
+    private val transactionRunner: TransactionRunner,
+    private val log: CompositeTasksLogger
 ) : TaskManager {
 
     private suspend fun TaskRequest<*>.serializeTags() = tagMapper.serialize(
@@ -116,7 +117,7 @@ internal class WorkManagerTaskManager(
                         task = task,
                         uniqueName = "",
                         repeatInterval = null,
-                        parentIds = emptySet() // Kořeny nemají rodiče
+                        parentIds = emptySet() // Roots have no parents
                     )
                 }
 
@@ -124,7 +125,7 @@ internal class WorkManagerTaskManager(
                     roots.map { (_, work) -> work }
                 ).appendAndSave(
                     taskContinuation = continuation.next,
-                    parentIds = rootIds // KOŘENY SE STÁVAJÍ RODIČI PRO NEXT!
+                    parentIds = rootIds // the roots become the parents of the next level
                 )
             }
         }
@@ -150,7 +151,7 @@ internal class WorkManagerTaskManager(
                         task = task,
                         uniqueName = uniqueName,
                         repeatInterval = null,
-                        parentIds = emptySet() // Kořeny nemají rodiče
+                        parentIds = emptySet() // Roots have no parents
                     )
                 }
 
@@ -160,7 +161,7 @@ internal class WorkManagerTaskManager(
                     roots.map { (_, work) -> work }
                 ).appendAndSave(
                     taskContinuation = continuation.next,
-                    parentIds = rootIds // KOŘENY SE STÁVAJÍ RODIČI PRO NEXT!
+                    parentIds = rootIds // the roots become the parents of the next level
                 )
             }
 
@@ -171,7 +172,7 @@ internal class WorkManagerTaskManager(
     @SuppressLint("EnqueueWork")
     private suspend fun WorkContinuation.appendAndSave(
         taskContinuation: TaskContinuation?,
-        parentIds: Set<Uuid> // TADY PŘIJÍMÁME ID RODIČŮ Z PŘEDCHOZÍHO KROKU
+        parentIds: Set<Uuid> // ids of the previous level, which are the parents here
     ): WorkContinuation {
         if (taskContinuation == null || taskContinuation.tasks.isEmpty()) {
             return this
@@ -179,7 +180,7 @@ internal class WorkManagerTaskManager(
 
         val nextRequests = taskContinuation.tasks.map { it to it.oneTimeWorkRequest() }
 
-        // Získáme IDčka aktuální vrstvy (to budou rodiče pro další krok)
+        // Ids of the current level — the parents for the next step.
         val currentLevelIds = nextRequests.map { it.second.id.toKotlinUuid() }.toSet()
 
         nextRequests.forEach { (task, request) ->
@@ -188,7 +189,7 @@ internal class WorkManagerTaskManager(
                 task = task,
                 uniqueName = "",
                 repeatInterval = null,
-                parentIds = parentIds // PŘIŘADÍME IDČKA RODIČŮ DO DATABÁZE!
+                parentIds = parentIds // persist the parent ids
             )
         }
 
@@ -351,10 +352,7 @@ internal class WorkManagerTaskManager(
                     .addIds(query.ids.map { it.toJavaUuid() })
                     .addStates(query.states.map { it.toWorkState() })
                     .addUniqueWorkNames(query.uniqueNames.toList()).build()
-            ).map {
-                println(it)
-                it
-            }.toTaskInfos().collect { emit(it) }
+            ).toTaskInfos().collect { emit(it) }
         }
     } ?: emptyFlow()
 
@@ -363,7 +361,7 @@ internal class WorkManagerTaskManager(
 
         val sharedWorkInfosFlow = stateIn(
             scope = this,
-            started = SharingStarted.Eagerly, // Můžeme Eagerly, protože hned pod tím to konzumujeme
+            started = SharingStarted.Eagerly, // safe: consumed immediately below
             initialValue = emptyList()
         )
 
@@ -408,10 +406,15 @@ internal class WorkManagerTaskManager(
                     override val outputData = task.outputData
                     override val progressData = task.progressData
                 }
-                taskMigrator.migrate(
-                    data = migrationData,
-                    registration = registration
-                )
+                // A missing migration path (or a downgrade after an application rollback) must not
+                // escape here — this runs inside a Flow the UI collects. TaskInfo is still built
+                // without the data, just without output/progress.
+                runCatching {
+                    taskMigrator.migrate(data = migrationData, registration = registration)
+                }.getOrElse { e ->
+                    log.warning(TAG, e) { "Migration failed while reading TaskInfo ${'$'}{task.id}" }
+                    null
+                }
             }
         }
 
@@ -475,6 +478,8 @@ internal class WorkManagerTaskManager(
         repository.insert(task = t, tags = emptySet(), parentIds = parentIds)
     }
 }
+
+private const val TAG = "WorkManagerTaskManager"
 
 private fun <T> Serializer<T>.decodeFromBytesOrNull(data: ByteArray) = try {
     decodeFromBytes(data)

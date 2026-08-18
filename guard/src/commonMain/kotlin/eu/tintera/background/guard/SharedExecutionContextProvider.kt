@@ -145,7 +145,7 @@ internal class SharedExecutionContextProvider(
                         performTeardown(session)
                     }
                 } else {
-                    runImmediateTeardown = true // Jen si poznačíme, že máme uklízet
+                    runImmediateTeardown = true // just note that teardown is due
                 }
             }
         }
@@ -156,13 +156,13 @@ internal class SharedExecutionContextProvider(
     }
 
     private suspend fun performTeardown(session: Session) {
-        // 1. Atomicky zjistíme, jestli jsme "vítězové", kdo má uklidit.
-        // Zámek držíme doslova jen na pár nanosekund.
+        // 1. Atomically decide whether we are the one that has to tear down.
+        //    The lock is held for just a few nanoseconds.
         val isWinnerToTeardown = mutex.withLock {
             currentSession.compareAndSet(session, null)
         }
 
-        // 2. Pokud jsme vyhráli, jdeme uklízet. Ale už BEZ ZÁMKU!
+        // 2. If we won, tear down — WITHOUT holding the lock.
         if (isWinnerToTeardown) {
             withTimeoutOrNull(2.seconds) {
                 lifecycleObserver.onPreRelease()

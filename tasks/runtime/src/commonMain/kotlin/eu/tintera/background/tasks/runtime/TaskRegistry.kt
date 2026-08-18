@@ -12,15 +12,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlin.reflect.KClass
 import kotlin.time.Clock
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration
 
 internal val taskRegistry = TaskRegistry()
 
 internal class TaskRegistry(
-    clock: Clock = Clock.System
+    clock: Clock = Clock.System,
+    warmupTimeout: Duration = DEFAULT_WARMUP_TIMEOUT
 ) : Registry, RegistryResolver, WarmupCache(
     clock = clock,
-    warmupTimeout = 5.seconds
+    warmupTimeout = warmupTimeout
 ) {
     private val registry = MutableStateFlow<Map<String, TaskRegistration<out Any, out Any, out Any>>>(emptyMap())
     private val typeRegistry =
@@ -32,7 +33,7 @@ internal class TaskRegistry(
         registration: TaskRegistration<Input, Output, Progress>
     ) {
         if (registration.currentVersion > 1) {
-            // Zkusíme nasimulovat cestu z každé historické verze (od 1 až po currentVersion - 1)
+            // Simulate the path from every historical version (1 up to currentVersion - 1).
             for (startVer in 1 until registration.currentVersion) {
                 try {
                     registration.migrations.findMigrationPath(
@@ -47,15 +48,29 @@ internal class TaskRegistry(
                 }
             }
         }
-        registry.update { currentMap ->
-            if (registration.identifier in currentMap) {
-                throw IllegalArgumentException("Handler for '${registration.identifier}' is already registered.")
+        // Re-registering the same handler is NOT an error. Registrations arrive from the consumer's
+        // Koin (`taskHandlerOf` creates a `createdAtStart` singleton), while this registry is a
+        // process-wide singleton that outlives a Koin restart. An application that restarts its Koin
+        // (sign-out, user switch) therefore sends the very same registrations again, and crashing it
+        // for that would be rude. The actual error is a clash between two DIFFERENT handlers on one
+        // identifier.
+        registry.value[registration.identifier]?.let { existing ->
+            require(existing.type == registration.type) {
+                "Identifier '${registration.identifier}' is already registered for " +
+                    "'${existing.type.simpleName}' and cannot be reused for '${registration.type.simpleName}'."
             }
+        }
+
+        registry.update { currentMap ->
             currentMap + (registration.identifier to registration)
         }
 
         typeRegistry.update { currentMap ->
-            currentMap + (registration.type to (currentMap.getOrElse(registration.type) { emptyList() }) + registration)
+            val forType = currentMap.getOrElse(registration.type) { emptyList() }
+                // Without this the per-type list would grow on every Koin restart.
+                .filterNot { it.identifier == registration.identifier }
+
+            currentMap + (registration.type to (forType + registration))
         }
     }
 
@@ -66,10 +81,16 @@ internal class TaskRegistry(
     ) {
         val registration = TagRegistration(identifier = identifier, serializer = serializer)
 
-        tagRegistry.update { currentMap ->
-            if (identifier in currentMap) {
-                throw IllegalArgumentException("Tag for $identifier is already registered.")
+        // Same reasoning as register(): repetition on a Koin restart is legitimate, a clash of two
+        // different types on one identifier is not.
+        tagTypeRegistry.value.entries.firstOrNull { it.value.identifier == identifier }?.let { existing ->
+            require(existing.key == type) {
+                "Tag identifier '$identifier' is already registered for " +
+                    "'${existing.key.simpleName}' and cannot be reused for '${type.simpleName}'."
             }
+        }
+
+        tagRegistry.update { currentMap ->
             currentMap + (identifier to registration)
         }
 

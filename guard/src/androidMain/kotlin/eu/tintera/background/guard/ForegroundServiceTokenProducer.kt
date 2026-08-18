@@ -35,12 +35,12 @@ internal class ForegroundServiceTokenProducer(
                     }
                 }
             } catch (e: Exception) {
-                // Pro sichr, kdyby OS udělal něco nečekaného (např. race condition
-                // mezi naším StateFlow a interním stavem Androidu)
+                // Defensive: the OS may do something unexpected, e.g. a race between our
+                // StateFlow and Android's internal state.
                 null
             }
         } else {
-            // Jsme v pozadí, službu nestartujeme, token nevydáváme
+            // In the background: do not start the service and do not hand out a token.
             null
         }
     }

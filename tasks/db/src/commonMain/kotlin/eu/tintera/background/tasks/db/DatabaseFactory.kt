@@ -8,10 +8,13 @@ internal class DatabaseFactory(
     private val driver: SQLiteDriver
 ) {
     fun create(): TasksDatabase = builder.create(
-        databaseConfiguration.databaseName.ifEmpty { "eu.tintera.tasks.db" }
+        name = databaseConfiguration.databaseName.ifEmpty { DEFAULT_DATABASE_NAME },
+        directory = databaseConfiguration.databaseDirectory,
     ).apply {
-        addMigrations(Migration9to10)
-        fallbackToDestructiveMigration(true)
+        // Only when the application explicitly asks for it — see DatabaseConfiguration.allowDestructiveMigration.
+        if (databaseConfiguration.allowDestructiveMigration) fallbackToDestructiveMigration(true)
         setDriver(driver)
     }.build()
 }
+
+internal const val DEFAULT_DATABASE_NAME = "eu.tintera.tasks.db"

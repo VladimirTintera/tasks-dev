@@ -33,21 +33,20 @@ suspend inline fun ExecutionContext.use(
 ) = coroutineScope {
 
     val expirationJob = launch {
-        isExpired.first { it } // Čekáme na signál, že nám došel čas
+        isExpired.first { it } // wait for the signal that our time is up
 
-        // Zrušíme TENTO specifický coroutineScope.
-        // Všechny child coroutiny (včetně blocku) dostanou CancellationException.
+        // Cancel THIS scope; every child coroutine (the block included) gets a CancellationException.
         this@coroutineScope.cancel("Context expired by system limit")
     }
 
     try {
-        // 2. Vykonáme samotnou byznys logiku (ExecutionContext je receiver)
+        // 2. Run the actual work (ExecutionContext is the receiver).
         block()
     } finally {
-        // Pokud block() doběhl úspěšně dřív, než vypršel čas, musíme hlídače zrušit.
+        // If block() finished before the time ran out, cancel the watchdog.
         expirationJob.cancel()
 
-        // VŽDY bezpečně uvolníme systémový zámek
+        // ALWAYS release the system lock.
         release()
     }
 }

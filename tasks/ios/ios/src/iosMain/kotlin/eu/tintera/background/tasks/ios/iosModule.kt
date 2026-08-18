@@ -35,6 +35,7 @@ fun iosModule(
                 appLifecycleObserver = get(),
                 isAppRefreshTaskAllowed = appRefreshTaskIdentifier != null,
                 clock = get(),
+                log = get(),
             )
         } binds arrayOf(TokenProducer::class, ExecutionContextObserver::class, Constraint::class, TaskLifecycleObserver::class)
     }
@@ -48,6 +49,7 @@ fun iosModule(
                 repository = get(),
                 appLifecycleObserver = get(),
                 clock = get(),
+                log = get(),
             )
         } binds arrayOf(TokenProducer::class, ExecutionContextObserver::class, TaskLifecycleObserver::class)
     }

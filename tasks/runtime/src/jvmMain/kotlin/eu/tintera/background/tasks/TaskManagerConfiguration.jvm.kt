@@ -1,14 +1,17 @@
 package eu.tintera.background.tasks
 
 import eu.tintera.background.guard.ExecutionEnvironment
+import eu.tintera.background.tasks.runtime.DEFAULT_WARMUP_TIMEOUT
 import java.nio.file.Paths
 import kotlin.io.path.absolutePathString
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 actual class TaskManagerConfiguration(
-    val databasePath: String,
+    databasePath: String,
     actual val databaseName: String = "",
+    actual val allowDestructiveMigration: Boolean = false,
+    actual val registryWarmupTimeout: Duration = DEFAULT_WARMUP_TIMEOUT,
     val maxConcurrentTasks: Int = 10,
     actual val executionContextReleaseDebounce: Duration = 1.5.seconds,
     actual val executionEnvironment: ExecutionEnvironment? = null
@@ -25,10 +28,13 @@ actual class TaskManagerConfiguration(
         executionContextReleaseDebounce = executionContextReleaseDebounce
     )
 
+    /** The directory is required on JVM (see `require` below) — taken from `databasePath`. */
+    actual val databaseDirectory: String? = databasePath
+
     init {
         require(maxConcurrentTasks > 0) { "maxConcurrentTasks must be > 0" }
         require(!executionContextReleaseDebounce.isNegative()) { "executionContextReleaseDebounce must be >= 0" }
-        require(!databasePath.isBlank()) { "databasePath must not be blank" }
+        require(databasePath.isNotBlank()) { "databasePath must not be blank" }
     }
 }
 

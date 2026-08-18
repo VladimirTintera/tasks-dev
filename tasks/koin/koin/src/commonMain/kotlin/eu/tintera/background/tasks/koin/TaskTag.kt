@@ -15,7 +15,6 @@ internal class TagRegistration<T : Tag>(
     val type: KClass<T>
 ) {
     init {
-        println("Registering tag with identifier: $identifier")
         Tasks.registry.registerTag(
             identifier = identifier,
             type = type,
@@ -28,7 +27,6 @@ inline fun <reified T : Tag> Module.taskTag(
     identifier: String,
     serializer: TagSerializer<T>
 ) {
-    println("Trying to register tag with identifier: $identifier")
     single(createdAtStart = true) {
         named<T>()
         TagRegistration(

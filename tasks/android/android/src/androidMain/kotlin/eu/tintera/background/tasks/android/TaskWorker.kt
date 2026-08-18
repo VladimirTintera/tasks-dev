@@ -5,12 +5,12 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.ServiceInfo
 import android.os.Build
-import androidx.annotation.RestrictTo
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import eu.tintera.background.tasks.*
 import eu.tintera.background.tasks.core.CompositeTaskLifecycleObserver
+import eu.tintera.background.tasks.core.CompositeTasksLogger
 import eu.tintera.background.tasks.core.TaskEvaluator
 import eu.tintera.background.tasks.core.TaskEvaluatorResult
 import eu.tintera.background.tasks.core.data.Repository
@@ -24,8 +24,32 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.uuid.toKotlinUuid
 
+/**
+ * The `CoroutineWorker` every task runs in. Normally you never touch it — [WorkManagerTaskManager]
+ * enqueues it for you.
+ *
+ * It is `open` for one reason: **adopting work scheduled by something else.** WorkManager stores the
+ * worker's class name in its own database, so work enqueued before you migrated still asks for the
+ * old class by name. Declaring a subclass under that name makes those rows resolve again:
+ *
+ * ```
+ * package com.example.legacy
+ *
+ * internal class LegacyWorker(
+ *     context: Context,
+ *     parameters: WorkerParameters,
+ * ) : eu.tintera.background.tasks.android.TaskWorker(context, parameters)
+ * ```
+ *
+ * Such a row has no matching record in this library's database, so [doWork] tries to adopt it
+ * through `TaskManagerConfiguration.compatTransformation`. Without that transformation the task
+ * fails — see the log message there.
+ *
+ * Providing the subclass is optional. If you skip it, WorkManager cannot instantiate the missing
+ * class, logs an error and marks the work failed; it does not crash. That is a perfectly reasonable
+ * choice when the scheduled work can simply be recreated after the upgrade.
+ */
 @OptIn(InternalTasksApi::class)
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 open class TaskWorker(
     context: Context,
     workerParameters: WorkerParameters,
@@ -39,6 +63,7 @@ open class TaskWorker(
 
     private val workManagerConfiguration: WorkManagerConfiguration by inject()
     private val taskLifecycleObserver: CompositeTaskLifecycleObserver by inject()
+    private val log: CompositeTasksLogger by inject()
 
     override suspend fun doWork(): Result {
 
@@ -60,8 +85,8 @@ open class TaskWorker(
                 runAttemptCount = runAttemptCount + 1
             )
         } ?: run {
-            // ADOPCE STARÉHO ÚKOLU:
-            // Vytáhneme všechna data z WorkManageru a zabalíme je do starého formátu (Verze 1)
+            // ADOPTING A LEGACY TASK: take everything WorkManager holds and wrap it in the old
+            // format (version 1).
 
             val sourceData = inputData.keyValueMap.mapNotNull { (key, value) ->
                 key.takeIf { it != TASK_IDENTIFIER }?.let {
@@ -69,7 +94,15 @@ open class TaskWorker(
                 }
             }.toMap()
 
-            workManagerConfiguration.compatTransformation(sourceData)?.let { byteArray ->
+            val adopted = workManagerConfiguration.compatTransformation(sourceData)
+
+            if (adopted == null) log.error(TAG) {
+                "Task ${'$'}taskId ('${'$'}taskIdentifier') is not in the database and compatTransformation " +
+                    "cannot adopt it, so it will fail. If this is work scheduled by a previous version " +
+                    "of the application, provide TaskManagerConfiguration.compatTransformation."
+            }
+
+            adopted?.let { byteArray ->
                 Task(
                     id = taskId,
                     identifier = taskIdentifier,
@@ -163,6 +196,7 @@ open class TaskWorker(
 
     companion object {
         const val TASK_IDENTIFIER = "task_identifier"
+        private const val TAG = "TaskWorker"
     }
 
 }

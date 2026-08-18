@@ -10,8 +10,8 @@ import kotlin.uuid.Uuid
 @Entity(
     tableName = "Task",
     indices = [
-        Index(value = ["state", "processTime"]), // Extrémně zrychlí Dispatcher!
-        Index(value = ["uniqueName"])            // Zrychlí allByUniqueName
+        Index(value = ["state", "processTime"]), // makes the dispatcher query dramatically faster
+        Index(value = ["uniqueName"])            // speeds up allByUniqueName
     ]
 )
 data class TaskEntity(

@@ -5,7 +5,9 @@ import kotlinx.coroutines.Dispatchers
 
 internal class WebDatabaseBuilderFactory : DatabaseBuilderFactory {
 
+    // directory is ignored: in the browser the database lives in OPFS/IndexedDB, not a directory.
     override fun create(
-        name: String
+        name: String,
+        directory: String?,
     ) = Room.databaseBuilder<TasksDatabase>(name).setQueryCoroutineContext(Dispatchers.Default)
 }

@@ -2,6 +2,7 @@ package eu.tintera.background.tasks.runtime
 
 import eu.tintera.background.tasks.InternalTasksApi
 import eu.tintera.background.tasks.TaskLifecycleObserver
+import eu.tintera.background.tasks.TasksLogger
 import eu.tintera.background.tasks.di.TasksKoinContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.getAndUpdate
@@ -16,12 +17,14 @@ internal object TaskManagerBootstrapper {
 
     internal fun initialize(
         taskLifecycleObservers: List<TaskLifecycleObserver>,
+        loggers: List<TasksLogger>,
         koinAppInitialization: KoinApplication.() -> Unit = {}
     ) {
         if (initialized.getAndUpdate { true }) return
 
         startTasksKoin(
             taskLifecycleObservers = taskLifecycleObservers,
+            loggers = loggers,
             koinAppInitialization = koinAppInitialization
         )
     }
@@ -29,6 +32,7 @@ internal object TaskManagerBootstrapper {
     @OptIn(InternalTasksApi::class)
     private fun startTasksKoin(
         taskLifecycleObservers: List<TaskLifecycleObserver>,
+        loggers: List<TasksLogger>,
         koinAppInitialization: KoinApplication.() -> Unit = {}
     ): KoinApplication {
         TasksKoinContext.koinApp = koinApplication {
@@ -40,6 +44,13 @@ internal object TaskManagerBootstrapper {
                 taskLifecycleObservers.map { observer ->
                     module {
                         single { observer } bind TaskLifecycleObserver::class
+                    }
+                }
+            )
+            modules(
+                loggers.map { logger ->
+                    module {
+                        single { logger } bind TasksLogger::class
                     }
                 }
             )
