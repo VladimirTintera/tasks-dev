@@ -62,8 +62,8 @@ open class TaskWorker(
                 runAttemptCount = runAttemptCount + 1
             )
         } ?: run {
-            // ADOPCE STARÉHO ÚKOLU:
-            // Vytáhneme všechna data z WorkManageru a zabalíme je do starého formátu (Verze 1)
+            // ADOPTING A LEGACY TASK: take everything WorkManager holds and wrap it in the old
+            // format (version 1).
 
             val sourceData = inputData.keyValueMap.mapNotNull { (key, value) ->
                 key.takeIf { it != TASK_IDENTIFIER }?.let {
@@ -74,9 +74,9 @@ open class TaskWorker(
             val adopted = workManagerConfiguration.compatTransformation(sourceData)
 
             if (adopted == null) log.error(TAG) {
-                "Task ${'$'}taskId ('${'$'}taskIdentifier') není v databázi a compatTransformation ho " +
-                    "neumí převzít, takže selže. Pokud jde o práci naplánovanou předchozí verzí " +
-                    "aplikace, předej TaskManagerConfiguration.compatTransformation."
+                "Task ${'$'}taskId ('${'$'}taskIdentifier') is not in the database and compatTransformation " +
+                    "cannot adopt it, so it will fail. If this is work scheduled by a previous version " +
+                    "of the application, provide TaskManagerConfiguration.compatTransformation."
             }
 
             adopted?.let { byteArray ->

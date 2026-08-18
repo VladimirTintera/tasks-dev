@@ -6,7 +6,7 @@ import eu.tintera.background.guard.fakes.FakeToken
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 
-// Falešný producent, u kterého můžeme "na povel" emitovat tokeny nebo je expirovat
+// Fake producer whose tokens can be emitted or expired on demand.
 class FakeTokenProducer : TokenProducer {
     private val tokenFlow = MutableSharedFlow<FakeToken>()
     private var expireCallback: (() -> Unit)? = null
@@ -15,7 +15,7 @@ class FakeTokenProducer : TokenProducer {
         return tokenFlow
     }
 
-    // Pomocná metoda pro testy: Pošle nový token do orchestrátoru
+    // Test helper: push a new token to the orchestrator.
     suspend fun emitToken(token: FakeToken) {
         expireCallback = {
             token.cancel()
@@ -32,7 +32,7 @@ class FakeTokenProducer : TokenProducer {
         return token
     }
 
-    // Pomocná metoda pro testy: Simuluje, že iOS odpálil Watchdoga
+    // Test helper: simulate the iOS watchdog firing.
     fun simulateExpiration() {
         expireCallback?.invoke()
     }

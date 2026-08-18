@@ -20,33 +20,33 @@ class ExhaustibleTokenProducerTest {
         val producer = TestExhaustibleTokenProducer()
         var parentExpireCallCount = 0
 
-        // Spustíme sběr flow přes Turbine
+        // Collect the flow with Turbine.
         producer.token().test {
-            // --- FÁZE 1: INICIALIZACE ---
-            // Okamžitě po napojení bychom měli dostat první token
+            // --- PHASE 1: INITIALIZATION ---
+            // The first token should arrive as soon as we subscribe.
             val firstToken = awaitItem()
 
             firstToken.invokeOnPreCancel { parentExpireCallCount++ }
 
             assertEquals(1, producer.produceCallCount, "Should produce exactly one token initially")
 
-            // --- FÁZE 2: VYČERPÁNÍ (EXHAUSTION) ---
-            // Nasimulujeme, že systému došel čas a zavolá interní onExpire()
+            // --- PHASE 2: EXHAUSTION ---
+            // Simulate the system running out of time and calling onExpire().
             producer.capturedExpireCallback.invoke()
 
-            // Ověříme, že se to propsalo i ven (třeba do kompozitu)
+            // The state must propagate outwards, e.g. into the composite.
             assertEquals(1, parentExpireCallCount, "Parent onExpire should be triggered")
 
-            // Ověříme, že producer je skutečně vyčerpaný a NEPOSÍLÁ žádný další token.
-            // Turbine se ujistí, že ve frontě nečeká žádný další emit.
+            // The producer is exhausted and emits NO further token; Turbine asserts the queue is
+            // empty.
             expectNoEvents()
 
-            // --- FÁZE 3: OŽIVENÍ (RESURRECTION) ---
-            // Nasimulujeme, že OS probudil aplikaci (např. přes HealthKit)
+            // --- PHASE 3: RESURRECTION ---
+            // Simulate the OS waking the application, e.g. through HealthKit.
             // a lifecycle observer zavolal onStarted()
             producer.onStarted()
 
-            // StateFlow by měl přehodit stav a okamžitě vyžádat a emitnout nový token
+            // The StateFlow flips and immediately requests and emits a new token.
             val secondToken = awaitItem()
 
             secondToken.invokeOnPreCancel { parentExpireCallCount++ }
@@ -55,7 +55,7 @@ class ExhaustibleTokenProducerTest {
             assertEquals(1, parentExpireCallCount, "Parent onExpire count should remain the same for now")
             assertNotSame(firstToken, secondToken, "Should be a completely new token instance")
 
-            // Zrušíme naslouchání (jelikož flow mapované přes StateFlow by jinak běželo donekonečna)
+            // Stop collecting — a StateFlow-backed flow would otherwise run forever.
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -64,7 +64,7 @@ class ExhaustibleTokenProducerTest {
     fun `providedObservers contains self`() {
         val producer = TestExhaustibleTokenProducer()
 
-        // Ověříme, že producer správně nabízí sám sebe jako observera
+        // The producer offers itself as an observer.
         assertTrue(
             producer.providedObservers.contains(producer),
             "Producer should expose itself in providedObservers"

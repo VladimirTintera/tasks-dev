@@ -58,7 +58,7 @@ class BackoffCriteriaTest {
             delay = 1.hours
         )
 
-        // 1h * 2^10 je hodně, určitě přesáhne MAX_BACKOFF_DELAY
+        // 1h * 2^10 comfortably exceeds MAX_BACKOFF_DELAY.
         val result = criteria.calculate(10)
 
         assertEquals(MAX_BACKOFF_DELAY, result)
@@ -68,10 +68,10 @@ class BackoffCriteriaTest {
     fun testMinBackoffLimit() {
         val criteria = BackoffCriteria(
             backoffPolicy = BackoffPolicy.Linear,
-            delay = 1.seconds // Velmi malý delay
+            delay = 1.seconds // deliberately tiny
         )
 
-        // Mělo by vrátit MIN_BACKOFF_DELAY, protože 1s * 1 < MIN_BACKOFF_DELAY
+        // Should return MIN_BACKOFF_DELAY, because 1s * 1 < MIN_BACKOFF_DELAY.
         val result = criteria.calculate(0)
         assertEquals(MIN_BACKOFF_DELAY, result)
     }

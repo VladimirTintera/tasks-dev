@@ -8,39 +8,39 @@ fun List<Migration>.findMigrationPath(
 ): List<Migration> {
     if (startVersion == targetVersion) return emptyList()
     if (startVersion > targetVersion) {
-        error("Downgrade z verze $startVersion na $targetVersion není podporován.")
+        error("Downgrade from version $startVersion to $targetVersion is not supported.")
     }
 
-    // BFS (Breadth-First Search) fronta pro hledání nejkratší cesty.
-    // Držíme v ní celé "cesty" (seznamy migrací), které jsme zatím prošli.
+    // Breadth-first search for the shortest path. The queue holds whole paths (lists of
+    // migrations) explored so far.
     val queue = ArrayDeque<List<Migration>>()
 
-    // Inicializace: Najdeme všechny migrace, které začínají v naší startovací verzi
+    // Seed with every migration starting at the source version.
     this.filter { it.startVersion == startVersion && it.endVersion <= targetVersion }
         .forEach { queue.add(listOf(it)) }
 
-    // Set pro sledování již navštívených verzí, abychom nezacyklili algoritmus
+    // Visited versions, so the search cannot loop.
     val visited = mutableSetOf(startVersion)
 
     while (queue.isNotEmpty()) {
         val currentPath = queue.removeFirst()
         val currentVersion = currentPath.last().endVersion
 
-        // Našli jsme cestu do cíle! (Díky BFS je zaručeně ta nejkratší možná)
+        // Target reached — breadth-first guarantees this is the shortest path.
         if (currentVersion == targetVersion) {
             return currentPath
         }
 
         if (visited.add(currentVersion)) {
-            // Najdeme všechny další kroky z aktuální verze
+            // Every next step from the current version.
             this.filter { it.startVersion == currentVersion && it.endVersion <= targetVersion }
-                .sortedByDescending { it.endVersion } // Malá optimalizace: zkoušíme delší skoky dřív
+                .sortedByDescending { it.endVersion } // Small optimisation: try longer jumps first
                 .forEach { nextMigration ->
                     queue.add(currentPath + nextMigration)
                 }
         }
     }
 
-    // Pokud se fronta vyprázdní a my cíl nenašli, cesta neexistuje
-    error("Nelze najít migrační cestu z verze $startVersion na verzi $targetVersion. Zkontroluj definované migrace v registraci úkolu.")
+    // Queue exhausted without reaching the target — no path exists.
+    error("No migration path from version $startVersion to version $targetVersion. Check the migrations declared in the task registration.")
 }

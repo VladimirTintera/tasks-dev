@@ -60,20 +60,20 @@ class SharedExecutionContextProviderTest {
         val wakeLock = executionContextProvider(fakeSystemLock)
 
         val token1 = wakeLock.acquire()
-        token1.release() // Začíná běžet 1.5s odpočet
+        token1.release() // starts the 1.5s countdown
 
-        // Posuneme čas před vypršení release debouncu - zámek by měl stále držet
+        // Move to just before the release debounce expires; the lock must still be held.
         advanceTimeBy(defaultReleaseDebounce - 1.milliseconds)
 
         assertEquals(0, fakeSystemLock.releaseCount)
 
-        // Přijde další zájemce, debounce se musí zrušit
+        // Another caller arrives, so the debounce must be cancelled.
         wakeLock.acquire()
 
-        // Posuneme čas o další 2 sekundy. Kdyby debounce běžel, teď by to uvolnil.
+        // Advance another 2 seconds. Had the debounce still been running, it would release now.
         advanceTimeBy(defaultReleaseDebounce + 1.milliseconds)
 
-        // Zámek musí stále držet, protože ho drží token2!
+        // The lock must still be held — token2 holds it.
         assertEquals(0, fakeSystemLock.releaseCount)
     }
 
@@ -197,69 +197,67 @@ class SharedExecutionContextProviderTest {
     fun `when system expires lock instantly during acquire token is cancelled immediately`() = runTest {
         // Arrange
         val fakeSystemLock = FakeTokenProvider().apply {
-            simulateInstantExpiration = true // Zapínáme zákeřný scénář
+            simulateInstantExpiration = true // the nasty scenario
         }
         val wakeLock = executionContextProvider(fakeSystemLock)
 
         // Act
-        // Požádáme o zámek. Vlivem flagu expiruje dřív, než se funkce dokončí.
+        // Acquire the lock; because of the flag it expires before the function returns.
         val token = wakeLock.acquire()
 
         // Assert
-        assertEquals(1, fakeSystemLock.acquireCount, "Měl by proběhnout 1 dotaz na systém")
+        assertEquals(1, fakeSystemLock.acquireCount, "Exactly one system request expected")
 
-        // Protože expiration handler proběhl DŘÍV, než se uložil token do session,
-        // callback token nemohl zrušit.
-        // Zrušil ho až defenzivní check po uložení!
-        assertEquals(0, fakeSystemLock.releaseCount, "Defenzivní check nemůže volat release na již zrušeném tokenu")
-        assertEquals(1, fakeSystemLock.cancelCount, "Standardní cancel se volá při expiraci")
+        // The expiration handler ran BEFORE the token was stored in the session, so the callback
+        // could not cancel it — the defensive check after storing did.
+        assertEquals(0, fakeSystemLock.releaseCount, "The defensive check must not release an already cancelled token")
+        assertEquals(1, fakeSystemLock.cancelCount, "The regular cancel runs on expiration")
 
-        // Vrácený token musí pochopitelně rovnou hlásit, že je expirovaný
-        assertTrue(token.isExpired.value, "Token musí být okamžitě ve stavu expirace")
+        // The returned token must report itself as expired straight away.
+        assertTrue(token.isExpired.value, "The token must be expired immediately")
 
         // Act 2
-        // Pokud by se teď zavolal release,
-        // nemělo by se už dít vůbec nic, protože token už je zrušený.
+        // Calling release now must do nothing at all, the token is already cancelled.
         token.release()
 
         // Assert 2
-        assertEquals(0, fakeSystemLock.releaseCount, "Počet release by měl zůstat 0")
-        assertEquals(1, fakeSystemLock.cancelCount, "Cancel na zrušeném tokenu nesmí volat systémový cancel znovu")
+        assertEquals(0, fakeSystemLock.releaseCount, "The release count must stay at 0")
+        assertEquals(1, fakeSystemLock.cancelCount, "Cancelling an already cancelled token must not hit the system again")
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `when coroutine is cancelled system wake lock is still released`() = runTest {
-        // 1. Příprava
+        // 1. Arrange
         val fakePlatformProvider = FakeTokenProvider()
         val countingProvider = executionContextProvider(
             tokenProducer = fakePlatformProvider,
             releaseDebounce = Duration.ZERO
         )
 
-        // 2. Spustíme job, který si vyžádá zámek a pak "usne" (simulace práce)
+        // 2. Start a job that acquires the lock and then sleeps, standing in for real work.
         val job = launch {
             val token = countingProvider.acquire()
             token.use {
-                // Tady coroutina normálně pracuje...
-                // My ji tu úmyslně uspíme, abychom ji mohli zvenčí zrušit
+                // Normally the coroutine would work here; the sleep lets the test cancel it from
+                // the outside.
                 delay(5000)
             }
         }
 
-        // Posuneme čas, aby se coroutina rozběhla a stihla si vyžádat zámek
+        // Advance so the coroutine starts and acquires the lock.
         runCurrent()
 
-        // Ověříme, že zámek byl na úrovni systému opravdu vyžádán
-        assertEquals(1, fakePlatformProvider.acquireCount, "Acquire by měl být zavolán 1x")
-        assertEquals(0, fakePlatformProvider.releaseCount, "Release by zatím NEMĚL být zavolán")
+        // The lock really was requested at the system level.
+        assertEquals(1, fakePlatformProvider.acquireCount, "Acquire expected exactly once")
+        assertEquals(0, fakePlatformProvider.releaseCount, "Release must NOT have been called yet")
 
-        // 3. AKCE: Natvrdo zrušíme coroutinu (tohle simuluje např. expiraci nebo smazání tasku)
+        // 3. ACT: cancel the coroutine outright — stands in for an expiration or a deleted task.
         job.cancelAndJoin()
 
-        // 4. ASSERT: Tohle je ten kritický bod!
-        // Pokud chybí withContext(NonCancellable), test tady spadne, protože release bude 0.
-        assertEquals(1, fakePlatformProvider.releaseCount, "Release MUSÍ být zavolán i po zrušení coroutiny!")
+        // 4. ASSERT: the critical point. Without withContext(NonCancellable) the release count
+        //    would be 0 and this fails.
+        assertEquals(1, fakePlatformProvider.releaseCount, "Release MUST happen even after the coroutine is cancelled")
     }
 
     @Test
@@ -272,24 +270,24 @@ class SharedExecutionContextProviderTest {
         // Akce
         val token = countingProvider.acquire()
 
-        // Assert: Zámek musí vědět, že je mrtvý
-        assertTrue(token.isExpired.value, "Token by měl být rovnou expirovaný")
+        // Assert: the lock knows it is dead.
+        assertTrue(token.isExpired.value, "The token should be expired straight away")
 
-        // Assert: Náš defenzivní kód musel zrušit neplatný token
+        // Assert: the defensive code cancelled the invalid token.
         assertEquals(0, fakeProvider.releaseCount)
         assertEquals(1, fakeProvider.cancelCount)
     }
 
     @Test
-    fun `uspesny acquire a release zavola onStarted a po debounce onPreRelease`() = runTest {
+    fun `a successful acquire and release invokes onStarted and then onPreRelease after the debounce`() = runTest {
         // Arrange
-        // Použijeme StandardTestDispatcher, abychom měli plnou kontrolu nad virtuálním časem
+        // StandardTestDispatcher gives full control over virtual time.
         val tokenProvider = FakeTokenProvider()
         val observer = SpyExecutionContextObserver()
 
         val contextProvider = SharedExecutionContextProvider(
             tokenProducer = tokenProvider,
-            scope = backgroundScope, // Poskytuje runTest, automaticky se uklidí
+            scope = backgroundScope, // provided by runTest, cleaned up automatically
             dispatcher = StandardTestDispatcher(testScheduler),
             config = ExecutionEnvironmentConfig(releaseDebounce = 5.seconds),
             lifecycleObserver = observer
@@ -302,14 +300,14 @@ class SharedExecutionContextProviderTest {
         assertEquals(1, observer.startedCount, "onStarted melo byt zavolano presne jednou")
         assertEquals(0, tokenProvider.releaseCount)
 
-        // Act - Zpracování a uvolnění (Release)
+        // Act: process and release.
         executionContext.release()
 
-        // Okamžitě po release by observer ještě neměl dostat onPreRelease (kvůli debounce)
+        // Right after release the observer must not see onPreRelease yet, because of the debounce.
         assertEquals(0, observer.preReleaseCount)
         assertEquals(0, tokenProvider.releaseCount)
 
-        // Posuneme čas o debounce limit (5 vteřin)
+        // Advance past the debounce limit (5 seconds).
         advanceTimeBy(5001)
 
         // Assert - Konec
@@ -318,7 +316,7 @@ class SharedExecutionContextProviderTest {
     }
 
     @Test
-    fun `okamzita expirace systemu zavola onPreCancel a zrusi token`() = runTest {
+    fun `an instant system expiration invokes onPreCancel and cancels the token`() = runTest {
         // Arrange
         val tokenProvider = FakeTokenProvider()
         val observer = SpyExecutionContextObserver()
@@ -335,22 +333,22 @@ class SharedExecutionContextProviderTest {
         contextProvider.acquire()
         assertEquals(1, observer.startedCount)
 
-        // Act - Systém náhle oznámí vypršení času
+        // Act: the system suddenly reports that time is up.
         tokenProvider.triggerExpiration()
 
         // Assert
         assertEquals(1, observer.preCancelCount, "onPreCancel melo byt okamzite zavolano")
-        assertEquals(0, observer.preReleaseCount, "onPreRelease se pri expiraci volat nesmi")
+        assertEquals(0, observer.preReleaseCount, "onPreRelease must not be called on expiration")
         assertEquals(1, tokenProvider.cancelCount, "Systemovy token mel byt zrusen (cancel)")
         assertEquals(0, tokenProvider.releaseCount)
     }
 
     @Test
-    fun `pokud onPreRelease trva dele nez timeout pojistka systemovy token se stejne uvolni`() = runTest {
+    fun `the system token is released even when onPreRelease outlasts the timeout`() = runTest {
         // Arrange
         val tokenProvider = FakeTokenProvider()
         val observer = SpyExecutionContextObserver().apply {
-            // Observer se zasekne na 10 vteřin (naše withTimeoutOrNull je ale na 2 vteřiny!)
+            // The observer blocks for 10 seconds, while withTimeoutOrNull only allows 2.
             delayInPreRelease = 10.seconds
         }
 
@@ -365,7 +363,7 @@ class SharedExecutionContextProviderTest {
         val executionContext = contextProvider.acquire()
         executionContext.release()
 
-        // Posuneme čas o 5 vteřin (vyprší debounce) a k tomu 2 vteřiny (vyprší withTimeoutOrNull uvnitř provideru)
+        // Advance 5 seconds for the debounce plus 2 for the provider's withTimeoutOrNull.
         advanceTimeBy((5000 + 2001).milliseconds)
 
         // Assert
@@ -373,7 +371,7 @@ class SharedExecutionContextProviderTest {
         assertEquals(
             1,
             tokenProvider.releaseCount,
-            "Systemovy token MUSI byt uvolnen bez ohledu na to, ze se observer zasekl"
+            "The system token MUST be released even when an observer hangs"
         )
     }
 

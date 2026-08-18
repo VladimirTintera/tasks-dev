@@ -4,16 +4,16 @@ import eu.tintera.background.tasks.TasksLogLevel
 import eu.tintera.background.tasks.TasksLogger
 
 /**
- * Rozešle záznam všem registrovaným loggerům. Injektuje se **konkrétním typem**, ne přes
- * [TasksLogger] — jinak by `getAll()` uvnitř vrátilo i tuhle instanci a zacyklilo se.
- * Stejný důvod jako u [CompositeTaskLifecycleObserver].
+ * Fans a record out to every registered logger. Injected by its **concrete type**, not through
+ * [TasksLogger] — otherwise `getAll()` inside would return this instance as well and recurse.
+ * Same reason as [CompositeTaskLifecycleObserver].
  */
 class CompositeTasksLogger(
     private val loggers: List<TasksLogger>
 ) : TasksLogger {
 
     override fun log(level: TasksLogLevel, tag: String, message: String, throwable: Throwable?) {
-        // Vadný logger nesmí shodit task, který se jen snažil něco zalogovat.
+        // A faulty logger must not bring down a task that was only trying to log something.
         loggers.forEach { runCatching { it.log(level, tag, message, throwable) } }
     }
 

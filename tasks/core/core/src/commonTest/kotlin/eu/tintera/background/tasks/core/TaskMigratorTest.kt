@@ -37,8 +37,8 @@ class TaskMigratorTest {
 
     @Test
     fun `migrate should successfully transform data through multiple versions`() {
-        // 1. PŘÍPRAVA (Arrange)
-        // Definujeme si jednoduché migrační pravidlo V1 -> V2 -> V3
+        // 1. ARRANGE
+        // A simple migration chain V1 -> V2 -> V3.
         val registration = taskHandlerRegistration(
             currentVersion = 3,
             inputSerializer = data1Serializer,
@@ -58,7 +58,7 @@ class TaskMigratorTest {
             )
         )
 
-        // Simulujeme stará data z DB ve verzi 1
+        // Legacy data from the DB, still at version 1.
         val oldInputBytes = data1Serializer.encodeToBytes(Data1(""))
         val dummyTask = createTask(
             identifier = "test_task",
@@ -71,11 +71,11 @@ class TaskMigratorTest {
         // 2. AKCE (Act)
         val result = migrator.migrate(dummyTask, registration)
 
-        // 3. OVĚŘENÍ (Assert)
+        // 3. ASSERT
         assertNotNull(result, "Migration result must not be null")
-        assertEquals(3, result.version, "Version must be 3") // Verze se musela posunout na cíl
+        assertEquals(3, result.version, "Version must be 3") // moved all the way to the target
 
-        // Zkontrolujeme, že se provedly obě matematické operace: (10 * 2) + 5 = 25
+        // Both steps ran: (10 * 2) + 5 = 25.
         val finalInput = result.input as Data1
         assertEquals("to2to3", finalInput.text)
     }
@@ -139,7 +139,7 @@ class TaskMigratorTest {
             )
         )
 
-        // Task v DB už MÁ verzi 2
+        // The task in the DB is already at version 2.
         val dummyTask = createTask(
             version = 3,
             identifier = "test_task",
@@ -148,7 +148,7 @@ class TaskMigratorTest {
 
         val result = TaskMigrator().migrate(dummyTask, registration)
 
-        // Očekáváme null, Evaluator ví, že nemá nic zapisovat a rovnou parsuje
+        // Expect null: the evaluator knows there is nothing to write and parses directly.
         assertNull(result)
     }
 }*/

@@ -20,8 +20,8 @@ fun State.terminal(): Boolean = when {
 }
 
 /**
- * Terminální stav můžeme nastavovat na cokoli
- * Neterminální pouze na neterminální stavy (nelze přeskočit z terminálního stavu na neterminální)
+ * A terminal state may be set from anything.
+ * A non-terminal state only from another non-terminal one — there is no way back out of a terminal state.
  */
 fun State.allowedSourceStatesForChangeTo() = when {
     terminal() -> State.entries

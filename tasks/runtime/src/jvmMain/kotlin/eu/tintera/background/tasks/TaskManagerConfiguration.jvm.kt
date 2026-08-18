@@ -28,7 +28,7 @@ actual class TaskManagerConfiguration(
         executionContextReleaseDebounce = executionContextReleaseDebounce
     )
 
-    /** Na JVM je adresář povinný (viz `require` níže) — bere se z `databasePath`. */
+    /** The directory is required on JVM (see `require` below) — taken from `databasePath`. */
     actual val databaseDirectory: String? = databasePath
 
     init {

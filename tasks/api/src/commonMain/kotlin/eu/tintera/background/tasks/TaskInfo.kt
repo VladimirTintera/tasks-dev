@@ -17,17 +17,17 @@ data class TaskInfo(
 )
 
 inline fun <reified T> TaskInfo.outputAs(): T? {
-    // Pro absolutní bezpečí přidáme kontrolu typu, aby to nespadlo na hloupém ClassCastException,
-    // ale vyhodilo to krásnou popisnou chybu, pokud se vývojář splete v typu.
+    // Explicit type check so a wrong type argument produces a descriptive error instead of a bare
+    // ClassCastException.
     if (outputData != null && outputData !is T) {
-        error("Task '$id': Nelze přetypovat outputData typu ${outputData::class.simpleName} na ${T::class.simpleName}")
+        error("Task '$id': cannot cast outputData of type ${outputData::class.simpleName} to ${T::class.simpleName}")
     }
     return outputData
 }
 
 inline fun <reified T> TaskInfo.progressAs(): T? {
     if (progress != null && progress !is T) {
-        error("Task '$id': Nelze přetypovat progress typu ${progress::class.simpleName} na ${T::class.simpleName}")
+        error("Task '$id': cannot cast progress of type ${progress::class.simpleName} to ${T::class.simpleName}")
     }
     return progress
 }

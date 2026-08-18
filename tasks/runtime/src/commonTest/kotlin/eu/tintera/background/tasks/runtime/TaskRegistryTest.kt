@@ -15,7 +15,7 @@ import kotlin.time.Instant
 @OptIn(ExperimentalCoroutinesApi::class)
 class TaskRegistryTest {
 
-    // Jednoduchý FakeClock pro manuální posun času v testech
+    // Simple FakeClock for advancing time manually in tests.
     class FakeClock(var currentTime: Instant = Instant.fromEpochMilliseconds(0)) : Clock {
         override fun now(): Instant = currentTime
         fun advanceBy(duration: Duration) {
@@ -29,8 +29,7 @@ class TaskRegistryTest {
     @BeforeTest
     fun setup() {
         clock = FakeClock()
-        // Ideální je mít TaskRegistry jako třídu, ne object,
-        // aby se mezi testy nesdílel stav (případně přidat metodu clear()).
+        // TaskRegistry is a class rather than an object so state is not shared between tests.
         registry = TaskRegistry(clock = clock)
     }
 
@@ -40,22 +39,22 @@ class TaskRegistryTest {
         // Arrange
         var result: TagRegistration<*>? = null
 
-        // Act: Spustíme resolve v oddělené coroutině (protože bude suspendovat)
+        // Act: run resolve in a separate coroutine, since it suspends.
         val job = launch {
             result = registry.resolveTag<MyDummyTag>("missing_tag")
         }
 
-        // Assert: Po 2 sekundách se nic neděje, coroutina stále běží
+        // Assert: nothing happens after 2 seconds, the coroutine is still running.
         advanceTimeBy(2.seconds)
         clock.advanceBy(2.seconds)
         assertTrue(job.isActive)
         assertNull(result)
 
-        // Assert: Po dalších 3 sekundách (celkem 5s) timeout vyprší
+        // Assert: after another 3 seconds (5s total) the timeout expires.
         advanceTimeBy(3.seconds)
         clock.advanceBy(3.seconds)
 
-        // Coroutina by měla úspěšně skončit a vrátit null
+        // The coroutine should finish and return null.
         job.join()
         assertNull(result)
     }
@@ -66,22 +65,22 @@ class TaskRegistryTest {
         var result1: TagRegistration<*>? = null
         var result2: TagRegistration<*>? = null
 
-        // Act 1: První požadavek odstartuje warmup v čase 0s
+        // Act 1: the first request starts the warmup window at 0s.
         val job1 = launch { result1 = registry.resolveTag<MyDummyTag>("tag_1") }
 
-        // Posuneme čas o 3 sekundy
+        // Advance by 3 seconds.
         advanceTimeBy(3.seconds)
         clock.advanceBy(3.seconds)
 
-        // Act 2: Druhý požadavek přijde v čase 3s (zbývají jen 2 sekundy do konce warmupu!)
+        // Act 2: a second request arrives at 3s — only 2 seconds of the window are left.
         val job2 = launch { result2 = registry.resolveTag<MyDummyTag>("tag_2") }
 
-        // Posuneme čas o zbylé 2 sekundy (celkem 5s od začátku)
+        // Advance by the remaining 2 seconds (5s from the start).
         advanceTimeBy(2.seconds)
         clock.advanceBy(2.seconds)
 
-        // Assert: OBA joby musí skončit přesně teď.
-        // Job 2 nečekal 5 sekund, svezl se v okně Jobu 1.
+        // Assert: BOTH jobs must finish now. Job 2 did not wait 5 seconds of its own — it rode
+        // along in job 1's window.
         job1.join()
         job2.join()
         assertNull(result1)
@@ -90,13 +89,13 @@ class TaskRegistryTest {
 
     @Test
     fun `after warmup is consumed resolving missing tags is instant`() = runTest {
-        // Arrange: Úmyslně vyčerpáme warmup
+        // Arrange: deliberately exhaust the warmup window.
         val job = launch { registry.resolveTag<MyDummyTag>("trigger_warmup") }
         advanceTimeBy(5.seconds)
         clock.advanceBy(5.seconds)
         job.join()
 
-        // Act: Zkusíme vyhledat další neexistující tag a změříme VIRTUÁLNÍ čas
+        // Act: look up another missing tag and measure VIRTUAL time.
         var result: TagRegistration<*>? = null
 
         val virtualTimeBefore = testScheduler.currentTime // nebo jen currentTime
@@ -105,28 +104,28 @@ class TaskRegistryTest {
 
         // Assert:
         assertNull(result)
-        // Virtuální čas se nesměl posunout ani o milisekundu (funkce nesuspendovala)
+        // Virtual time must not have moved at all — the function did not suspend.
         assertEquals(virtualTimeBefore, virtualTimeAfter)
     }
 }
 
-// Dummy třída pro testování
+// Dummy class for testing.
 class MyDummyTag : Tag
 /**
- * Warmup okno musí jít prodloužit — aplikace s pomalým studeným startem (probuzení na pozadí na
- * slabém zařízení) nemusí stihnout zaregistrovat handlery do výchozích 5 sekund.
+ * The warmup window has to be extendable: an application with a slow cold start — a background
+ * wake-up on a low-end device — may not register its handlers within the default 5 seconds.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class TaskRegistryWarmupTimeoutTest {
 
     @Test
-    fun `delsi warmup okno drzi resolve dele nez vychozich 5s`() = runTest {
+    fun `a longer warmup window holds resolve past the default 5s`() = runTest {
         val clock = TaskRegistryTest.FakeClock()
         val registry = TaskRegistry(clock = clock, warmupTimeout = 20.seconds)
 
         val job = launch { registry.resolveTag<MyDummyTag>("missing") }
 
-        // Po výchozích 5 sekundách by se s původním nastavením už vzdal.
+        // With the default setting it would have given up after 5 seconds.
         advanceTimeBy(5.seconds)
         clock.advanceBy(5.seconds)
         assertTrue(job.isActive)

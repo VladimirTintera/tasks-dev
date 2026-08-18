@@ -26,7 +26,7 @@ class TaskDispatcherTest {
         val fakeRepo = FakeRepository()
         val fakeProcessor = FakeTaskProcessor()
 
-        // Předáme náš testovací dispatcher!
+        // Hand in the test dispatcher.
         TaskDispatcher(
             taskProcessor = fakeProcessor,
             repository = fakeRepo,
@@ -38,7 +38,7 @@ class TaskDispatcherTest {
         val taskId = Uuid.random()
         val initialTime = Clock.System.now()
 
-        // Vytvoříme první verzi tasku
+        // First version of the task.
         val taskV1 = createTask(
             identifier = "cancelledOutside",
             id = taskId,
@@ -51,14 +51,14 @@ class TaskDispatcherTest {
         // 2. Akce: Vyemitujeme task z DB
         fakeRepo.insert(taskV1, emptySet(), emptySet())
 
-        // runCurrent() "popostrčí" všechny čekající coroutiny na testovacím dispatcheru,
-        // aby okamžitě zpracovaly emisi z Flow
+        // runCurrent() nudges every pending coroutine on the test dispatcher so the flow emission
+        // is processed right away.
         runCurrent()
 
-        // 3. Ověření: TaskV1 musí běžet
-        assertTrue(fakeProcessor.currentlyRunningKeys.contains(keyV1), "Starý job měl běžet!")
+        // 3. Assert: TaskV1 must be running.
+        assertTrue(fakeProcessor.currentlyRunningKeys.contains(keyV1), "The old job should have been running")
 
-        // 4. Akce: Task selhal, DB ho zaktualizovala (změna retries a času)
+        // 4. Act: the task failed and the DB updated it (retry count and time changed).
 
         val keyV2 = ExecutionKey(
             id = taskId,
@@ -75,7 +75,7 @@ class TaskDispatcherTest {
 
         runCurrent()
 
-        // 5. Ověření: Původní job byl zrušen a nahrazen novým
+        // 5. Assert: the original job was cancelled and replaced.
         assertFalse(fakeProcessor.currentlyRunningKeys.contains(keyV1), "Old job should by cancelled!")
         assertTrue(fakeProcessor.currentlyRunningKeys.contains(keyV2), "New job should be running!")
     }

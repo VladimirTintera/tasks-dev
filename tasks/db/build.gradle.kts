@@ -40,7 +40,7 @@ kotlin {
             implementation(libs.kotlinx.serialization.protobuf)
 
             api(libs.androidx.room.runtime)
-            // DatabaseFactory pracuje přímo s androidx.sqlite.SQLiteDriver.
+            // DatabaseFactory works with androidx.sqlite.SQLiteDriver directly.
             implementation(libs.androidx.sqlite)
             implementation(projects.tasks.core.core)
 

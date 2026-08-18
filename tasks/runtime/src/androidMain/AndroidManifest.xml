@@ -9,8 +9,8 @@
             android:authorities="${applicationId}.androidx-startup"
             android:exported="false"
             tools:node="merge">
-            <!-- Musí být plně kvalifikované jméno TaskManagerStartupInitializer — androidx.startup
-                 ho načítá reflexí a při překlepu spadne aplikace už při startu procesu. -->
+            <!-- Must be the fully qualified name of TaskManagerStartupInitializer — androidx.startup
+                 loads it reflectively, so a typo crashes the application at process start. -->
             <meta-data android:name="eu.tintera.background.tasks.TaskManagerStartupInitializer"
                 android:value="androidx.startup" />
         </provider>

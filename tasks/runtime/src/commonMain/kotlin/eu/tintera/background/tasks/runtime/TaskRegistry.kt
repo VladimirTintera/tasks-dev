@@ -33,7 +33,7 @@ internal class TaskRegistry(
         registration: TaskRegistration<Input, Output, Progress>
     ) {
         if (registration.currentVersion > 1) {
-            // Zkusíme nasimulovat cestu z každé historické verze (od 1 až po currentVersion - 1)
+            // Simulate the path from every historical version (1 up to currentVersion - 1).
             for (startVer in 1 until registration.currentVersion) {
                 try {
                     registration.migrations.findMigrationPath(
@@ -48,11 +48,12 @@ internal class TaskRegistry(
                 }
             }
         }
-        // Opakovaná registrace téhož handleru NENÍ chyba: registrace přichází z Koinu konzumenta
-        // (`taskHandlerOf` = `createdAtStart` singleton), kdežto tenhle registr je procesový
-        // singleton, který restart Koinu přežije. Aplikace, která svůj Koin restartuje (odhlášení,
-        // přepnutí uživatele), tedy pošle tytéž registrace znovu — a shodit ji za to by bylo hrubé.
-        // Chyba je až kolize dvou RŮZNÝCH handlerů na jednom identifikátoru.
+        // Re-registering the same handler is NOT an error. Registrations arrive from the consumer's
+        // Koin (`taskHandlerOf` creates a `createdAtStart` singleton), while this registry is a
+        // process-wide singleton that outlives a Koin restart. An application that restarts its Koin
+        // (sign-out, user switch) therefore sends the very same registrations again, and crashing it
+        // for that would be rude. The actual error is a clash between two DIFFERENT handlers on one
+        // identifier.
         registry.value[registration.identifier]?.let { existing ->
             require(existing.type == registration.type) {
                 "Identifier '${registration.identifier}' is already registered for " +
@@ -66,7 +67,7 @@ internal class TaskRegistry(
 
         typeRegistry.update { currentMap ->
             val forType = currentMap.getOrElse(registration.type) { emptyList() }
-                // Bez tohohle by se při každém restartu Koinu seznam pro daný typ prodloužil.
+                // Without this the per-type list would grow on every Koin restart.
                 .filterNot { it.identifier == registration.identifier }
 
             currentMap + (registration.type to (forType + registration))
@@ -80,8 +81,8 @@ internal class TaskRegistry(
     ) {
         val registration = TagRegistration(identifier = identifier, serializer = serializer)
 
-        // Stejná úvaha jako u register(): opakování při restartu Koinu je legitimní, kolize dvou
-        // různých typů na jednom identifikátoru je chyba.
+        // Same reasoning as register(): repetition on a Koin restart is legitimate, a clash of two
+        // different types on one identifier is not.
         tagTypeRegistry.value.entries.firstOrNull { it.value.identifier == identifier }?.let { existing ->
             require(existing.key == type) {
                 "Tag identifier '$identifier' is already registered for " +

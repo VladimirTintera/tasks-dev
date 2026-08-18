@@ -1,9 +1,10 @@
-// COOP/COEP hlavičky — bez nich prohlížeč nepovolí SharedArrayBuffer, který potřebuje SQLite
-// ve WASM workeru.
+// COOP/COEP headers — without them the browser refuses SharedArrayBuffer, which SQLite in the
+// WASM worker needs.
 //
-// Guard na `config.devServer`: tenhle snippet se vkládá do KAŽDÉ webpack konfigurace, ale
-// `devServer` existuje jen v dev buildu. V produkčním (jsBrowserProductionWebpack) je undefined
-// a bez guardu celý build spadne na "Cannot set properties of undefined (setting 'headers')".
+// The `config.devServer` guard matters: this snippet is injected into EVERY webpack config, but
+// `devServer` only exists in the dev build. In the production one (jsBrowserProductionWebpack) it
+// is undefined, and without the guard the whole build fails with
+// "Cannot set properties of undefined (setting 'headers')".
 ;(function(config) {
     if (!config.devServer) return;
 

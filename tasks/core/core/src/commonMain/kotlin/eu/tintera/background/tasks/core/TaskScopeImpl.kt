@@ -93,7 +93,7 @@ class TaskScopeImpl<Input : Any, Progress : Any>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            // Progress je jen informativní — jeho neuložení nesmí shodit běžící task.
+            // Progress is informational only — failing to store it must not bring down a running task.
             log.warning(TAG, e) { "Failed to persist progress for task $taskId" }
         }
     }

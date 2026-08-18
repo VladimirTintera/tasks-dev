@@ -12,10 +12,10 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertSame
 
 /**
- * Registrace handlerů přichází z Koinu konzumenta (`taskHandlerOf` zakládá `createdAtStart`
- * singleton). `taskRegistry` je ale procesový singleton, který restart Koinu přežije — takže
- * pokud aplikace svůj Koin restartuje (typicky odhlášení / přepnutí uživatele), přijdou přesně
- * tytéž registrace podruhé.
+ * Handler registrations arrive from the consumer's Koin (`taskHandlerOf` creates a `createdAtStart`
+ * singleton), but `taskRegistry` is a process-wide singleton that outlives a Koin restart. When an
+ * application restarts its Koin — typically on sign-out or a user switch — the very same
+ * registrations arrive a second time.
  */
 class TaskRegistryRegistrationTest {
 
@@ -48,18 +48,18 @@ class TaskRegistryRegistrationTest {
     )
 
     @Test
-    fun `stejny handler smi byt zaregistrovan znovu - restart Koinu aplikace`() = runTest {
+    fun `the same handler may be registered again - application Koin restart`() = runTest {
         val registry = TaskRegistry()
 
         registry.register(registration())
-        // Druhý průchod eager fází Koinu po jeho restartu. Nesmí shodit start aplikace.
+        // A second pass through Koin's eager phase after a restart. Must not bring the app down.
         registry.register(registration())
 
         assertNotNull(registry.resolve<Unit, Unit, Unit>("dummy"))
     }
 
     @Test
-    fun `opakovana registrace nahradi tu predchozi`() = runTest {
+    fun `re-registration replaces the previous one`() = runTest {
         val registry = TaskRegistry()
         val second = registration()
 
@@ -70,7 +70,7 @@ class TaskRegistryRegistrationTest {
     }
 
     @Test
-    fun `opakovana registrace nezduplikuje zaznam v type registru`() = runTest {
+    fun `re-registration does not duplicate the type registry entry`() = runTest {
         val registry = TaskRegistry()
 
         registry.register(registration())
@@ -80,7 +80,7 @@ class TaskRegistryRegistrationTest {
     }
 
     @Test
-    fun `dva ruzne handlery na stejnem identifikatoru jsou porad chyba`() = runTest {
+    fun `two different handlers on one identifier are still an error`() = runTest {
         val registry = TaskRegistry()
 
         registry.register(registration())

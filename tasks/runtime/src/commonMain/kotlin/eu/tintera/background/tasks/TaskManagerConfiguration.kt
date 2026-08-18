@@ -8,18 +8,18 @@ expect class TaskManagerConfiguration {
     val executionContextReleaseDebounce: Duration
     val databaseName: String
 
-    /** Adresář databáze; `null` = platformní výchozí. Viz `DatabaseConfiguration.databaseDirectory`. */
+    /** Database directory; `null` = the platform default. See `DatabaseConfiguration.databaseDirectory`. */
     val databaseDirectory: String?
 
-    /** Smí Room při rozbité migrační cestě databázi smazat? Výchozí `false`. */
+    /** May Room delete the database when a migration path is broken? Defaults to `false`. */
     val allowDestructiveMigration: Boolean
 
     /**
-     * Jak dlouho po prvním dotazu na registr čekat, než se registrace usadí.
+     * How long to wait after the first registry lookup for registrations to settle.
      *
-     * Kryje závod mezi systémem, který umí spustit task hned po startu procesu, a aplikací, která
-     * své handlery registruje až při stavbě vlastního Koinu. Zvýšit, pokud má aplikace pomalý
-     * studený start (typicky probuzení na pozadí na slabém zařízení).
+     * Covers the race between the system, which can run a task right after process start, and the
+     * application, which registers its handlers only while building its own Koin. Raise it when the
+     * application has a slow cold start — typically a background wake-up on a low-end device.
      */
     val registryWarmupTimeout: Duration
 }

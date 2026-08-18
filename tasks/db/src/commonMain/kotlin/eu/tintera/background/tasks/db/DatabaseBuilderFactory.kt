@@ -4,8 +4,8 @@ import androidx.room3.RoomDatabase
 
 internal fun interface DatabaseBuilderFactory {
     /**
-     * @param name jméno souboru databáze
-     * @param directory adresář; `null` = platformní výchozí
+     * @param name database file name
+     * @param directory directory to use; `null` = the platform default
      */
     fun create(name: String, directory: String?): RoomDatabase.Builder<TasksDatabase>
 }

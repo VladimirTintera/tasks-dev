@@ -6,11 +6,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 class TestExhaustibleTokenProducer : ExhaustibleTokenProducer("Test") {
-    // Místo obyčejného Int použijeme StateFlow, abychom na změnu mohli čekat
+    // A StateFlow rather than a plain Int, so tests can await the change.
     private val _produceCallCount = MutableStateFlow(0)
     val produceCallCountFlow = _produceCallCount.asStateFlow()
 
-    // Pro zpětnou kompatibilitu s jinými testy
+    // Kept for other tests.
     val produceCallCount: Int get() = _produceCallCount.value
 
     lateinit var capturedExpireCallback: () -> Unit
@@ -18,7 +18,7 @@ class TestExhaustibleTokenProducer : ExhaustibleTokenProducer("Test") {
     override suspend fun produce(): Token {
         val token = FakeToken()
         capturedExpireCallback = { token.cancel() }
-        _produceCallCount.update { it + 1 } // Atomický update
+        _produceCallCount.update { it + 1 } // atomic update
         return token
     }
 }

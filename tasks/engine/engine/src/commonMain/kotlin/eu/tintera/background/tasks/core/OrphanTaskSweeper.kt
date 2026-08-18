@@ -9,7 +9,7 @@ internal class OrphanTaskSweeper(
     private val repository: OrphanTaskSweeperRepository,
     private val scope: ApplicationScope,
     private val dispatchers: AppDispatchers,
-    private val activeTaskTracker: ActiveTaskTracker, // <--- Sdílený tracker
+    private val activeTaskTracker: ActiveTaskTracker, // shared tracker
     private val appStateObserver: AppStateObserver,
 ) : ExecutionContextObserver {
 

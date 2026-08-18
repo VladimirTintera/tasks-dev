@@ -11,7 +11,7 @@ internal interface ActiveTaskTracker {
 }
 
 internal class ActiveTaskTrackerImpl : ActiveTaskTracker, TaskLifecycleObserver {
-    // Použijeme StateFlow jako elegantní thread-safe Set
+    // A StateFlow doubles as a thread-safe set.
     private val activeIds = MutableStateFlow<Set<Uuid>>(emptySet())
 
     private fun track(id: Uuid) {

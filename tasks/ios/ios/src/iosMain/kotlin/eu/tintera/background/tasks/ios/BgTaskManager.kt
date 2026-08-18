@@ -48,7 +48,7 @@ internal abstract class BgTaskManager(
 
         scope.launch(dispatchers.default) {
             appLifecycleObserver.isBackground
-                .dropWhile { it } // Ignoruj počáteční background
+                .dropWhile { it } // ignore the initial background state
                 .distinctUntilChanged()
                 .collectLatest { isBg ->
                     if (isBg) evaluateAndScheduleNext()
@@ -93,9 +93,9 @@ internal abstract class BgTaskManager(
             val error = alloc<ObjCObjectVar<NSError?>>()
             BGTaskScheduler.sharedScheduler.submitTaskRequest(request, error.ptr)
 
-            // Bez tohohle je plánování BG oken naprosto neprůhledné: iOS požadavek běžně odmítne
-            // (nepovolený identifier v Info.plist, příliš mnoho čekajících requestů, zakázané
-            // background refresh) a aplikace se prostě nikdy neprobudí.
+            // Without this, scheduling background windows is completely opaque: iOS routinely
+            // refuses the request (identifier missing from Info.plist, too many pending requests,
+            // background refresh disabled) and the application simply never wakes up.
             error.value?.also {
                 log.error(tag) {
                     "BGTaskScheduler refused the request for ${'$'}{time}: " +

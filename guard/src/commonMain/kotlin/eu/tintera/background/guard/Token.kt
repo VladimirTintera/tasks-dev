@@ -51,7 +51,7 @@ abstract class AbstractToken : Token {
         var wasAdded = false
         preCancelHooks.update { list ->
             if (_state.value == TokenState.CANCELLED || _state.value == TokenState.RELEASED) {
-                return@update list // Už je po všem, nebudeme registrovat
+                return@update list // already finished — nothing to register
             }
             wasAdded = true
             list + block
@@ -91,7 +91,7 @@ abstract class AbstractToken : Token {
 
     protected fun finishWithCancel() {
         if (finishTo(TokenState.CANCELLED)) {
-            // Atomicky vyzvedneme a vyčistíme hooky, čímž zamezíme dvojímu spuštění
+            // Take and clear the hooks atomically so they cannot run twice.
             val hooks = preCancelHooks.getAndUpdate { emptyList() }
             hooks.forEach { hook ->
                 try {

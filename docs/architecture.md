@@ -4,6 +4,30 @@ This document outlines the architecture and modular structure of the **TaskManag
 
 ---
 
+## Conventions
+
+### Language
+
+**All code is written in English** — comments, KDoc, exception messages, log messages, test names,
+identifiers. This is an open-source library and everything in it has to be readable by people who
+do not speak Czech.
+
+Project documentation (this file, `README.md`, `development.md`) is English for the same reason.
+
+### Comments explain *why*
+
+The code says what happens; a comment is there for the reasoning that is not visible from it —
+a platform quirk, an ordering constraint, a deliberate trade-off. Comments that restate the next
+line are noise and get deleted.
+
+### Logging
+
+Never `println` or `printStackTrace`. Diagnostics go through `TasksLogger`, which the consuming
+application plugs in at initialization; with no logger registered the library stays silent.
+`TaskLifecycleObserver` is a separate seam and covers only the lifecycle of individual tasks.
+
+---
+
 ## Core Concepts
 
 The architecture follows a Clean Architecture design, dividing components into clear, decoupled layers of abstraction.

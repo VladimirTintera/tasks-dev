@@ -17,10 +17,11 @@ internal open class WarmupCache(
     warmupTimeout: Duration = DEFAULT_WARMUP_TIMEOUT
 ) {
     /**
-     * Jak dlouho po prvním dotazu čekat, než se registrace usadí.
+     * How long to wait after the first lookup for registrations to settle.
      *
-     * `var`, protože registr je procesový singleton vznikající dřív než Koin — hodnotu z konfigurace
-     * tedy nejde předat konstruktorem. Nastavuje ji jednou [TasksInitializerBase] při startu.
+     * A `var` because the registry is a process-wide singleton created before Koin exists, so the
+     * configured value cannot be passed through the constructor. [TasksInitializerBase] sets it
+     * once at startup.
      */
     internal var warmupTimeout: Duration = warmupTimeout
     private val mutex = Mutex()
@@ -66,5 +67,5 @@ internal open class WarmupCache(
     }
 }
 
-/** Výchozí okno pro usazení registrací po startu procesu. */
+/** Default window for registrations to settle after process start. */
 internal val DEFAULT_WARMUP_TIMEOUT: Duration = 5.seconds

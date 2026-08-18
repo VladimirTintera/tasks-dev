@@ -2,23 +2,24 @@ package eu.tintera.background.tasks.db
 
 interface DatabaseConfiguration {
 
-    /** Jméno souboru databáze. Prázdné = výchozí `eu.tintera.tasks.db`. */
+    /** Database file name. Empty = the default `eu.tintera.tasks.db`. */
     val databaseName: String
 
     /**
-     * Adresář, kam soubor umístit. `null` = platformní výchozí (Android `getDatabasePath`,
-     * iOS Application Support). Na JVM je povinný — desktopová aplikace si adresář určuje sama.
+     * Directory to place the file in. `null` = the platform default (Android `getDatabasePath`,
+     * iOS Application Support). Required on JVM — a desktop application picks its own directory.
      *
-     * Na webu se ignoruje: tam databáze žije v OPFS, ne v souborovém adresáři.
+     * Ignored on web: there the database lives in OPFS, not in a filesystem directory.
      */
     val databaseDirectory: String? get() = null
 
     /**
-     * Smí Room při chybějící nebo rozbité migrační cestě databázi **smazat** a založit prázdnou?
+     * May Room **delete** the database and create an empty one when a migration path is missing
+     * or broken?
      *
-     * Výchozí `false` záměrně: destruktivní fallback zahodí celou frontu naplánovaných tasků, a to
-     * beze slova — což je horší než hlasitý pád při startu, který si vývojář všimne. Zapínat leda
-     * v debug buildech.
+     * Defaults to `false` on purpose: the destructive fallback throws away the whole queue of
+     * scheduled tasks, and it does so silently — which is worse than a loud crash at startup that
+     * a developer will notice. Enable in debug builds at most.
      */
     val allowDestructiveMigration: Boolean get() = false
 }

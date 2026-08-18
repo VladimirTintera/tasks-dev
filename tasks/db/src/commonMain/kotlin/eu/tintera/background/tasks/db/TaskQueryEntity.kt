@@ -13,7 +13,7 @@ internal class TaskQueryEntity(
     fun toRoomRawQuery(): RoomRawQuery {
         val query = StringBuilder("SELECT t.id, t.identifier, t.runAttemptCount, t.state, t.outputData, t.processTime, t.progressData, t.finishedAt, t.createdAt, t.version, tt.taskId, tt.name FROM task t LEFT JOIN TaskTag tt ON t.id = tt.taskId WHERE 1=1")
 
-        // Seznam akcí, které nabindují konkrétní hodnotu na správný index.
+        // Actions that bind each value to its index.
         // V KMP se binduje na objekt SQLiteStatement.
         val bindings = mutableListOf<(androidx.sqlite.SQLiteStatement, Int) -> Unit>()
 
@@ -21,7 +21,7 @@ internal class TaskQueryEntity(
             // Vygeneruje: AND id IN (?, ?, ?)
             query.append(" AND id IN (${ids.joinToString(",") { "?" }})")
 
-            // Pro každý otazník si uložíme instruci, jak ho naplnit
+            // For every placeholder, remember how to fill it.
             ids.forEach { id ->
                 bindings.add { statement, index ->
                     statement.bindText(index, id.toString())
@@ -39,7 +39,7 @@ internal class TaskQueryEntity(
         }
 
         if (tags.isNotEmpty()) {
-            // V KMP Builderu přidáme jen subquery:
+            // The KMP builder only takes the subquery:
             query.append(" AND id IN (SELECT taskId FROM TaskTag WHERE name IN (${tags.joinToString(",") { "?" }}))")
 
             tags.forEach { tag ->
@@ -58,7 +58,7 @@ internal class TaskQueryEntity(
         return RoomRawQuery(
             sql = query.toString(),
             onBindStatement = { statement ->
-                // SQLite indexy parametrů začínají striktně od 1, nikoliv od 0!
+                // SQLite parameter indices start at 1, not 0.
                 bindings.forEachIndexed { arrayIndex, bindAction ->
                     bindAction(statement, arrayIndex + 1)
                 }

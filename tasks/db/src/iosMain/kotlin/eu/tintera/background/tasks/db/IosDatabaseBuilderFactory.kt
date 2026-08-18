@@ -23,7 +23,7 @@ private fun applicationSupportDirectory(): String {
         directory = NSApplicationSupportDirectory,
         inDomain = NSUserDomainMask,
         appropriateForURL = null,
-        create = true, // DŮLEŽITÉ: Musí být true, aby se složka vytvořila, pokud neexistuje
+        create = true, // IMPORTANT: must be true so the directory is created when missing
         error = null,
     )
     return requireNotNull(applicationSupportDirectory?.path)

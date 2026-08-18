@@ -46,13 +46,15 @@ class TaskEvaluatorImpl(
             log.warning(TAG) { "Task $id not found" }
         }
 
-        // Failed, ne Retry — a to schválně. Handler, který aplikace přestala používat (nahradila
-        // ho jiným nebo ho opustila), zmizí z registrace, ale jeho dřív naplánované tasky ve frontě
-        // zůstanou. Ty musí definitivně selhat, jinak by se donekonečna probouzely.
+        // Failed, not Retry — deliberately. A handler the application stopped using (replaced by
+        // another one, or dropped altogether) disappears from the registry, but tasks scheduled by
+        // it earlier are still sitting in the queue. Those have to fail for good, otherwise they
+        // would keep waking up forever.
         //
-        // Závod se startem aplikace (systém spustí task dřív, než konzument postaví svůj Koin)
-        // řeší warmup okno v registru — do té doby resolve počká. Když ani ono nestačí, je to
-        // konfigurace: TaskManagerConfiguration.registryWarmupTimeout.
+        // The race with application startup (the system runs a task before the consumer has built
+        // its Koin) is handled by the registry's warmup window, which makes resolve wait. When even
+        // that is not enough it is a matter of configuration:
+        // TaskManagerConfiguration.registryWarmupTimeout.
         val registration = registryResolver.resolve<Any, Any, Any>(
             identifier = task.identifier
         ) ?: return handleResult(
@@ -63,18 +65,20 @@ class TaskEvaluatorImpl(
         ).also {
             log.error(TAG) {
                 "No registration found for task $id (identifier '${task.identifier}') — failing it. " +
-                    "Buď jde o task naplánovaný handlerem, který už aplikace neregistruje, nebo se " +
-                    "identifier v registraci neshoduje s tím v TaskRequest. Pokud aplikace startuje " +
-                    "pomalu, zvaž zvýšení TaskManagerConfiguration.registryWarmupTimeout."
+                    "Either it was scheduled by a handler the application no longer registers, or the " +
+                    "identifier in the registration does not match the one in TaskRequest. If the " +
+                    "application starts slowly, consider raising " +
+                    "TaskManagerConfiguration.registryWarmupTimeout."
             }
         }
 
         val migrationResult = runCatching {
             taskMigrator.migrate(data = task, registration = registration)
         }.getOrElse { e ->
-            // Chybějící migrační cesta nebo downgrade (task uložila novější verze aplikace, po
-            // rollbacku ho čte starší). Vyhodit to ven znamená shodit workera — task raději
-            // ukončíme jako Failed, ať se fronta nezasekne.
+            // Missing migration path, or a downgrade (the task was written by a newer version of
+            // the application and is being read by an older one after a rollback). Letting this
+            // escape would bring the worker down, so the task ends as Failed instead and the queue
+            // keeps moving.
             log.error(TAG, e) {
                 "Migration failed for task $id (identifier '${task.identifier}', version ${task.version} " +
                     "→ ${registration.currentVersion})"

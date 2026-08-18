@@ -117,18 +117,18 @@ class TaskProcessorTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `when iOS wake lock expires - task is cancelled and token released but state remains running`() = runTest {
-        // 1. Příprava závislostí
+        // 1. Set up dependencies.
         val fakeWakeLock = FakeExecutionContextProvider()
 
-        // Zde si vytvoříš jednoduché fakes nebo mocky pro svá rozhraní
-        val fakeRepository = FakeRepository() // Musí vracet flow stavů a rodičů
+        // Simple fakes for the interfaces under test.
+        val fakeRepository = FakeRepository() // must return flows of states and parents
         val fakeNetworkState = FakeNetworkState()
 
         val fakeEvaluator = createTaskEvaluator(fakeRepository, fakeTaskRegistry())
 
         val processor = createTaskProcessor(fakeRepository, fakeEvaluator, fakeWakeLock)
 
-        // Vytvoříme testovací task, který vyžaduje iOS KeepAlive
+        // A task that requires the iOS keep-alive.
         val task = Task(
             id = Uuid.random(),
             state = State.Enqueued,
@@ -154,35 +154,35 @@ class TaskProcessorTest {
 
         assertEquals(State.Enqueued, fakeRepository.taskState(task.id))
 
-        // 2. Spuštění processoru v samostatné coroutině (aby nám neblokoval test)
+        // 2. Run the processor in its own coroutine so it does not block the test.
         val processorJob = launch {
             processor.run(task.id)
         }
 
-        // Posuneme virtuální čas o kousek, aby task stihl začít pracovat (např. 1 vteřinu)
+        // Advance virtual time a little so the task gets going (1 second).
         advanceTimeBy(1000.milliseconds)
 
-        // Ověříme, že Task začal běžet a token se ještě neuvolnil
+        // The task is running and the token has not been released yet.
         assertEquals(State.Running, fakeRepository.taskState(task.id), "task must be running")
         assertFalse(fakeWakeLock.token.isExpired.value, "token is not expired")
 
-        // 3. AKCE: Nasimulujeme, že iOS volá expiration handler!
+        // 3. ACT: simulate iOS invoking the expiration handler.
         fakeWakeLock.cancel()
 
-        // Necháme všechny coroutiny, ať zpracují zrušení
+        // Let every coroutine process the cancellation.
         advanceUntilIdle()
 
-        // 4. ASSERTION (Ověření správného chování)
+        // 4. ASSERT.
 
-        // A) Processor job by měl být korektně dokončený (nevyhodil crash do aplikace)
+        // A) The processor job finished cleanly and did not crash the application.
         assertTrue(processorJob.isCompleted, "Job is completed")
-        assertFalse(processorJob.isCancelled, "Job is not cancelled") // Job doběhl normálně
+        assertFalse(processorJob.isCancelled, "Job is not cancelled") // finished normally
 
-        // B) Wakelock Token MUSÍ být uvolněn přes finally/use blok!
+        // B) The wake-lock token MUST be released through the finally/use block.
         assertTrue(fakeWakeLock.token.isExpired.value)
 
-        // C) Task nesmí být označen jako Failed nebo Success, musí zůstat viset
-        // (protože mainJob byl zrušen a přeskočil se zápis do DB).
+        // C) The task must be left pending rather than marked Failed or Success — mainJob was
+        //    cancelled, so the DB write was skipped.
         assertEquals(State.Running, fakeRepository.taskState(task.id))
     }
 
@@ -419,7 +419,7 @@ class TaskProcessorTest {
             )
         )
 
-        // Vytvoříme task, který má běžet až za 1 hodinu
+        // A task scheduled to run in an hour.
         val task = createTask(
             identifier = "delayedTask",
             initialDelay = 1.hours
@@ -427,26 +427,26 @@ class TaskProcessorTest {
 
         fakeRepository.insert(task, emptySet(), emptySet())
 
-        // Spustíme procesor (coroutina se uspí)
+        // Start the processor; the coroutine goes to sleep.
         val job = launch {
             processor.run(task.id)
         }
 
-        // Posuneme čas jen o 30 minut
+        // Advance only 30 minutes.
         advanceTimeBy(30.minutes)
         runCurrent()
 
-        // ASSERT: Zatím nesměl být vyžádán žádný iOS zámek!
-        assertEquals(0, fakeProvider.acquireCount, "Během čekání se nesmí zamykat OS")
+        // ASSERT: no iOS lock may have been requested yet.
+        assertEquals(0, fakeProvider.acquireCount, "The OS must not be locked while waiting")
 
-        // Posuneme čas za hranici (task by měl začít běžet)
+        // Advance past the threshold; the task should start.
         advanceTimeBy(31.minutes)
         runCurrent()
 
         assertEquals(State.Running, fakeRepository.taskState(task.id))
 
-        // ASSERT: Až teď se musel zámek vyžádat
-        assertEquals(1, fakeProvider.acquireCount, "Před samotnou exekucí se musí OS zamknout")
+        // ASSERT: only now must the lock have been requested.
+        assertEquals(1, fakeProvider.acquireCount, "The OS must be locked before execution")
 
         job.cancelAndJoin()
     }
@@ -471,24 +471,24 @@ class TaskProcessorTest {
             executionContextProvider = executionContextProvider(fakeProvider)
         )
 
-        // Vytvoříme task, který má běžet až za 1 hodinu
+        // A task scheduled to run in an hour.
         val task = createTask(
             identifier = "cancelledOutside",
         )
 
         fakeRepository.insert(task, emptySet(), emptySet())
 
-        // Spustíme procesor (coroutina se uspí)
+        // Start the processor; the coroutine goes to sleep.
         val job = launch {
             processor.run(task.id)
         }
 
-        // Posuneme čas o 1 vteřinu (Task přejde do stavu Running)
+        // Advance 1 second; the task moves to Running.
         advanceTimeBy(1.seconds)
         runCurrent()
 
         assertEquals(State.Running, fakeRepository.taskState(task.id), "Task is running")
-        // AKCE (Sabotáž zvenčí): UI vlákno změní stav tasku v DB!
+        // ACT (external interference): the UI thread changes the task state in the DB.
         fakeRepository.updateState(
             id = task.id,
             state = State.Cancelled,
@@ -499,11 +499,11 @@ class TaskProcessorTest {
 
         assertEquals(State.Cancelled, fakeRepository.taskState(task.id), "Task is cancelled")
 
-        // Necháme Coroutine Dispatcher zpracovat tu změnu ve Flow
+        // Let the dispatcher process the change coming through the flow.
         runCurrent()
 
         // ASSERT: job.isCancelled must be true!
-        // Náš DB Watcher zjistil, že state.terminal() je true, a zavolal mainJob.cancelAndJoin()
-        assertTrue(job.isCompleted, "Processor musí zrušit běh, pokud je task zrušen v DB")
+        // The DB watcher saw state.terminal() and called mainJob.cancelAndJoin().
+        assertTrue(job.isCompleted, "The processor must stop when the task is cancelled in the DB")
     }
 }

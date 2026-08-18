@@ -3,10 +3,10 @@ package eu.tintera.background.tasks
 enum class TasksLogLevel { Debug, Info, Warning, Error }
 
 /**
- * Šev pro diagnostiku knihovny. Bez registrovaného loggeru se nikam nic nepíše — knihovna nemá
- * názor na to, kam logy patří.
+ * Diagnostics seam for the library. With no logger registered nothing is written anywhere — the
+ * library has no opinion on where logs belong.
  *
- * Registruje se při inicializaci:
+ * Registered at initialization:
  * ```
  * TasksInitializer.initialize(
  *     configuration = …,
@@ -14,9 +14,9 @@ enum class TasksLogLevel { Debug, Info, Warning, Error }
  * )
  * ```
  *
- * Nezaměňovat s [TaskLifecycleObserver] — ten sleduje životní cyklus konkrétních tasků
- * (spuštěn / dokončen / zrušen). Sem chodí to ostatní: proč se task nepodařilo spustit, jak
- * dopadlo plánování background okna, spolknuté výjimky.
+ * Not to be confused with [TaskLifecycleObserver], which tracks the lifecycle of individual tasks
+ * (started / completed / cancelled). Everything else lands here: why a task could not be started,
+ * how scheduling a background window went, swallowed exceptions.
  */
 fun interface TasksLogger {
     fun log(level: TasksLogLevel, tag: String, message: String, throwable: Throwable?)

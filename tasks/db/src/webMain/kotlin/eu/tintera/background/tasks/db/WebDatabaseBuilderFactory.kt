@@ -5,7 +5,7 @@ import kotlinx.coroutines.Dispatchers
 
 internal class WebDatabaseBuilderFactory : DatabaseBuilderFactory {
 
-    // directory se ignoruje: v prohlížeči je databáze v OPFS/IndexedDB, ne v adresáři.
+    // directory is ignored: in the browser the database lives in OPFS/IndexedDB, not a directory.
     override fun create(
         name: String,
         directory: String?,
