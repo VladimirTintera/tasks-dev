@@ -4,18 +4,15 @@ import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import java.io.File
 
-internal class JvmDatabaseBuilderFactory(
-    private val config: JvmDatabaseConfiguration
-) : DatabaseBuilderFactory {
+internal class JvmDatabaseBuilderFactory : DatabaseBuilderFactory {
 
-    override fun create(name: String): RoomDatabase.Builder<TasksDatabase> {
+    override fun create(name: String, directory: String?): RoomDatabase.Builder<TasksDatabase> {
+        require(!directory.isNullOrBlank()) { "databaseDirectory must be set on JVM" }
 
-        val directory = File(config.databasePath)
-        if (!directory.exists()) directory.mkdirs()
-        val dbFilePath = File(config.databasePath, name).absolutePath
+        File(directory).mkdirs()
 
         return Room.databaseBuilder<TasksDatabase>(
-            name = dbFilePath,
+            name = File(directory, name).absolutePath,
         )
     }
 }

@@ -12,13 +12,10 @@ import eu.tintera.background.tasks.core.cleanup.DatabaseCleanupService
 import eu.tintera.background.tasks.core.engineModule
 import eu.tintera.background.tasks.core.guard.guardInit
 import eu.tintera.background.tasks.db.DatabaseConfiguration
-import eu.tintera.background.tasks.db.JvmDatabaseConfiguration
-import eu.tintera.background.tasks.defaultAppDirectory
 import eu.tintera.background.tasks.engine.db.engineDbModule
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.bind
-import org.koin.dsl.binds
 import org.koin.dsl.module
 
 internal fun jvmModule(
@@ -48,12 +45,11 @@ internal fun jvmModule(
 
     single<SQLiteDriver> { BundledSQLiteDriver() }
 
-    single {
-        object : JvmDatabaseConfiguration {
+    single<DatabaseConfiguration> {
+        object : DatabaseConfiguration {
             override val databaseName: String = config.databaseName
-            override val databasePath: String = config.databasePath.ifEmpty {
-                defaultAppDirectory(config.databaseName)
-            }
+            override val databaseDirectory: String? = config.databaseDirectory
+            override val allowDestructiveMigration: Boolean = config.allowDestructiveMigration
         }
-    } binds arrayOf(DatabaseConfiguration::class, JvmDatabaseConfiguration::class)
+    }
 }

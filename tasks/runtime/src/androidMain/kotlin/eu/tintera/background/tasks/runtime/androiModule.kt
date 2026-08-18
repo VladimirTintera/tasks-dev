@@ -36,6 +36,8 @@ internal fun androidModule(
     single<DatabaseConfiguration> {
         object : DatabaseConfiguration {
             override val databaseName: String = config.databaseName
+            override val databaseDirectory: String? = config.databaseDirectory
+            override val allowDestructiveMigration: Boolean = config.allowDestructiveMigration
         }
     }
 

@@ -9,8 +9,8 @@ import platform.Foundation.NSUserDomainMask
 
 internal class IosDatabaseBuilderFactory : DatabaseBuilderFactory {
 
-    override fun create(name: String): RoomDatabase.Builder<TasksDatabase> {
-        val dbFilePath = applicationSupportDirectory() + "/$name"
+    override fun create(name: String, directory: String?): RoomDatabase.Builder<TasksDatabase> {
+        val dbFilePath = (directory ?: applicationSupportDirectory()) + "/$name"
         return Room.databaseBuilder<TasksDatabase>(
             name = dbFilePath,
         )

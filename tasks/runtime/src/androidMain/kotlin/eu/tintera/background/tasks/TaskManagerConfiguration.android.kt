@@ -12,5 +12,7 @@ actual class TaskManagerConfiguration(
     val compatTransformation: (Map<String, Any?>) -> ByteArray? = { null },
     val sqLiteDriver: SQLiteDriver? = null,
     actual val databaseName: String = "",
+    actual val databaseDirectory: String? = null,
+    actual val allowDestructiveMigration: Boolean = false,
     actual val executionEnvironment: ExecutionEnvironment? = null,
 )
