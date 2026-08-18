@@ -5,7 +5,6 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.ServiceInfo
 import android.os.Build
-import androidx.annotation.RestrictTo
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -25,8 +24,32 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.uuid.toKotlinUuid
 
+/**
+ * The `CoroutineWorker` every task runs in. Normally you never touch it — [WorkManagerTaskManager]
+ * enqueues it for you.
+ *
+ * It is `open` for one reason: **adopting work scheduled by something else.** WorkManager stores the
+ * worker's class name in its own database, so work enqueued before you migrated still asks for the
+ * old class by name. Declaring a subclass under that name makes those rows resolve again:
+ *
+ * ```
+ * package com.example.legacy
+ *
+ * internal class LegacyWorker(
+ *     context: Context,
+ *     parameters: WorkerParameters,
+ * ) : eu.tintera.background.tasks.android.TaskWorker(context, parameters)
+ * ```
+ *
+ * Such a row has no matching record in this library's database, so [doWork] tries to adopt it
+ * through `TaskManagerConfiguration.compatTransformation`. Without that transformation the task
+ * fails — see the log message there.
+ *
+ * Providing the subclass is optional. If you skip it, WorkManager cannot instantiate the missing
+ * class, logs an error and marks the work failed; it does not crash. That is a perfectly reasonable
+ * choice when the scheduled work can simply be recreated after the upgrade.
+ */
 @OptIn(InternalTasksApi::class)
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 open class TaskWorker(
     context: Context,
     workerParameters: WorkerParameters,
