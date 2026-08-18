@@ -7,10 +7,9 @@ interface DatabaseConfiguration {
 
     /**
      * Adresář, kam soubor umístit. `null` = platformní výchozí (Android `getDatabasePath`,
-     * iOS Application Support, JVM adresář aplikace).
+     * iOS Application Support). Na JVM je povinný — desktopová aplikace si adresář určuje sama.
      *
-     * Existuje kvůli přebírání databáze z jiného umístění — typicky když aplikace migruje
-     * z předchozího enginu, který si soubor držel jinde.
+     * Na webu se ignoruje: tam databáze žije v OPFS, ne v souborovém adresáři.
      */
     val databaseDirectory: String? get() = null
 

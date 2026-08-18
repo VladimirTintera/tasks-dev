@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "428a7b4072a300b57866668876258c83",
+    "identityHash": "8956770f05991b27252a6465eb655f67",
     "entities": [
       {
         "tableName": "Task",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `identifier` TEXT NOT NULL, `uniqueName` TEXT NOT NULL, `retriesCount` INTEGER NOT NULL, `initialDelay` INTEGER NOT NULL, `processTime` TEXT NOT NULL, `state` TEXT NOT NULL, `inputData` BLOB NOT NULL, `outputData` BLOB NOT NULL, `networkRequired` INTEGER NOT NULL, `createdAt` TEXT NOT NULL, `finishedAt` TEXT, `repeatInterval` INTEGER, `backoffCriteria` BLOB, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `identifier` TEXT NOT NULL, `uniqueName` TEXT NOT NULL, `runAttemptCount` INTEGER NOT NULL, `initialDelay` INTEGER NOT NULL, `processTime` INTEGER, `state` TEXT NOT NULL, `inputData` BLOB, `outputData` BLOB, `networkRequired` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `finishedAt` INTEGER, `repeatInterval` INTEGER, `backoffCriteria` BLOB, `progressData` BLOB, `retentionDelay` INTEGER NOT NULL DEFAULT 86400000, `requiresDeviceIdle` INTEGER NOT NULL DEFAULT 0, `version` INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -27,8 +27,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "retriesCount",
-            "columnName": "retriesCount",
+            "fieldPath": "runAttemptCount",
+            "columnName": "runAttemptCount",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -41,8 +41,7 @@
           {
             "fieldPath": "processTime",
             "columnName": "processTime",
-            "affinity": "TEXT",
-            "notNull": true
+            "affinity": "INTEGER"
           },
           {
             "fieldPath": "state",
@@ -53,14 +52,12 @@
           {
             "fieldPath": "inputData",
             "columnName": "inputData",
-            "affinity": "BLOB",
-            "notNull": true
+            "affinity": "BLOB"
           },
           {
             "fieldPath": "outputData",
             "columnName": "outputData",
-            "affinity": "BLOB",
-            "notNull": true
+            "affinity": "BLOB"
           },
           {
             "fieldPath": "networkRequired",
@@ -71,13 +68,13 @@
           {
             "fieldPath": "createdAt",
             "columnName": "createdAt",
-            "affinity": "TEXT",
+            "affinity": "INTEGER",
             "notNull": true
           },
           {
             "fieldPath": "finishedAt",
             "columnName": "finishedAt",
-            "affinity": "TEXT"
+            "affinity": "INTEGER"
           },
           {
             "fieldPath": "repeatInterval",
@@ -88,6 +85,32 @@
             "fieldPath": "backoffCriteria",
             "columnName": "backoffCriteria",
             "affinity": "BLOB"
+          },
+          {
+            "fieldPath": "progressData",
+            "columnName": "progressData",
+            "affinity": "BLOB"
+          },
+          {
+            "fieldPath": "retentionDelay",
+            "columnName": "retentionDelay",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "86400000"
+          },
+          {
+            "fieldPath": "requiresDeviceIdle",
+            "columnName": "requiresDeviceIdle",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "version",
+            "columnName": "version",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "1"
           }
         ],
         "primaryKey": {
@@ -95,7 +118,28 @@
           "columnNames": [
             "id"
           ]
-        }
+        },
+        "indices": [
+          {
+            "name": "index_Task_state_processTime",
+            "unique": false,
+            "columnNames": [
+              "state",
+              "processTime"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Task_state_processTime` ON `${TABLE_NAME}` (`state`, `processTime`)"
+          },
+          {
+            "name": "index_Task_uniqueName",
+            "unique": false,
+            "columnNames": [
+              "uniqueName"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Task_uniqueName` ON `${TABLE_NAME}` (`uniqueName`)"
+          }
+        ]
       },
       {
         "tableName": "TaskParentTask",
@@ -121,6 +165,26 @@
             "parentTaskId"
           ]
         },
+        "indices": [
+          {
+            "name": "index_TaskParentTask_taskId",
+            "unique": false,
+            "columnNames": [
+              "taskId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_TaskParentTask_taskId` ON `${TABLE_NAME}` (`taskId`)"
+          },
+          {
+            "name": "index_TaskParentTask_parentTaskId",
+            "unique": false,
+            "columnNames": [
+              "parentTaskId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_TaskParentTask_parentTaskId` ON `${TABLE_NAME}` (`parentTaskId`)"
+          }
+        ],
         "foreignKeys": [
           {
             "table": "Task",
@@ -187,7 +251,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '428a7b4072a300b57866668876258c83')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '8956770f05991b27252a6465eb655f67')"
     ]
   }
 }

@@ -11,7 +11,6 @@ internal class DatabaseFactory(
         name = databaseConfiguration.databaseName.ifEmpty { DEFAULT_DATABASE_NAME },
         directory = databaseConfiguration.databaseDirectory,
     ).apply {
-        addMigrations(Migration9to10)
         // Jen když si o to aplikace vysloveně řekne — viz DatabaseConfiguration.allowDestructiveMigration.
         if (databaseConfiguration.allowDestructiveMigration) fallbackToDestructiveMigration(true)
         setDriver(driver)

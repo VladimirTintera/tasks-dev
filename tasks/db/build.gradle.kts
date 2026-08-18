@@ -15,20 +15,6 @@ room3 {
 
 kotlin {
 
-    // androidx.sqlite dělí API na nonWeb (synchronní) a web (suspend) — potřebujeme stejný šev,
-    // abychom ruční migrace psali jednou pro obě větve, ne pro každý target zvlášť.
-    applyDefaultHierarchyTemplate {
-        common {
-            group("nonWeb") {
-                // withAndroidTarget() cílí na KGP `androidTarget()`; tady je android z AGP
-                // pluginu com.android.kotlin.multiplatform.library, který se jmenuje "android".
-                withCompilations { it.target.name == "android" }
-                withIos()
-                withJvm()
-            }
-        }
-    }
-
     compilerOptions {
         optIn.addAll(
             "kotlinx.serialization.ExperimentalSerializationApi"
@@ -54,13 +40,13 @@ kotlin {
             implementation(libs.kotlinx.serialization.protobuf)
 
             api(libs.androidx.room.runtime)
-            // Room protahuje jen typy ve svém API (SQLiteConnection v Migration). Top-level funkce
-            // jako androidx.sqlite.execSQL, které používá Migration9to10, potřebují artefakt přímo.
+            // DatabaseFactory pracuje přímo s androidx.sqlite.SQLiteDriver.
             implementation(libs.androidx.sqlite)
             implementation(projects.tasks.core.core)
 
             implementation(libs.koin.core)
         }
+
     }
 }
 
