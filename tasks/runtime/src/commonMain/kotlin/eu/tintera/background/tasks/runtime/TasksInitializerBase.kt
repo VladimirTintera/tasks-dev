@@ -23,6 +23,8 @@ abstract class TasksInitializerBase {
         loggers: List<TasksLogger> = emptyList()
     ): TaskManager {
 
+        taskRegistry.warmupTimeout = config.registryWarmupTimeout
+
         TaskManagerBootstrapper.initialize(
             taskLifecycleObservers = taskLifecycleObservers,
             loggers = loggers

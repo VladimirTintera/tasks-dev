@@ -1,6 +1,7 @@
 package eu.tintera.background.tasks
 
 import eu.tintera.background.guard.ExecutionEnvironment
+import eu.tintera.background.tasks.runtime.DEFAULT_WARMUP_TIMEOUT
 import java.nio.file.Paths
 import kotlin.io.path.absolutePathString
 import kotlin.time.Duration
@@ -10,6 +11,7 @@ actual class TaskManagerConfiguration(
     databasePath: String,
     actual val databaseName: String = "",
     actual val allowDestructiveMigration: Boolean = false,
+    actual val registryWarmupTimeout: Duration = DEFAULT_WARMUP_TIMEOUT,
     val maxConcurrentTasks: Int = 10,
     actual val executionContextReleaseDebounce: Duration = 1.5.seconds,
     actual val executionEnvironment: ExecutionEnvironment? = null

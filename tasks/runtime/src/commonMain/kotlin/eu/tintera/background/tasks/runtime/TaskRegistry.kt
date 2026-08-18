@@ -12,15 +12,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlin.reflect.KClass
 import kotlin.time.Clock
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration
 
 internal val taskRegistry = TaskRegistry()
 
 internal class TaskRegistry(
-    clock: Clock = Clock.System
+    clock: Clock = Clock.System,
+    warmupTimeout: Duration = DEFAULT_WARMUP_TIMEOUT
 ) : Registry, RegistryResolver, WarmupCache(
     clock = clock,
-    warmupTimeout = 5.seconds
+    warmupTimeout = warmupTimeout
 ) {
     private val registry = MutableStateFlow<Map<String, TaskRegistration<out Any, out Any, out Any>>>(emptyMap())
     private val typeRegistry =
@@ -47,15 +48,28 @@ internal class TaskRegistry(
                 }
             }
         }
-        registry.update { currentMap ->
-            if (registration.identifier in currentMap) {
-                throw IllegalArgumentException("Handler for '${registration.identifier}' is already registered.")
+        // Opakovaná registrace téhož handleru NENÍ chyba: registrace přichází z Koinu konzumenta
+        // (`taskHandlerOf` = `createdAtStart` singleton), kdežto tenhle registr je procesový
+        // singleton, který restart Koinu přežije. Aplikace, která svůj Koin restartuje (odhlášení,
+        // přepnutí uživatele), tedy pošle tytéž registrace znovu — a shodit ji za to by bylo hrubé.
+        // Chyba je až kolize dvou RŮZNÝCH handlerů na jednom identifikátoru.
+        registry.value[registration.identifier]?.let { existing ->
+            require(existing.type == registration.type) {
+                "Identifier '${registration.identifier}' is already registered for " +
+                    "'${existing.type.simpleName}' and cannot be reused for '${registration.type.simpleName}'."
             }
+        }
+
+        registry.update { currentMap ->
             currentMap + (registration.identifier to registration)
         }
 
         typeRegistry.update { currentMap ->
-            currentMap + (registration.type to (currentMap.getOrElse(registration.type) { emptyList() }) + registration)
+            val forType = currentMap.getOrElse(registration.type) { emptyList() }
+                // Bez tohohle by se při každém restartu Koinu seznam pro daný typ prodloužil.
+                .filterNot { it.identifier == registration.identifier }
+
+            currentMap + (registration.type to (forType + registration))
         }
     }
 
@@ -66,10 +80,16 @@ internal class TaskRegistry(
     ) {
         val registration = TagRegistration(identifier = identifier, serializer = serializer)
 
-        tagRegistry.update { currentMap ->
-            if (identifier in currentMap) {
-                throw IllegalArgumentException("Tag for $identifier is already registered.")
+        // Stejná úvaha jako u register(): opakování při restartu Koinu je legitimní, kolize dvou
+        // různých typů na jednom identifikátoru je chyba.
+        tagTypeRegistry.value.entries.firstOrNull { it.value.identifier == identifier }?.let { existing ->
+            require(existing.key == type) {
+                "Tag identifier '$identifier' is already registered for " +
+                    "'${existing.key.simpleName}' and cannot be reused for '${type.simpleName}'."
             }
+        }
+
+        tagRegistry.update { currentMap ->
             currentMap + (identifier to registration)
         }
 

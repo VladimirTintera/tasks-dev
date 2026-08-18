@@ -14,8 +14,15 @@ import kotlin.time.Instant
 
 internal open class WarmupCache(
     private val clock: Clock,
-    private val warmupTimeout: Duration = 5.seconds
+    warmupTimeout: Duration = DEFAULT_WARMUP_TIMEOUT
 ) {
+    /**
+     * Jak dlouho po prvním dotazu čekat, než se registrace usadí.
+     *
+     * `var`, protože registr je procesový singleton vznikající dřív než Koin — hodnotu z konfigurace
+     * tedy nejde předat konstruktorem. Nastavuje ji jednou [TasksInitializerBase] při startu.
+     */
+    internal var warmupTimeout: Duration = warmupTimeout
     private val mutex = Mutex()
 
     private data class Warmup(
@@ -58,3 +65,6 @@ internal open class WarmupCache(
         }
     }
 }
+
+/** Výchozí okno pro usazení registrací po startu procesu. */
+internal val DEFAULT_WARMUP_TIMEOUT: Duration = 5.seconds

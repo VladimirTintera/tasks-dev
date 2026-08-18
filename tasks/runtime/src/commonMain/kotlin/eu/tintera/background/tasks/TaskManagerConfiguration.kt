@@ -13,4 +13,13 @@ expect class TaskManagerConfiguration {
 
     /** Smí Room při rozbité migrační cestě databázi smazat? Výchozí `false`. */
     val allowDestructiveMigration: Boolean
+
+    /**
+     * Jak dlouho po prvním dotazu na registr čekat, než se registrace usadí.
+     *
+     * Kryje závod mezi systémem, který umí spustit task hned po startu procesu, a aplikací, která
+     * své handlery registruje až při stavbě vlastního Koinu. Zvýšit, pokud má aplikace pomalý
+     * studený start (typicky probuzení na pozadí na slabém zařízení).
+     */
+    val registryWarmupTimeout: Duration
 }

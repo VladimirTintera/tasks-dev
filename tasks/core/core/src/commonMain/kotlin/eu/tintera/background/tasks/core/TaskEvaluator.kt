@@ -46,6 +46,13 @@ class TaskEvaluatorImpl(
             log.warning(TAG) { "Task $id not found" }
         }
 
+        // Failed, ne Retry — a to schválně. Handler, který aplikace přestala používat (nahradila
+        // ho jiným nebo ho opustila), zmizí z registrace, ale jeho dřív naplánované tasky ve frontě
+        // zůstanou. Ty musí definitivně selhat, jinak by se donekonečna probouzely.
+        //
+        // Závod se startem aplikace (systém spustí task dřív, než konzument postaví svůj Koin)
+        // řeší warmup okno v registru — do té doby resolve počká. Když ani ono nestačí, je to
+        // konfigurace: TaskManagerConfiguration.registryWarmupTimeout.
         val registration = registryResolver.resolve<Any, Any, Any>(
             identifier = task.identifier
         ) ?: return handleResult(
@@ -55,8 +62,10 @@ class TaskEvaluatorImpl(
             )
         ).also {
             log.error(TAG) {
-                "No registration found for task $id (identifier '${task.identifier}'). " +
-                    "Registrace se musí jmenovat stejně jako identifier v TaskRequest."
+                "No registration found for task $id (identifier '${task.identifier}') — failing it. " +
+                    "Buď jde o task naplánovaný handlerem, který už aplikace neregistruje, nebo se " +
+                    "identifier v registraci neshoduje s tím v TaskRequest. Pokud aplikace startuje " +
+                    "pomalu, zvaž zvýšení TaskManagerConfiguration.registryWarmupTimeout."
             }
         }
 

@@ -112,3 +112,28 @@ class TaskRegistryTest {
 
 // Dummy třída pro testování
 class MyDummyTag : Tag
+/**
+ * Warmup okno musí jít prodloužit — aplikace s pomalým studeným startem (probuzení na pozadí na
+ * slabém zařízení) nemusí stihnout zaregistrovat handlery do výchozích 5 sekund.
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+class TaskRegistryWarmupTimeoutTest {
+
+    @Test
+    fun `delsi warmup okno drzi resolve dele nez vychozich 5s`() = runTest {
+        val clock = TaskRegistryTest.FakeClock()
+        val registry = TaskRegistry(clock = clock, warmupTimeout = 20.seconds)
+
+        val job = launch { registry.resolveTag<MyDummyTag>("missing") }
+
+        // Po výchozích 5 sekundách by se s původním nastavením už vzdal.
+        advanceTimeBy(5.seconds)
+        clock.advanceBy(5.seconds)
+        assertTrue(job.isActive)
+
+        advanceTimeBy(15.seconds)
+        clock.advanceBy(15.seconds)
+        job.join()
+        assertFalse(job.isActive)
+    }
+}
