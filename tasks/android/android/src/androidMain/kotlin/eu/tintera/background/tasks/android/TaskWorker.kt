@@ -17,11 +17,14 @@ import eu.tintera.background.tasks.core.data.Repository
 import eu.tintera.background.tasks.core.data.Task
 import eu.tintera.background.tasks.core.nonTerminalStates
 import eu.tintera.background.tasks.di.TasksKoinComponent
+import eu.tintera.background.tasks.di.TasksKoinContext
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.core.component.inject
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.toKotlinUuid
 
 /**
@@ -66,6 +69,17 @@ open class TaskWorker(
     private val log: CompositeTasksLogger by inject()
 
     override suspend fun doWork(): Result {
+
+        // WorkManager initializes itself and its scheduler can reach for work while
+        // `Application.onCreate` is still running, so a worker may well start before the
+        // application had a chance to call TasksInitializer.initialize(...). Waiting costs
+        // milliseconds; failing here and relying on a retry would push the same work minutes
+        // into the future for nothing.
+        withTimeoutOrNull(INITIALIZATION_TIMEOUT) { TasksKoinContext.awaitKoinApp() }
+            ?: error(
+                "TaskManager was not initialized within $INITIALIZATION_TIMEOUT. Call " +
+                    "TasksInitializer.initialize(...) when your application starts."
+            )
 
         val taskIdentifier = inputData.getString(
             TASK_IDENTIFIER
@@ -197,6 +211,13 @@ open class TaskWorker(
     companion object {
         const val TASK_IDENTIFIER = "task_identifier"
         private const val TAG = "TaskWorker"
+
+        /**
+         * How long a worker waits for the library to be initialized. Generous on purpose — it only
+         * has to outlast a cold start; running out means nobody ever called
+         * `TasksInitializer.initialize(...)`, which no amount of waiting fixes.
+         */
+        private val INITIALIZATION_TIMEOUT = 30.seconds
     }
 
 }
