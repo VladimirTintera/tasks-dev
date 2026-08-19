@@ -30,6 +30,7 @@ kotlin {
         commonMain.dependencies {
             api(libs.koin.core)
             api(projects.tasks.api)
+            implementation(libs.kotlinx.coroutines.core)
         }
     }
 }

@@ -100,6 +100,26 @@ The database is structured to separate interfaces from database-specific entitie
 ### 5. Runtime / Bootstrap
 - [runtime](../runtime) serves as the library's orchestrator and bootstrap layer. It exposes the public `Tasks` singleton used for initialization, handles warm-ups, and registers platform-specific observers (like network state and app background/foreground state).
 
+**Initialization is always explicit**, on every platform:
+
+```kotlin
+TasksInitializer.initialize(
+    configuration = TaskManagerConfiguration(…),
+    taskLifecycleObservers = …,
+    loggers = …,
+)
+```
+
+There is deliberately no Android auto-start through `androidx.startup`. It looks convenient, but it
+runs from a `ContentProvider` — before `Application.onCreate` — and initialization is
+first-one-wins, so an application configuring the library in `onCreate` would have its
+configuration **silently discarded**, loggers and lifecycle observers included. Opting out meant a
+`tools:node="remove"` entry that is easy to get wrong and impossible to verify. iOS needs explicit
+identifiers anyway, so explicit initialization is also the one story that holds on every platform.
+
+A worker started by the system before the application initialized does not fail: `TaskWorker`
+suspends until initialization happens (see `TasksKoinContext.awaitKoinApp`).
+
 ---
 
 ## Migrating from an existing WorkManager setup
