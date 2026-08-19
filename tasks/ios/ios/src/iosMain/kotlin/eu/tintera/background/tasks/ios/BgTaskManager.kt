@@ -74,7 +74,7 @@ internal abstract class BgTaskManager(
             identifier = taskIdentifier,
             usingQueue = null
         ) {
-            log.info(tag) { "background window opened by the system at ${'$'}{clock.now()}" }
+            log.info(tag) { "background window opened by the system at ${clock.now()}" }
             it?.also { task ->
                 produce(BgTaskToken(taskIdentifier, task))
             }
@@ -98,10 +98,10 @@ internal abstract class BgTaskManager(
             // background refresh disabled) and the application simply never wakes up.
             error.value?.also {
                 log.error(tag) {
-                    "BGTaskScheduler refused the request for ${'$'}{time}: " +
-                        "[${'$'}{it.code}] ${'$'}{it.localizedDescription}"
+                    "BGTaskScheduler refused the request for ${time}: " +
+                        "[${it.code}] ${it.localizedDescription}"
                 }
-            } ?: log.debug(tag) { "next background window requested for ${'$'}time" }
+            } ?: log.debug(tag) { "next background window requested for $time" }
         }
     }
 

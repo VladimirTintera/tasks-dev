@@ -412,7 +412,7 @@ internal class WorkManagerTaskManager(
                 runCatching {
                     taskMigrator.migrate(data = migrationData, registration = registration)
                 }.getOrElse { e ->
-                    log.warning(TAG, e) { "Migration failed while reading TaskInfo ${'$'}{task.id}" }
+                    log.warning(TAG, e) { "Migration failed while reading TaskInfo ${task.id}" }
                     null
                 }
             }
