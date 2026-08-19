@@ -111,7 +111,7 @@ open class TaskWorker(
             val adopted = workManagerConfiguration.compatTransformation(sourceData)
 
             if (adopted == null) log.error(TAG) {
-                "Task ${'$'}taskId ('${'$'}taskIdentifier') is not in the database and compatTransformation " +
+                "Task $taskId ('$taskIdentifier') is not in the database and compatTransformation " +
                     "cannot adopt it, so it will fail. If this is work scheduled by a previous version " +
                     "of the application, provide TaskManagerConfiguration.compatTransformation."
             }
