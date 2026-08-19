@@ -33,10 +33,17 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
-include(":shared")
-include(":androidApp")
-include(":desktopApp")
-include(":webApp")
+// Demo applications, only useful when this build is the one you are working on.
+//
+// As an included build (composite) the consumer has no use for them, and configuring them is not
+// free: they drag in Compose, the JS/WASM toolchains and their own dependency graph. `gradle.parent`
+// is non-null exactly when another build included this one.
+if (gradle.parent == null) {
+    include(":shared")
+    include(":androidApp")
+    include(":desktopApp")
+    include(":webApp")
+}
 
 include(":guard")
 
