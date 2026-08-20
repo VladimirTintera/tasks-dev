@@ -275,6 +275,10 @@ class RepositoryCoreTaskManager(
         }
     }
 
+    override suspend fun cancelTasksByTag(
+        tag: Tag
+    ) = cancelTasksByTag(tagMapper.serialize(tag))
+
     private suspend fun cancelTask(taskId: Uuid) {
         repository.finishTaskWithUnsuccess(
             id = taskId,

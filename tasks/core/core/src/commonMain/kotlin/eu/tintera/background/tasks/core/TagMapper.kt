@@ -12,14 +12,20 @@ class TagMapper(
 
     suspend fun serialize(
         tags: Collection<Tag>
-    ): Set<String> = tags.map {
-        when (it) {
-            is LabelTag -> it.label
-            else -> it.serialize()
-        }
-    }.toSet()
+    ): Set<String> = tags.map { serialize(it) }.toSet()
 
-    private suspend fun Tag.serialize(): String {
+    /**
+     * The wire form of a single tag. A [LabelTag] is its own label, so a typed lookup and a raw
+     * string lookup for the same label find the same tasks.
+     */
+    suspend fun serialize(
+        tag: Tag
+    ): String = when (tag) {
+        is LabelTag -> tag.label
+        else -> tag.serializeTyped()
+    }
+
+    private suspend fun Tag.serializeTyped(): String {
 
         val registration = registryResolver.resolveTag<Tag>(
             type = this::class
