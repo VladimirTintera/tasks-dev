@@ -340,6 +340,8 @@ internal class WorkManagerTaskManager(
         workManager.cancelAllWorkByTag(tag).await()
     }
 
+    override suspend fun cancelTasksByTag(tag: Tag) = cancelTasksByTag(tagMapper.serialize(tag))
+
     override fun taskInfos(
         query: TaskInfoQuery
     ) = query.takeIf { !it.isEmpty() }?.let {
