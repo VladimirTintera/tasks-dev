@@ -3,6 +3,7 @@ package eu.tintera.background.guard
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.*
+import kotlin.concurrent.atomics.AtomicReference
 
 internal class CompositeTokenProducer(
     private val scope: CoroutineScope,
@@ -27,7 +28,8 @@ internal class CompositeTokenProducer(
 
     override fun token(): Flow<Token> = flow {
         val activeTokens = MutableStateFlow<Set<Token>>(emptySet())
-        var combinedTokenRef: CompositeToken? = null
+        // Read from the collection job, written here — atomic rather than a plain var.
+        val combinedTokenRef = AtomicReference<CompositeToken?>(null)
 
         val mergedFlow = flow {
             val seen = mutableSetOf<TokenProducer>()
@@ -46,19 +48,24 @@ internal class CompositeTokenProducer(
                 _acquiredTokens.tryEmit(token)
                 token.markAsActive()
 
+                // Kept next to the asynchronous check below on purpose: this one runs synchronously,
+                // which is the only thing fast enough when the OS revokes a permission and gives us
+                // a microscopic window to react in.
                 token.invokeOnPreCancel {
                     val allCancelled = activeTokens.value.all { it.state.value == TokenState.CANCELLED }
                     if (allCancelled) {
-                        combinedTokenRef?.triggerCancel()
+                        combinedTokenRef.load()?.triggerCancel()
                     }
                 }
 
                 launch {
                     token.state.first { it.isFinal }
-                    activeTokens.updateAndGet { it - token }.also {
-                        if (it.isEmpty()) {
-                            this@collectionScope.cancel()
-                        }
+                    if (activeTokens.updateAndGet { it - token }.isEmpty()) {
+                        // Nothing covers us any more, so the session has to end — but only if it
+                        // ever started. Before the combined token is emitted an empty set merely
+                        // means "no permission yet"; cancelling the collection here would mean we
+                        // never hear about the next one and `acquire()` would hang forever.
+                        combinedTokenRef.load()?.triggerCancel()
                     }
                 }
             }
@@ -66,30 +73,41 @@ internal class CompositeTokenProducer(
 
         var emitted = false
         try {
-            activeTokens.first { it.isNotEmpty() }
+            while (!emitted) {
+                activeTokens.first { it.isNotEmpty() }
 
-            val combinedToken = CompositeToken(
-                releaseAction = {
-                    collectionJob.cancel()
-                    coroutineScope {
-                        activeTokens.getAndUpdate { emptySet() }.forEach {
-                            launch { it.release() }
+                val combinedToken = CompositeToken(
+                    releaseAction = {
+                        collectionJob.cancel()
+                        coroutineScope {
+                            activeTokens.getAndUpdate { emptySet() }.forEach {
+                                launch { it.release() }
+                            }
+                        }
+                    },
+                    cancelAction = {
+                        collectionJob.cancel()
+                        scope.launch {
+                            activeTokens.getAndUpdate { emptySet() }.forEach {
+                                launch { it.release() }
+                            }
                         }
                     }
-                },
-                cancelAction = {
-                    collectionJob.cancel()
-                    scope.launch {
-                        activeTokens.getAndUpdate { emptySet() }.forEach {
-                            launch { it.release() }
-                        }
-                    }
+                )
+
+                combinedTokenRef.store(combinedToken)
+
+                // The last token may have finished between the wait above and the line below.
+                // Emitting now would hand out a permission that covers nothing, so wait for the
+                // next one instead.
+                if (activeTokens.value.isEmpty()) {
+                    combinedTokenRef.compareAndSet(combinedToken, null)
+                    continue
                 }
-            )
 
-            combinedTokenRef = combinedToken
-            emitted = true
-            emit(combinedToken)
+                emitted = true
+                emit(combinedToken)
+            }
         } finally {
             if (!emitted) {
                 collectionJob.cancel()
