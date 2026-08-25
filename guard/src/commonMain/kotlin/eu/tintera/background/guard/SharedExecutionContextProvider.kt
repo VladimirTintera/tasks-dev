@@ -30,7 +30,14 @@ internal class SharedExecutionContextProvider(
     override val state: StateFlow<MultiplexerState> = _multiplexerState.asStateFlow()
 
     override suspend fun acquire(): ExecutionContext {
-        val session = getOrCreateSession()
+        // Counted around the whole wait, cancellation included: a caller that gives up must not
+        // leave the multiplexer claiming somebody is still queuing for a token.
+        _multiplexerState.update { it.copy(awaitingCount = it.awaitingCount + 1) }
+        val session = try {
+            getOrCreateSession()
+        } finally {
+            _multiplexerState.update { it.copy(awaitingCount = it.awaitingCount - 1) }
+        }
         return ExecutionContextImpl(session, ::releaseSessionToken)
     }
 
@@ -64,6 +71,12 @@ internal class SharedExecutionContextProvider(
                             session.isExpired.value = true
                             currentSession.compareAndSet(session, null)
                             session.systemToken.exchange(null)
+                            // An expired session never reaches performTeardown (releaseSessionToken
+                            // returns early on it), so this is the only place that can clear the
+                            // flag. Without it the multiplexer keeps reporting a held token for the
+                            // rest of the process lifetime — the state would be a permanent lie
+                            // exactly after the event worth observing.
+                            _multiplexerState.update { it.copy(isSystemTokenHeld = false) }
                         }
 
                         session.systemToken.store(sysToken)
