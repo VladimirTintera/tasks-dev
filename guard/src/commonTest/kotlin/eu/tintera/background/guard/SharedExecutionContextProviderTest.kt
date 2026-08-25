@@ -422,6 +422,62 @@ class SharedExecutionContextProviderTest {
             secondAcquireJob.cancelAndJoin()
         }
     }
+
+    @Test
+    fun `when the system cancels the token the multiplexer stops reporting it as held`() = runTest {
+        val fakeSystemLock = FakeTokenProvider()
+        val provider = executionContextProvider(fakeSystemLock)
+
+        provider.acquire()
+        assertTrue(provider.state.value.isSystemTokenHeld, "The token is held right after acquire")
+
+        fakeSystemLock.triggerExpiration()
+
+        // An expired session skips performTeardown, so this only holds because the pre-cancel hook
+        // clears the flag itself.
+        assertFalse(
+            provider.state.value.isSystemTokenHeld,
+            "A cancelled system token must not be reported as held"
+        )
+    }
+
+    @Test
+    fun `while acquire waits for a token the multiplexer reports it as awaiting`() = runTest {
+        var shouldSuspend = true
+        val fakeToken = FakeToken()
+        val producer = TokenProducer {
+            flow {
+                if (shouldSuspend) awaitCancellation() else emit(fakeToken)
+            }
+        }
+        val provider = executionContextProvider(producer, releaseDebounce = Duration.ZERO)
+
+        assertEquals(0, provider.state.value.awaitingCount)
+
+        val acquireJob = launch { provider.acquire() }
+        runCurrent()
+
+        // Nothing is running and no token is held — without awaitingCount this state would be
+        // indistinguishable from an idle multiplexer.
+        assertFalse(provider.state.value.isSystemTokenHeld)
+        assertEquals(0, provider.state.value.activeTasksCount)
+        assertEquals(1, provider.state.value.awaitingCount, "The waiting caller must be visible")
+
+        acquireJob.cancelAndJoin()
+
+        assertEquals(
+            0,
+            provider.state.value.awaitingCount,
+            "A caller that gave up must not stay counted"
+        )
+
+        // And the counter really does come back down the happy path too.
+        shouldSuspend = false
+        provider.acquire()
+
+        assertEquals(0, provider.state.value.awaitingCount)
+        assertTrue(provider.state.value.isSystemTokenHeld)
+    }
 }
 
 
