@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
  * token that is currently alive — buffering is preserved, staleness is not.
  */
 abstract class PendingTokenProducer(
-    private val scope: CoroutineScope
+    protected val scope: CoroutineScope
 ) : TokenProducer, PendingTokenObservable {
 
     private val _pendingToken = MutableStateFlow<Set<Token>>(emptySet())

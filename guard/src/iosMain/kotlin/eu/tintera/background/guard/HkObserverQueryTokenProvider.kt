@@ -26,13 +26,27 @@ import kotlin.uuid.Uuid
  */
 abstract class HkObserverQueryTokenProvider(
     scope: CoroutineScope,
-    store: HKHealthStore,
-    type: HKSampleType,
-    timeout: Duration = 10.seconds
+    private val store: HKHealthStore,
+    private val type: HKSampleType,
+    private val timeout: Duration = 10.seconds
 ) : PendingTokenProducer(scope) {
     abstract fun onError(error: NSError)
 
-    init {
+    /**
+     * Starts the observer query. Called **after** construction, never from `init`.
+     *
+     * The query callback reaches abstract [onError], so starting it from the constructor would
+     * publish a `this` whose subclass is not built yet: a subclass assigns its own fields only
+     * after the super constructor returns, and HealthKit may invoke the handler straight away.
+     * The same leak crashed `PluginSyncEnabler` in the SDK with an NPE on a field that looked
+     * non-null. Publishing `this` from a constructor also voids the memory model guarantee for
+     * final fields, so it is not merely a start-up race.
+     *
+     * Register the producer with the execution environment first, then call this — a token
+     * produced before registration is not lost (the pending set is a `StateFlow`), but there is
+     * no reason to hand one out before anyone can take it.
+     */
+    fun start() {
         val observer = HKObserverQuery(
             sampleType = type,
             predicate = null,
