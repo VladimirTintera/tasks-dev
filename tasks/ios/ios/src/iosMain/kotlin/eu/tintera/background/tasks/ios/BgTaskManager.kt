@@ -23,7 +23,7 @@ import kotlin.uuid.Uuid
 
 internal abstract class BgTaskManager(
     scope: ApplicationScope,
-    dispatchers: AppDispatchers,
+    private val dispatchers: AppDispatchers,
     private val taskIdentifier: String,
     private val repository: BgTaskManagerRepository,
     private val appLifecycleObserver: AppLifecycleObserver,
@@ -43,7 +43,17 @@ internal abstract class BgTaskManager(
         _lastKnownTasks.update { it.filterNot { task -> task.id == id } }
     }
 
-    init {
+    /**
+     * Starts scheduling. Called **after** construction, never from `init`.
+     *
+     * Both [register] and the lifecycle collector reach abstract members ([createRequest],
+     * [filter]) through [evaluateAndScheduleNext], so starting them from the constructor would
+     * publish a `this` whose subclass is not built yet — its own fields are assigned only after
+     * the super constructor returns. The lifecycle flow drops the initial background state, which
+     * made the window narrow enough never to be hit; the same leak in the SDK's
+     * `LocalServiceSyncEnabler` was hit, and crashed with an NPE on a field that looked non-null.
+     */
+    fun start() {
         register()
 
         scope.launch(dispatchers.default) {
