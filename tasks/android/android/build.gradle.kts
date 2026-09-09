@@ -25,5 +25,13 @@ kotlin {
             implementation(libs.androidx.work.runtime.ktx)
             implementation(libs.koin.android)
         }
+
+        // Host tests only — nothing here touches the Android framework or WorkManager, so no
+        // Robolectric. `withHostTest {}` comes from the convention plugin.
+        getByName("androidHostTest").dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.turbine)
+        }
     }
 }

@@ -358,40 +358,25 @@ internal class WorkManagerTaskManager(
         }
     } ?: emptyFlow()
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private fun Flow<List<WorkInfo>>.toTaskInfos() = channelFlow {
+    /**
+     * WorkManager knows the schedule, the engine's own database knows the payload — a [TaskInfo] is
+     * the two put together. See [combineWithDetails] for why the first emission must come from the
+     * upstream and never from a seeded value.
+     */
+    private fun Flow<List<WorkInfo>>.toTaskInfos() = combineWithDetails(
+        idsOf = { workInfos -> workInfos.map { it.id.toKotlinUuid() }.toSet() },
+        detailsOf = { ids -> repository.taskInfoByIds(ids) },
+    ) { workInfos, dbTasks ->
+        val taskMap = dbTasks.associateBy { it.id }.mapValues { (_, task) ->
+            task to taskRegistry.resolve<Any, Any, Any>(task.identifier)
+        }
 
-        val sharedWorkInfosFlow = stateIn(
-            scope = this,
-            started = SharingStarted.Eagerly, // safe: consumed immediately below
-            initialValue = emptyList()
-        )
-
-        val dbTasksFlow = sharedWorkInfosFlow
-            .map { list -> list.map { it.id.toKotlinUuid() }.toSet() }
-            .distinctUntilChanged()
-            .flatMapLatest { ids ->
-                if (ids.isEmpty()) {
-                    flowOf(emptyList())
-                } else {
-                    repository.taskInfoByIds(ids)
-                }
-            }
-
-        combine(sharedWorkInfosFlow, dbTasksFlow) { workInfos, dbTasks ->
-            val taskMap = dbTasks.associateBy { it.id }.mapValues { (_, task) ->
-                task to taskRegistry.resolve<Any, Any, Any>(task.identifier)
-            }
-
-            workInfos.map { workInfo ->
-                val pair = taskMap[workInfo.id.toKotlinUuid()]
-                workInfo.toTaskInfo(
-                    info = pair?.first,
-                    registration = pair?.second,
-                )
-            }
-        }.collect {
-            send(it)
+        workInfos.map { workInfo ->
+            val pair = taskMap[workInfo.id.toKotlinUuid()]
+            workInfo.toTaskInfo(
+                info = pair?.first,
+                registration = pair?.second,
+            )
         }
     }
 
