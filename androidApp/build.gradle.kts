@@ -24,6 +24,8 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     packaging {
         resources {
@@ -47,4 +49,10 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.core)
     implementation(projects.shared)
+
+    androidTestImplementation(projects.tasks.runtime)
+    androidTestImplementation(libs.androidx.testExt.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.kotlin.testJunit)
+    androidTestImplementation(libs.kotlinx.coroutines.core)
 }
