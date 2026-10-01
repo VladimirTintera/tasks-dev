@@ -99,6 +99,8 @@ internal class TaskRegistry(
         }
     }
 
+    override fun openRegistrationPhase(): AutoCloseable = openPhase()
+
     @Suppress("UNCHECKED_CAST")
     override suspend fun <I : Any, O : Any, P : Any> resolve(
         identifier: String
