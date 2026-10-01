@@ -178,6 +178,23 @@ identifiers anyway, so explicit initialization is also the one story that holds 
 A worker started by the system before the application initialized does not fail: `TaskWorker`
 suspends until initialization happens (see `TasksKoinContext.awaitKoinApp`).
 
+**Wrap your registrations in a registration phase.** Handlers and tags usually arrive late — the
+Koin integration registers them from `createdAtStart` singletons — so a lookup of something not
+registered yet waits instead of failing. On its own the registry can only guess how long: a warmup
+window counted from the first unanswered lookup. The guess fails on a slow start (a background
+wake-up on a low-end device burns the window before anything is registered) and inside Koin's eager
+phase, whose order is arbitrary, so a singleton may use a tag whose registration is still queued
+behind it. Tell the registry instead:
+
+```kotlin
+Tasks.registry.registering {
+    koinApplication.createEagerInstances()
+}
+```
+
+While any phase is open, lookups wait for the registration; once the last one closes, a miss is
+final. Phases nest, so every part of an application that registers can open its own.
+
 ---
 
 ## Migrating from an existing WorkManager setup
