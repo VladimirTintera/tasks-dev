@@ -1,9 +1,16 @@
 package eu.tintera.background.tasks.android
 
 import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
 import androidx.work.WorkInfo
+import eu.tintera.background.tasks.Constraints
 import eu.tintera.background.tasks.ExistingTaskPolicy
 import eu.tintera.background.tasks.State
+
+internal fun Constraints.toWorkConstraints() = androidx.work.Constraints(
+    requiredNetworkType = if (requiresNetwork) NetworkType.CONNECTED else NetworkType.NOT_REQUIRED,
+    requiresDeviceIdle = requiresDeviceIdle,
+)
 
 internal fun ExistingTaskPolicy.toWorkPolicy() = when (this) {
     ExistingTaskPolicy.Keep -> ExistingWorkPolicy.KEEP
