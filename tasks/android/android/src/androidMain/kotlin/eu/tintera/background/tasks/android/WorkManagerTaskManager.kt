@@ -275,13 +275,7 @@ internal class WorkManagerTaskManager(
     ) {
         val inputData = Data.Builder().putString(TaskWorker.TASK_IDENTIFIER, identifier).build()
         setInputData(inputData)
-        if (constraints.requiresNetwork || constraints.requiresDeviceIdle)
-            setConstraints(
-                androidx.work.Constraints(
-                    requiredNetworkType = NetworkType.CONNECTED,
-                    requiresDeviceIdle = constraints.requiresDeviceIdle
-                )
-            )
+        setConstraints(constraints.toWorkConstraints())
 
         if (initialDelay.isPositive())
             setInitialDelay(initialDelay.inWholeMilliseconds, TimeUnit.MILLISECONDS)
